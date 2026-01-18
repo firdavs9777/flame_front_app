@@ -169,6 +169,7 @@ class WebSocketService {
   void on(String event, WebSocketEventCallback callback) {
     _listeners[event] ??= {};
     _listeners[event]!.add(callback);
+    debugPrint('WebSocket: Registered listener for event: $event (total: ${_listeners[event]!.length})');
   }
 
   /// Remove event listener
@@ -184,18 +185,33 @@ class WebSocketService {
   /// Handle incoming message
   void _onMessage(dynamic message) {
     try {
+      debugPrint('WebSocket: Raw message received - $message');
       final data = jsonDecode(message as String) as Map<String, dynamic>;
       final event = data['event'] as String?;
-      final eventData = data['data'] as Map<String, dynamic>? ?? {};
+      final rawEventData = data['data'];
 
-      debugPrint('WebSocket: Received - event: $event');
+      debugPrint('WebSocket: Received - event: $event, data type: ${rawEventData.runtimeType}');
 
       if (event == null) return;
 
+      // Handle case where data might not be a Map
+      Map<String, dynamic> eventData;
+      if (rawEventData is Map<String, dynamic>) {
+        eventData = rawEventData;
+      } else if (rawEventData is Map) {
+        eventData = Map<String, dynamic>.from(rawEventData);
+      } else {
+        debugPrint('WebSocket: Event data is not a Map, wrapping: $rawEventData');
+        eventData = {'raw': rawEventData};
+      }
+
+      debugPrint('WebSocket: Emitting event: $event with data: $eventData');
+
       // Emit to listeners
       _emit(event, eventData);
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint('WebSocket: Failed to parse message - $e');
+      debugPrint('WebSocket: Stack trace - $stack');
     }
   }
 
@@ -228,14 +244,20 @@ class WebSocketService {
   /// Emit event to listeners
   void _emit(String event, Map<String, dynamic> data) {
     final callbacks = _listeners[event];
-    if (callbacks != null) {
+    debugPrint('WebSocket: _emit called for event: $event, listener count: ${callbacks?.length ?? 0}');
+    debugPrint('WebSocket: Registered events: ${_listeners.keys.toList()}');
+
+    if (callbacks != null && callbacks.isNotEmpty) {
       for (final callback in callbacks) {
         try {
+          debugPrint('WebSocket: Calling listener for event: $event');
           callback(data);
         } catch (e) {
           debugPrint('WebSocket: Listener error - $e');
         }
       }
+    } else {
+      debugPrint('WebSocket: No listeners registered for event: $event');
     }
   }
 

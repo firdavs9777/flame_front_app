@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/services/chat_service.dart';
@@ -28,10 +29,13 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
   bool get hasMore => _hasMore;
 
   void _initWebSocket() {
+    debugPrint('🔌 _initWebSocket: Setting up WebSocket listeners');
+
     // Connect to WebSocket
     _wsService.connect();
 
     // Listen for new messages
+    debugPrint('🔌 Registering listener for: ${WebSocketServerEvent.newMessage}');
     _wsService.on(WebSocketServerEvent.newMessage, _onNewMessage);
 
     // Listen for message status updates
@@ -48,6 +52,8 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
     // Listen for reactions
     _wsService.on(WebSocketServerEvent.reactionAdded, _onReactionAdded);
     _wsService.on(WebSocketServerEvent.reactionRemoved, _onReactionRemoved);
+
+    debugPrint('🔌 _initWebSocket: All WebSocket listeners registered');
   }
 
   @override
@@ -64,13 +70,27 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
   }
 
   void _onNewMessage(Map<String, dynamic> data) {
+    debugPrint('📨 _onNewMessage called with data: $data');
+
     final conversationId = data['conversation_id'] as String?;
     final messageData = data['message'] as Map<String, dynamic>?;
 
-    if (conversationId == null || messageData == null) return;
+    debugPrint('📨 conversationId: $conversationId, messageData: $messageData');
 
-    final message = Message.fromJson(messageData);
-    addMessageToConversation(conversationId, message);
+    if (conversationId == null || messageData == null) {
+      debugPrint('📨 Missing conversationId or messageData, returning early');
+      return;
+    }
+
+    try {
+      final message = Message.fromJson(messageData);
+      debugPrint('📨 Parsed message: ${message.id} - ${message.content}');
+      addMessageToConversation(conversationId, message);
+      debugPrint('📨 Message added to conversation successfully');
+    } catch (e, stack) {
+      debugPrint('📨 Error parsing message: $e');
+      debugPrint('📨 Stack: $stack');
+    }
   }
 
   void _onMessageStatus(Map<String, dynamic> data) {
@@ -191,6 +211,27 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
 
   Future<bool> sendImageMessage(String conversationId, File image, {String? replyToId}) async {
     final result = await _chatService.sendImageMessage(conversationId, image, replyToId: replyToId);
+
+    if (result.success && result.data != null) {
+      final message = result.data!;
+      final conversations = state.valueOrNull ?? [];
+
+      state = AsyncValue.data(conversations.map((conversation) {
+        if (conversation.id == conversationId) {
+          return conversation.copyWith(
+            messages: [...conversation.messages, message],
+            lastMessageAt: DateTime.now(),
+          );
+        }
+        return conversation;
+      }).toList());
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> sendVideoMessage(String conversationId, File video, {int? duration, String? replyToId}) async {
+    final result = await _chatService.sendVideoMessage(conversationId, video, duration: duration, replyToId: replyToId);
 
     if (result.success && result.data != null) {
       final message = result.data!;

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
+import 'package:flame/services/chat_service.dart' show Sticker;
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/widgets/smart_image.dart';
@@ -203,7 +204,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         },
         onVoiceTap: () {
           Navigator.pop(context);
-          _showVoiceRecordingInfo();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Hold the mic button to record a voice message'),
+              duration: Duration(seconds: 2),
+            ),
+          );
         },
         onGifTap: () {
           Navigator.pop(context);
@@ -265,21 +271,89 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
       setState(() => _isSending = true);
 
-      // TODO: Implement video sending when backend supports it
-      _showComingSoon('Video messages');
-      setState(() => _isSending = false);
+      final replyToId = _replyingTo?.id;
+      setState(() => _replyingTo = null);
+
+      final success = await ref.read(conversationsProvider.notifier).sendVideoMessage(
+        widget.conversation.id,
+        File(video.path),
+        replyToId: replyToId,
+      );
+
+      if (mounted) {
+        setState(() => _isSending = false);
+
+        if (success) {
+          await _refreshMessages();
+          _scrollToBottom(animated: true);
+        } else {
+          _showError('Failed to send video');
+        }
+      }
     } catch (e) {
+      setState(() => _isSending = false);
       _showError('Failed to pick video');
     }
   }
 
-  void _showVoiceRecordingInfo() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Hold the mic button to record a voice message'),
-        duration: Duration(seconds: 2),
+  Future<void> _sendVoiceMessage(File voiceFile, int durationSeconds) async {
+    setState(() => _isSending = true);
+
+    final replyToId = _replyingTo?.id;
+    setState(() => _replyingTo = null);
+
+    final success = await ref.read(conversationsProvider.notifier).sendVoiceMessage(
+      widget.conversation.id,
+      voiceFile,
+      duration: durationSeconds,
+      replyToId: replyToId,
+    );
+
+    if (mounted) {
+      setState(() => _isSending = false);
+
+      if (success) {
+        await _refreshMessages();
+        _scrollToBottom(animated: true);
+      } else {
+        _showError('Failed to send voice message');
+      }
+    }
+  }
+
+  void _showStickerPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StickerPicker(
+        onStickerSelected: _sendSticker,
       ),
     );
+  }
+
+  Future<void> _sendSticker(Sticker sticker) async {
+    setState(() => _isSending = true);
+
+    final replyToId = _replyingTo?.id;
+    setState(() => _replyingTo = null);
+
+    final success = await ref.read(conversationsProvider.notifier).sendStickerMessage(
+      widget.conversation.id,
+      sticker.id,
+      replyToId: replyToId,
+    );
+
+    if (mounted) {
+      setState(() => _isSending = false);
+
+      if (success) {
+        await _refreshMessages();
+        _scrollToBottom(animated: true);
+      } else {
+        _showError('Failed to send sticker');
+      }
+    }
   }
 
   void _showComingSoon(String feature) {
@@ -464,8 +538,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onSend: _sendMessage,
             onCancelReply: () => setState(() => _replyingTo = null),
             onAttachmentTap: _showAttachmentModal,
-            onStickerTap: () {}, // TODO: Implement
+            onStickerTap: _showStickerPicker,
             onTextChanged: _onTextChanged,
+            onVoiceRecorded: _sendVoiceMessage,
           ),
         ],
       ),
