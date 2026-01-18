@@ -55,5 +55,7 @@
 	<string>Flame needs your location to find matches near you</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Flame needs your location to find matches near you and notify you of nearby matches</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Flame needs microphone access to record voice messages</string>
 </dict>
 </plist>
