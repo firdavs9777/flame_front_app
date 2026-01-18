@@ -42,6 +42,10 @@ class _StepVerifyEmailState extends ConsumerState<StepVerifyEmail> {
   void initState() {
     super.initState();
     _startResendTimer();
+    // Request focus on first field after frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNodes[0].requestFocus();
+    });
   }
 
   @override
@@ -355,6 +359,9 @@ class _StepVerifyEmailState extends ConsumerState<StepVerifyEmail> {
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
         maxLength: 1,
+        autofocus: index == 0,
+        enableSuggestions: false,
+        autocorrect: false,
         style: const TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
@@ -374,6 +381,7 @@ class _StepVerifyEmailState extends ConsumerState<StepVerifyEmail> {
           ),
         ),
         inputFormatters: [
+          LengthLimitingTextInputFormatter(1),
           FilteringTextInputFormatter.digitsOnly,
         ],
         onChanged: (value) => _onCodeChanged(index, value),
