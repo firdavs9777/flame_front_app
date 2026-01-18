@@ -7,45 +7,43 @@ final discoveryServiceProvider = Provider<DiscoveryService>((ref) => DiscoverySe
 
 // Discovery provider with async loading from API
 final discoveryProvider = StateNotifierProvider<DiscoveryNotifier, AsyncValue<List<User>>>((ref) {
-  final notifier = DiscoveryNotifier(ref.watch(discoveryServiceProvider));
-  // Store ref for accessing filters
-  notifier._ref = ref;
-  return notifier;
+  return DiscoveryNotifier(ref.watch(discoveryServiceProvider), ref);
 });
 
 class DiscoveryNotifier extends StateNotifier<AsyncValue<List<User>>> {
   final DiscoveryService _discoveryService;
+  final Ref _ref;
   bool _hasMore = true;
   int _offset = 0;
   static const int _limit = 10;
 
-  // Reference to read filters
-  late Ref _ref;
+  // Store current filters for loadMore
+  DiscoveryFilters? _currentFilters;
 
-  DiscoveryNotifier(this._discoveryService) : super(const AsyncValue.loading());
+  DiscoveryNotifier(this._discoveryService, this._ref) : super(const AsyncValue.loading());
 
   bool get hasMore => _hasMore;
 
-  // Get current filters
-  DiscoveryFilters get _filters => _ref.read(filterProvider);
-
-  Future<void> loadPotentialMatches({bool refresh = false}) async {
+  Future<void> loadPotentialMatches({bool refresh = false, DiscoveryFilters? filters}) async {
     if (refresh) {
       _offset = 0;
       _hasMore = true;
       state = const AsyncValue.loading();
     }
 
-    final filters = _filters;
+    // Use provided filters or read from provider
+    final DiscoveryFilters currentFilters = filters ?? _ref.read(filterProvider);
+    _currentFilters = currentFilters;
+
     final result = await _discoveryService.getPotentialMatches(
       limit: _limit,
       offset: _offset,
-      minAge: filters.minAge,
-      maxAge: filters.maxAge,
-      maxDistance: filters.maxDistance,
-      genderPreference: filters.genderPreference,
-      interests: filters.interests.isNotEmpty ? filters.interests : null,
-      onlineOnly: filters.onlineOnly,
+      minAge: currentFilters.minAge,
+      maxAge: currentFilters.maxAge,
+      maxDistance: currentFilters.maxDistance,
+      genderPreference: currentFilters.genderPreference,
+      interests: currentFilters.interests.isNotEmpty ? currentFilters.interests : null,
+      onlineOnly: currentFilters.onlineOnly,
     );
 
     if (result.success && result.data != null) {
@@ -67,7 +65,9 @@ class DiscoveryNotifier extends StateNotifier<AsyncValue<List<User>>> {
   Future<void> loadMore() async {
     if (!_hasMore) return;
 
-    final filters = _filters;
+    // Use stored filters or read from provider
+    final DiscoveryFilters filters = _currentFilters ?? _ref.read(filterProvider);
+
     final result = await _discoveryService.getPotentialMatches(
       limit: _limit,
       offset: _offset,
