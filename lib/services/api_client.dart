@@ -4,14 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
-  // Auto-detect platform for correct localhost URL
-  // For real device, change this to your computer's IP: http://192.168.x.x:8000/v1
-  static String get baseUrl {
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000/v1'; // Android emulator
-    }
-    return 'http://127.0.0.1:8000/v1'; // iOS simulator / desktop
-  }
+  static const String baseUrl = 'https://flame.banatalk.com/v1';
 
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
