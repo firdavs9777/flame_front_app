@@ -2,23 +2,86 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/services/chat_service.dart';
+import 'package:flame/services/websocket_service.dart';
 
 final chatServiceProvider = Provider<ChatService>((ref) => ChatService());
+final webSocketServiceProvider = Provider<WebSocketService>((ref) => WebSocketService());
 
 // Conversations provider with async loading from API
 final conversationsProvider = StateNotifierProvider<ConversationsNotifier, AsyncValue<List<Conversation>>>((ref) {
-  return ConversationsNotifier(ref.watch(chatServiceProvider));
+  final chatService = ref.watch(chatServiceProvider);
+  final wsService = ref.watch(webSocketServiceProvider);
+  return ConversationsNotifier(chatService, wsService);
 });
 
 class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>> {
   final ChatService _chatService;
+  final WebSocketService _wsService;
   bool _hasMore = true;
   int _offset = 0;
   static const int _limit = 20;
 
-  ConversationsNotifier(this._chatService) : super(const AsyncValue.loading());
+  ConversationsNotifier(this._chatService, this._wsService) : super(const AsyncValue.loading()) {
+    _initWebSocket();
+  }
 
   bool get hasMore => _hasMore;
+
+  void _initWebSocket() {
+    // Connect to WebSocket
+    _wsService.connect();
+
+    // Listen for new messages
+    _wsService.on(WebSocketServerEvent.newMessage, _onNewMessage);
+
+    // Listen for message status updates
+    _wsService.on(WebSocketServerEvent.messageStatus, _onMessageStatus);
+
+    // Listen for user online/offline
+    _wsService.on(WebSocketServerEvent.userOnline, _onUserOnline);
+    _wsService.on(WebSocketServerEvent.userOffline, _onUserOffline);
+  }
+
+  @override
+  void dispose() {
+    _wsService.off(WebSocketServerEvent.newMessage, _onNewMessage);
+    _wsService.off(WebSocketServerEvent.messageStatus, _onMessageStatus);
+    _wsService.off(WebSocketServerEvent.userOnline, _onUserOnline);
+    _wsService.off(WebSocketServerEvent.userOffline, _onUserOffline);
+    super.dispose();
+  }
+
+  void _onNewMessage(Map<String, dynamic> data) {
+    final conversationId = data['conversation_id'] as String?;
+    final messageData = data['message'] as Map<String, dynamic>?;
+
+    if (conversationId == null || messageData == null) return;
+
+    final message = Message.fromJson(messageData);
+    addMessageToConversation(conversationId, message);
+  }
+
+  void _onMessageStatus(Map<String, dynamic> data) {
+    final conversationId = data['conversation_id'] as String?;
+    final messageIds = (data['message_ids'] as List?)?.cast<String>() ?? [];
+    final status = data['status'] as String?;
+
+    if (conversationId == null || status == null) return;
+
+    updateMessageStatus(conversationId, messageIds, MessageStatus.fromString(status));
+  }
+
+  void _onUserOnline(Map<String, dynamic> data) {
+    final userId = data['user_id'] as String?;
+    if (userId == null) return;
+    updateUserOnlineStatus(userId, true);
+  }
+
+  void _onUserOffline(Map<String, dynamic> data) {
+    final userId = data['user_id'] as String?;
+    if (userId == null) return;
+    updateUserOnlineStatus(userId, false);
+  }
 
   Future<void> loadConversations({bool refresh = false}) async {
     if (refresh) {
@@ -116,6 +179,9 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
     );
 
     if (result.success) {
+      // Also send via WebSocket
+      _wsService.sendMessageRead(conversationId, unreadMessageIds);
+
       state = AsyncValue.data(conversations.map((c) {
         if (c.id == conversationId) {
           return c.copyWith(
@@ -134,6 +200,10 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
     final conversations = state.valueOrNull ?? [];
     state = AsyncValue.data(conversations.map((conversation) {
       if (conversation.id == conversationId) {
+        // Check if message already exists
+        if (conversation.messages.any((m) => m.id == message.id)) {
+          return conversation;
+        }
         return conversation.copyWith(
           messages: [...conversation.messages, message],
           lastMessageAt: message.timestamp,
@@ -143,6 +213,84 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
       return conversation;
     }).toList());
   }
+
+  void updateMessageStatus(String conversationId, List<String> messageIds, MessageStatus status) {
+    final conversations = state.valueOrNull ?? [];
+    state = AsyncValue.data(conversations.map((conversation) {
+      if (conversation.id == conversationId) {
+        return conversation.copyWith(
+          messages: conversation.messages.map((m) {
+            if (messageIds.contains(m.id)) {
+              return m.copyWith(status: status);
+            }
+            return m;
+          }).toList(),
+        );
+      }
+      return conversation;
+    }).toList());
+  }
+
+  void updateUserOnlineStatus(String userId, bool isOnline) {
+    final conversations = state.valueOrNull ?? [];
+    state = AsyncValue.data(conversations.map((conversation) {
+      if (conversation.otherUser.id == userId) {
+        return conversation.copyWith(
+          otherUser: conversation.otherUser.copyWith(isOnline: isOnline),
+        );
+      }
+      return conversation;
+    }).toList());
+  }
+
+  // Send typing indicator
+  void sendTyping(String conversationId) {
+    _wsService.sendTyping(conversationId);
+  }
+
+  // Send stop typing indicator
+  void sendStopTyping(String conversationId) {
+    _wsService.sendStopTyping(conversationId);
+  }
+}
+
+// Typing indicators provider
+final typingUsersProvider = StateNotifierProvider<TypingUsersNotifier, Map<String, String?>>((ref) {
+  final wsService = ref.watch(webSocketServiceProvider);
+  return TypingUsersNotifier(wsService);
+});
+
+class TypingUsersNotifier extends StateNotifier<Map<String, String?>> {
+  final WebSocketService _wsService;
+
+  TypingUsersNotifier(this._wsService) : super({}) {
+    _wsService.on(WebSocketServerEvent.userTyping, _onUserTyping);
+    _wsService.on(WebSocketServerEvent.userStopTyping, _onUserStopTyping);
+  }
+
+  @override
+  void dispose() {
+    _wsService.off(WebSocketServerEvent.userTyping, _onUserTyping);
+    _wsService.off(WebSocketServerEvent.userStopTyping, _onUserStopTyping);
+    super.dispose();
+  }
+
+  void _onUserTyping(Map<String, dynamic> data) {
+    final conversationId = data['conversation_id'] as String?;
+    final userId = data['user_id'] as String?;
+    if (conversationId != null && userId != null) {
+      state = {...state, conversationId: userId};
+    }
+  }
+
+  void _onUserStopTyping(Map<String, dynamic> data) {
+    final conversationId = data['conversation_id'] as String?;
+    if (conversationId != null) {
+      state = {...state, conversationId: null};
+    }
+  }
+
+  bool isTyping(String conversationId) => state[conversationId] != null;
 }
 
 // Messages provider for a specific conversation
@@ -164,4 +312,10 @@ final unreadMessagesCountProvider = Provider<int>((ref) {
     data: (conversations) => conversations.fold(0, (sum, c) => sum + c.unreadCount),
     orElse: () => 0,
   );
+});
+
+// WebSocket connection status
+final webSocketConnectedProvider = Provider<bool>((ref) {
+  final wsService = ref.watch(webSocketServiceProvider);
+  return wsService.isConnected;
 });
