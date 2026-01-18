@@ -111,24 +111,24 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_native_splash: c32d145d68aeda5502d5f543ee38c192065986cf
-  google_mlkit_commons: 2abe6a70e1824e431d16a51085cb475b672c8aab
-  google_mlkit_face_detection: 754da2113a1952f063c7c5dc347ac6ae8934fb77
+  flutter_native_splash: df59bb2e1421aa0282cb2e95618af4dcb0c56c29
+  google_mlkit_commons: 2544377e5503bf78ee7412ccfce0394c2dcb8a6b
+  google_mlkit_face_detection: 111b3ac2f2df6ad5f464bafed9ba380ac8366d37
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
   GoogleMLKit: eff9e23ec1d90ea4157a1ee2e32a4f610c5b3318
   GoogleToolboxForMac: d1a2cbf009c453f4d6ded37c105e2f67a32206d8
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
-  image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
+  image_picker_ios: 4f2f91b01abdb52842a8e277617df877e40f905b
   MLImage: 0ad1c5f50edd027672d8b26b0fee78a8b4a0fc56
   MLKitCommon: 07c2c33ae5640e5380beaaa6e4b9c249a205542d
   MLKitFaceDetection: 2a593db4837db503ad3426b565e7aab045cefea5
   MLKitVision: 45e79d68845a2de77e2dd4d7f07947f0ed157b0e
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
-  path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
+  path_provider_foundation: 0b743cbb62d8e47eab856f09262bb8c1ddcfe6ba
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
-  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
-  sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
+  shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
+  sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
 
 PODFILE CHECKSUM: 1857a7cdb7dfafe45f2b0e9a9af44644190f7506
 
