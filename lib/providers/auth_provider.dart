@@ -110,6 +110,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String bio,
     required List<String> interests,
     required List<String> photos,
+    required double latitude,
+    required double longitude,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
 
@@ -123,6 +125,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       bio: bio,
       interests: interests,
       photos: photos,
+      latitude: latitude,
+      longitude: longitude,
     );
 
     if (result.success && result.user != null) {

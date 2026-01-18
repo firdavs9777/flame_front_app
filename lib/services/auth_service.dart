@@ -64,6 +64,8 @@ class AuthService {
     required String bio,
     required List<String> interests,
     required List<String> photos,
+    required double latitude,
+    required double longitude,
   }) async {
     final response = await _apiClient.post('/auth/register', body: {
       'email': email,
@@ -75,6 +77,8 @@ class AuthService {
       'bio': bio,
       'interests': interests,
       'photos': photos,
+      'latitude': latitude,
+      'longitude': longitude,
     });
 
     if (response.success && response.data != null) {

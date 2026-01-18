@@ -57,5 +57,9 @@
 	<string>Flame needs photo library access to select profile photos</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Flame needs permission to save photos to your library</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Flame needs your location to find matches near you</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Flame needs your location to find matches near you and notify you of nearby matches</string>
 </dict>
 </plist>
