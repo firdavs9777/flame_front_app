@@ -1,5 +1,5 @@
-import 'user.dart';
-import 'message.dart';
+import 'package:flame/models/user.dart';
+import 'package:flame/models/message.dart';
 
 class Match {
   final String id;

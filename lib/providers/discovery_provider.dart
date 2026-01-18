@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/models.dart';
-import '../services/discovery_service.dart';
+import 'package:flame/models/models.dart';
+import 'package:flame/services/discovery_service.dart';
 
 final discoveryServiceProvider = Provider<DiscoveryService>((ref) => DiscoveryService());
 

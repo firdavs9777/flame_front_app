@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import 'package:flame/theme/app_theme.dart';
 
 class ActionButtons extends StatelessWidget {
   final VoidCallback onDislike;

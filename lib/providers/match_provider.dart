@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/models.dart';
-import '../services/match_service.dart';
+import 'package:flame/models/models.dart';
+import 'package:flame/services/match_service.dart';
 
 final matchServiceProvider = Provider<MatchService>((ref) => MatchService());
 

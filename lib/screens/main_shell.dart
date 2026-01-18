@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/providers.dart';
-import '../theme/app_theme.dart';
+import 'package:flame/providers/providers.dart';
+import 'package:flame/theme/app_theme.dart';
 import 'home/home_screen.dart';
 import 'chat/matches_screen.dart';
 import 'profile/my_profile_screen.dart';

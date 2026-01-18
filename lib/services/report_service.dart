@@ -1,5 +1,5 @@
-import 'api_client.dart';
-import 'user_service.dart';
+import 'package:flame/services/api_client.dart';
+import 'package:flame/services/user_service.dart';
 
 class ReportService {
   final ApiClient _apiClient = ApiClient();

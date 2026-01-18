@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/models.dart';
-import '../services/swipe_service.dart';
-import 'discovery_provider.dart';
-import 'match_provider.dart';
-import 'user_provider.dart';
+import 'package:flame/models/models.dart';
+import 'package:flame/services/swipe_service.dart';
+import 'package:flame/providers/discovery_provider.dart';
+import 'package:flame/providers/match_provider.dart';
+import 'package:flame/providers/user_provider.dart';
 
 final swipeServiceProvider = Provider<SwipeService>((ref) => SwipeService());
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../models/models.dart';
-import '../theme/app_theme.dart';
+import 'package:flame/models/models.dart';
+import 'package:flame/theme/app_theme.dart';
 
 class ProfileCard extends StatefulWidget {
   final User user;

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/user.dart';
-import '../services/auth_service.dart';
+import 'package:flame/models/user.dart';
+import 'package:flame/services/auth_service.dart';
 
 enum AuthStatus {
   initial,

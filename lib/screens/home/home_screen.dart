@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
-import '../../models/models.dart';
-import '../../providers/providers.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/profile_card.dart';
-import '../../widgets/action_buttons.dart';
-import '../profile/profile_detail_screen.dart';
+import 'package:flame/models/models.dart';
+import 'package:flame/providers/providers.dart';
+import 'package:flame/theme/app_theme.dart';
+import 'package:flame/widgets/profile_card.dart';
+import 'package:flame/widgets/action_buttons.dart';
+import 'package:flame/screens/profile/profile_detail_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../models/models.dart';
-import '../../providers/providers.dart';
-import '../../theme/app_theme.dart';
-import '../profile/profile_detail_screen.dart';
+import 'package:flame/models/models.dart';
+import 'package:flame/providers/providers.dart';
+import 'package:flame/theme/app_theme.dart';
+import 'package:flame/screens/profile/profile_detail_screen.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final Conversation conversation;

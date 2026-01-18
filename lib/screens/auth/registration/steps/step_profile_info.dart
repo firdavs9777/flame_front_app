@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../models/user.dart';
-import '../registration_flow.dart';
+import 'package:flame/theme/app_theme.dart';
+import 'package:flame/models/user.dart';
+import 'package:flame/screens/auth/registration/registration_flow.dart';
 
 class StepProfileInfo extends StatefulWidget {
   final RegistrationData data;

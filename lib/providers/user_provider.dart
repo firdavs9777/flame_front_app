@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/models.dart';
-import '../services/user_service.dart';
+import 'package:flame/models/models.dart';
+import 'package:flame/services/user_service.dart';
 
 final userServiceProvider = Provider<UserService>((ref) => UserService());
 
