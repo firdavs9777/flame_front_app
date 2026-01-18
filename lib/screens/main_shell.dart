@@ -19,6 +19,14 @@ class MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<MainShell> {
   bool _initialized = false;
 
+  // Create screens once to avoid GlobalKey conflicts
+  late final List<Widget> _screens = [
+    const HomeScreen(),
+    const MatchesScreen(),
+    const MyProfileScreen(),
+    const SettingsScreen(),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -46,17 +54,10 @@ class _MainShellState extends ConsumerState<MainShell> {
     final newMatches = ref.watch(newMatchesCountProvider);
     final totalNotifications = unreadMessages + newMatches;
 
-    final screens = [
-      const HomeScreen(),
-      const MatchesScreen(),
-      const MyProfileScreen(),
-      const SettingsScreen(),
-    ];
-
     return Scaffold(
       body: IndexedStack(
         index: currentIndex,
-        children: screens,
+        children: _screens,
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
