@@ -3,26 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
-import 'forgot_password_screen.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
+  const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _rememberMe = false;
+  bool _emailSent = false;
 
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -31,9 +27,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authProvider);
 
     ref.listen<AuthState>(authProvider, (previous, next) {
-      if (next.isAuthenticated) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
       if (next.error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -87,18 +80,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                   const SizedBox(height: 48),
 
-                  // Login Form Card
-                  _buildLoginCard(authState)
-                      .animate()
-                      .fadeIn(delay: 200.ms, duration: 600.ms)
-                      .slideY(begin: 0.1, end: 0, delay: 200.ms, duration: 600.ms),
-
-                  const SizedBox(height: 32),
-
-                  // Social Login
-                  _buildSocialLogin()
-                      .animate()
-                      .fadeIn(delay: 400.ms, duration: 600.ms),
+                  // Form Card
+                  _emailSent
+                      ? _buildSuccessCard()
+                          .animate()
+                          .fadeIn(duration: 500.ms)
+                          .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1))
+                      : _buildFormCard(authState)
+                          .animate()
+                          .fadeIn(delay: 200.ms, duration: 600.ms)
+                          .slideY(begin: 0.1, end: 0, delay: 200.ms, duration: 600.ms),
 
                   const SizedBox(height: 32),
                 ],
@@ -132,9 +123,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Welcome\nBack',
-          style: TextStyle(
+        Text(
+          _emailSent ? 'Check Your\nEmail' : 'Forgot\nPassword?',
+          style: const TextStyle(
             fontSize: 40,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -143,7 +134,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Sign in to continue',
+          _emailSent
+              ? 'We\'ve sent a reset link to your email'
+              : 'No worries, we\'ll send you reset instructions',
           style: TextStyle(
             fontSize: 16,
             color: Colors.white.withOpacity(0.85),
@@ -153,7 +146,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildLoginCard(AuthState authState) {
+  Widget _buildFormCard(AuthState authState) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -176,22 +169,103 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _buildInputLabel('Email'),
             const SizedBox(height: 8),
             _buildEmailField(),
-            const SizedBox(height: 24),
-
-            // Password Field
-            _buildInputLabel('Password'),
-            const SizedBox(height: 8),
-            _buildPasswordField(),
-            const SizedBox(height: 16),
-
-            // Remember Me & Forgot Password
-            _buildRememberForgot(),
             const SizedBox(height: 32),
 
-            // Login Button
-            _buildLoginButton(authState),
+            // Submit Button
+            _buildSubmitButton(authState),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSuccessCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppTheme.successColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.mark_email_read_outlined,
+              size: 40,
+              color: AppTheme.successColor,
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Email Sent!',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Please check your inbox and follow the instructions to reset your password.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text(
+                'Back to Login',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _emailSent = false;
+              });
+            },
+            child: Text(
+              'Didn\'t receive the email? Try again',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -246,109 +320,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildPasswordField() {
-    return TextFormField(
-      controller: _passwordController,
-      obscureText: _obscurePassword,
-      style: const TextStyle(fontSize: 16),
-      decoration: InputDecoration(
-        hintText: 'Enter your password',
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        prefixIcon: Icon(
-          Icons.lock_outline_rounded,
-          color: Colors.grey[400],
-        ),
-        suffixIcon: IconButton(
-          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-          icon: Icon(
-            _obscurePassword
-                ? Icons.visibility_off_outlined
-                : Icons.visibility_outlined,
-            color: Colors.grey[400],
-          ),
-        ),
-        filled: true,
-        fillColor: Colors.grey[50],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.errorColor, width: 1),
-        ),
-      ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your password';
-        }
-        if (value.length < 6) {
-          return 'Password must be at least 6 characters';
-        }
-        return null;
-      },
-    );
-  }
-
-  Widget _buildRememberForgot() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: Checkbox(
-                value: _rememberMe,
-                onChanged: (value) => setState(() => _rememberMe = value!),
-                activeColor: AppTheme.primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Remember me',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const ForgotPasswordScreen(),
-              ),
-            );
-          },
-          child: const Text(
-            'Forgot Password?',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.primaryColor,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLoginButton(AuthState authState) {
+  Widget _buildSubmitButton(AuthState authState) {
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: authState.isLoading ? null : _handleLogin,
+        onPressed: authState.isLoading ? null : _handleSubmit,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primaryColor,
           foregroundColor: Colors.white,
@@ -368,7 +345,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               )
             : const Text(
-                'Sign In',
+                'Send Reset Link',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -378,74 +355,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildSocialLogin() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(child: Divider(color: Colors.white.withOpacity(0.5))),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Or continue with',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.85),
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            Expanded(child: Divider(color: Colors.white.withOpacity(0.5))),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildSocialButton(Icons.g_mobiledata_rounded, 'Google'),
-            const SizedBox(width: 16),
-            _buildSocialButton(Icons.apple_rounded, 'Apple'),
-            const SizedBox(width: 16),
-            _buildSocialButton(Icons.facebook_rounded, 'Facebook'),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSocialButton(IconData icon, String label) {
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: IconButton(
-        onPressed: () {
-          // TODO: Implement social login
-        },
-        icon: Icon(
-          icon,
-          size: 28,
-          color: AppTheme.textPrimary,
-        ),
-      ),
-    );
-  }
-
-  void _handleLogin() {
+  void _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
-      ref.read(authProvider.notifier).login(
+      final success = await ref.read(authProvider.notifier).forgotPassword(
             _emailController.text.trim(),
-            _passwordController.text,
           );
+      if (success) {
+        setState(() {
+          _emailSent = true;
+        });
+      }
     }
   }
 }

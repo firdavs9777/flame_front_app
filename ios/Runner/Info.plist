@@ -4,6 +4,12 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSCameraUsageDescription</key>
+    <string>This app needs camera access to take photos for your profile</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>This app needs photo library access to select photos</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>This app needs microphone access for video features</string>
 	<key>CFBundleDisplayName</key>
 	<string>Flame</string>
 	<key>CFBundleExecutable</key>
