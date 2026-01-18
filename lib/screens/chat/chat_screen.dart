@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
@@ -20,6 +22,7 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ImagePicker _imagePicker = ImagePicker();
 
   bool _isSending = false;
   bool _isLoadingMessages = false;
@@ -177,6 +180,115 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _showError('Failed to send message');
       }
     }
+  }
+
+  // ==================== Attachments ====================
+
+  void _showAttachmentModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AttachmentModal(
+        onImageTap: () {
+          Navigator.pop(context);
+          _pickImage(ImageSource.gallery);
+        },
+        onCameraTap: () {
+          Navigator.pop(context);
+          _pickImage(ImageSource.camera);
+        },
+        onVideoTap: () {
+          Navigator.pop(context);
+          _pickVideo();
+        },
+        onVoiceTap: () {
+          Navigator.pop(context);
+          _showVoiceRecordingInfo();
+        },
+        onGifTap: () {
+          Navigator.pop(context);
+          _showComingSoon('GIF');
+        },
+        onStickerTap: () {
+          Navigator.pop(context);
+          _showComingSoon('Stickers');
+        },
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+
+      if (image == null) return;
+
+      setState(() => _isSending = true);
+
+      final replyToId = _replyingTo?.id;
+      setState(() => _replyingTo = null);
+
+      final success = await ref.read(conversationsProvider.notifier).sendImageMessage(
+        widget.conversation.id,
+        File(image.path),
+        replyToId: replyToId,
+      );
+
+      if (mounted) {
+        setState(() => _isSending = false);
+
+        if (success) {
+          await _refreshMessages();
+          _scrollToBottom(animated: true);
+        } else {
+          _showError('Failed to send image');
+        }
+      }
+    } catch (e) {
+      _showError('Failed to pick image');
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    try {
+      final XFile? video = await _imagePicker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(minutes: 5),
+      );
+
+      if (video == null) return;
+
+      setState(() => _isSending = true);
+
+      // TODO: Implement video sending when backend supports it
+      _showComingSoon('Video messages');
+      setState(() => _isSending = false);
+    } catch (e) {
+      _showError('Failed to pick video');
+    }
+  }
+
+  void _showVoiceRecordingInfo() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Hold the mic button to record a voice message'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showComingSoon(String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature coming soon!'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   // ==================== Message Actions ====================
@@ -351,7 +463,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             replyingTo: _replyingTo,
             onSend: _sendMessage,
             onCancelReply: () => setState(() => _replyingTo = null),
-            onAttachmentTap: () {}, // TODO: Implement
+            onAttachmentTap: _showAttachmentModal,
             onStickerTap: () {}, // TODO: Implement
             onTextChanged: _onTextChanged,
           ),
