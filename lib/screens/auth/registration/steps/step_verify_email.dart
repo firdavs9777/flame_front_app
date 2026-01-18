@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/theme/app_theme.dart';
@@ -102,17 +101,6 @@ class _StepVerifyEmailState extends ConsumerState<StepVerifyEmail> {
     if (_code.length == 6) {
       _verifyCode();
     }
-  }
-
-  void _handlePaste(String? value) {
-    if (value == null || value.length != 6) return;
-    if (!RegExp(r'^\d{6}$').hasMatch(value)) return;
-
-    for (int i = 0; i < 6; i++) {
-      _controllers[i].text = value[i];
-    }
-    _focusNodes[5].requestFocus();
-    _verifyCode();
   }
 
   Future<void> _verifyCode() async {
