@@ -131,9 +131,12 @@ class ApiClient {
   }
 
   // DELETE request
-  Future<ApiResponse> delete(String endpoint, {Map<String, dynamic>? body}) async {
+  Future<ApiResponse> delete(String endpoint, {Map<String, dynamic>? body, Map<String, String>? queryParams}) async {
     try {
-      final uri = Uri.parse('$baseUrl$endpoint');
+      var uri = Uri.parse('$baseUrl$endpoint');
+      if (queryParams != null) {
+        uri = uri.replace(queryParameters: queryParams);
+      }
       final request = http.Request('DELETE', uri);
       request.headers.addAll(_headers);
       if (body != null) {
