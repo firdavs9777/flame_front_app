@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/models/user.dart';
+import 'package:flame/services/location_service.dart';
 import 'steps/step_email_password.dart';
 import 'steps/step_profile_info.dart';
 import 'steps/step_looking_for.dart';
@@ -24,6 +25,8 @@ class RegistrationData {
   List<String> interests = [];
   List<String> photos = []; // URLs after upload
   List<File> photoFiles = []; // Local files before upload
+  double? latitude;
+  double? longitude;
 }
 
 class RegistrationFlow extends ConsumerStatefulWidget {
@@ -316,6 +319,21 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     setState(() => _isUploading = true);
 
     try {
+      // Request location permission and get current location
+      final locationService = LocationService();
+      final locationResult = await locationService.getCurrentPosition();
+
+      if (!locationResult.success) {
+        setState(() => _isUploading = false);
+        if (mounted) {
+          _showLocationError(locationResult.error ?? 'Failed to get location');
+        }
+        return;
+      }
+
+      _data.latitude = locationResult.latitude;
+      _data.longitude = locationResult.longitude;
+
       // Convert photos to base64
       final base64Photos = <String>[];
 
@@ -341,6 +359,8 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
             bio: _data.bio,
             interests: _data.interests,
             photos: _data.photos,
+            latitude: _data.latitude!,
+            longitude: _data.longitude!,
           );
 
       setState(() => _isUploading = false);
@@ -364,6 +384,32 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
         );
       }
     }
+  }
+
+  void _showLocationError(String error) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Location Required'),
+        content: Text(
+          '$error\n\nFlame needs your location to find matches near you.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final locationService = LocationService();
+              await locationService.openAppSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _handleEmailVerified() {

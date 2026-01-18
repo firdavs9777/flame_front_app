@@ -4,11 +4,42 @@ import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 
-class DiscoverScreen extends ConsumerWidget {
+class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DiscoverScreen> createState() => _DiscoverScreenState();
+}
+
+class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
+  bool _isSaving = false;
+
+  Future<void> _applyFilters() async {
+    setState(() => _isSaving = true);
+
+    // Save preferences to API
+    final success = await ref.read(filterProvider.notifier).savePreferencesToApi();
+
+    setState(() => _isSaving = false);
+
+    if (mounted) {
+      if (success) {
+        // Refresh discovery with new filters
+        ref.read(discoveryProvider.notifier).loadPotentialMatches(refresh: true);
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to save preferences. Please try again.'),
+            backgroundColor: Colors.red[400],
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final filters = ref.watch(filterProvider);
 
     return Scaffold(
@@ -133,12 +164,17 @@ class DiscoverScreen extends ConsumerWidget {
 
           // Apply button
           ElevatedButton(
-            onPressed: () {
-              // Refresh discovery with new filters
-              ref.read(discoveryProvider.notifier).loadPotentialMatches(refresh: true);
-              Navigator.pop(context);
-            },
-            child: const Text('Apply Filters'),
+            onPressed: _isSaving ? null : _applyFilters,
+            child: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('Apply Filters'),
           ),
         ],
       ),

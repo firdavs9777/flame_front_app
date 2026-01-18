@@ -1,11 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
+import 'package:flame/services/user_service.dart';
 
 final filterProvider = StateNotifierProvider<FilterNotifier, DiscoveryFilters>((ref) {
   return FilterNotifier();
 });
 
 class FilterNotifier extends StateNotifier<DiscoveryFilters> {
+  final UserService _userService = UserService();
+
   FilterNotifier() : super(const DiscoveryFilters());
 
   void setAgeRange(int min, int max) {
@@ -30,6 +33,26 @@ class FilterNotifier extends StateNotifier<DiscoveryFilters> {
 
   void reset() {
     state = const DiscoveryFilters();
+  }
+
+  /// Initialize filters from user preferences
+  void initFromUser(User user) {
+    state = DiscoveryFilters(
+      minAge: user.minAgePreference,
+      maxAge: user.maxAgePreference,
+      maxDistance: user.maxDistancePreference,
+      genderPreference: user.lookingFor,
+    );
+  }
+
+  /// Save preferences to API and return success status
+  Future<bool> savePreferencesToApi() async {
+    final result = await _userService.updatePreferences(
+      minAge: state.minAge,
+      maxAge: state.maxAge,
+      maxDistance: state.maxDistance,
+    );
+    return result.success;
   }
 }
 
