@@ -81,9 +81,20 @@ class _StepVerifyEmailState extends ConsumerState<StepVerifyEmail> {
   String get _code => _controllers.map((c) => c.text).join();
 
   void _onCodeChanged(int index, String value) {
-    if (value.length == 1 && index < 5) {
+    // Filter to only allow digits
+    final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (digitsOnly != value) {
+      // Non-digit was entered, update controller with only the digit
+      _controllers[index].text = digitsOnly;
+      _controllers[index].selection = TextSelection.fromPosition(
+        TextPosition(offset: digitsOnly.length),
+      );
+    }
+
+    if (digitsOnly.length == 1 && index < 5) {
       _focusNodes[index + 1].requestFocus();
-    } else if (value.isEmpty && index > 0) {
+    } else if (digitsOnly.isEmpty && index > 0) {
       _focusNodes[index - 1].requestFocus();
     }
 
@@ -362,6 +373,7 @@ class _StepVerifyEmailState extends ConsumerState<StepVerifyEmail> {
         autofocus: index == 0,
         enableSuggestions: false,
         autocorrect: false,
+        obscureText: false,
         style: const TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
@@ -380,10 +392,6 @@ class _StepVerifyEmailState extends ConsumerState<StepVerifyEmail> {
             borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
           ),
         ),
-        inputFormatters: [
-          LengthLimitingTextInputFormatter(1),
-          FilteringTextInputFormatter.digitsOnly,
-        ],
         onChanged: (value) => _onCodeChanged(index, value),
       ),
     );
