@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,7 +6,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/models/user.dart';
-import 'package:flame/services/user_service.dart';
 import 'steps/step_email_password.dart';
 import 'steps/step_profile_info.dart';
 import 'steps/step_looking_for.dart';
@@ -316,25 +316,19 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     setState(() => _isUploading = true);
 
     try {
-      // Upload photos first
-      final userService = UserService();
-      final uploadedUrls = <String>[];
+      // Convert photos to base64
+      final base64Photos = <String>[];
 
-      for (int i = 0; i < _data.photoFiles.length; i++) {
-        final file = _data.photoFiles[i];
-        final result = await userService.uploadPhotoForRegistration(
-          file,
-          isPrimary: i == 0,
-        );
-
-        if (result.success && result.data != null) {
-          uploadedUrls.add(result.data!.url);
-        } else {
-          throw Exception(result.error ?? 'Failed to upload photo ${i + 1}');
-        }
+      for (final file in _data.photoFiles) {
+        final bytes = await file.readAsBytes();
+        final base64String = base64Encode(bytes);
+        // Add data URI prefix for the backend to recognize the format
+        final extension = file.path.split('.').last.toLowerCase();
+        final mimeType = extension == 'png' ? 'image/png' : 'image/jpeg';
+        base64Photos.add('data:$mimeType;base64,$base64String');
       }
 
-      _data.photos = uploadedUrls;
+      _data.photos = base64Photos;
 
       // Register user
       final success = await ref.read(authProvider.notifier).register(
