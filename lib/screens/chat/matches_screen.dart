@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/chat/chat_screen.dart';
+import 'package:flame/widgets/smart_image.dart';
 
 class MatchesScreen extends ConsumerStatefulWidget {
   const MatchesScreen({super.key});
@@ -247,9 +247,7 @@ class _MatchCircle extends ConsumerWidget {
                   ),
                   child: CircleAvatar(
                     radius: 32,
-                    backgroundImage: CachedNetworkImageProvider(
-                      match.user.primaryPhoto,
-                    ),
+                    backgroundImage: match.user.primaryPhoto.toImageProvider(),
                   ),
                 ),
                 if (match.user.isOnline)
@@ -307,9 +305,7 @@ class _ConversationTile extends ConsumerWidget {
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundImage: CachedNetworkImageProvider(
-              conversation.otherUser.primaryPhoto,
-            ),
+            backgroundImage: conversation.otherUser.primaryPhoto.toImageProvider(),
           ),
           if (conversation.otherUser.isOnline)
             Positioned(

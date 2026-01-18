@@ -180,6 +180,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     return result.success;
   }
+
+  // Change password
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    final result = await _authService.changePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+
+    state = state.copyWith(
+      isLoading: false,
+      error: result.success ? null : result.error,
+    );
+
+    return result.success;
+  }
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
