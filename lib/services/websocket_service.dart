@@ -10,6 +10,7 @@ class WebSocketEvent {
   static const String typing = 'typing';
   static const String stopTyping = 'stop_typing';
   static const String messageRead = 'message_read';
+  static const String recordingVoice = 'recording_voice';
 }
 
 /// WebSocket events received from the server
@@ -22,6 +23,14 @@ class WebSocketServerEvent {
   static const String messageStatus = 'message_status';
   static const String userOnline = 'user_online';
   static const String userOffline = 'user_offline';
+  // New events for reactions, edits, pins
+  static const String messageEdited = 'message_edited';
+  static const String messageDeleted = 'message_deleted';
+  static const String reactionAdded = 'reaction_added';
+  static const String reactionRemoved = 'reaction_removed';
+  static const String messagePinned = 'message_pinned';
+  static const String messageUnpinned = 'message_unpinned';
+  static const String userRecordingVoice = 'user_recording_voice';
 }
 
 typedef WebSocketEventCallback = void Function(Map<String, dynamic> data);
@@ -149,6 +158,11 @@ class WebSocketService {
       'conversation_id': conversationId,
       'message_ids': messageIds,
     });
+  }
+
+  /// Send recording voice indicator
+  void sendRecordingVoice(String conversationId) {
+    send(WebSocketEvent.recordingVoice, {'conversation_id': conversationId});
   }
 
   /// Add event listener
