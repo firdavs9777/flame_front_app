@@ -1,6 +1,6 @@
 import 'dart:io';
-import '../models/user.dart';
-import 'api_client.dart';
+import 'package:flame/models/user.dart';
+import 'package:flame/services/api_client.dart';
 
 class UserService {
   final ApiClient _apiClient = ApiClient();

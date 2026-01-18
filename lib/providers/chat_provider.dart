@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/models.dart';
-import '../services/chat_service.dart';
+import 'package:flame/models/models.dart';
+import 'package:flame/services/chat_service.dart';
 
 final chatServiceProvider = Provider<ChatService>((ref) => ChatService());
 

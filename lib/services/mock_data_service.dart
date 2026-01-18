@@ -1,5 +1,5 @@
 import 'package:uuid/uuid.dart';
-import '../models/models.dart';
+import 'package:flame/models/models.dart';
 
 class MockDataService {
   static const _uuid = Uuid();

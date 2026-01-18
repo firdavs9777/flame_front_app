@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../services/face_detection_service.dart';
-import '../registration_flow.dart';
+import 'package:flame/theme/app_theme.dart';
+import 'package:flame/services/face_detection_service.dart';
+import 'package:flame/screens/auth/registration/registration_flow.dart';
 
 class StepPhotos extends StatefulWidget {
   final RegistrationData data;
@@ -510,8 +510,9 @@ class _StepPhotosState extends State<StepPhotos> {
 
       final file = File(pickedFile.path);
 
-      // Validate face in the image
-      final result = await _faceDetection.validateFace(file);
+      // Validate face in the image (strict mode for main photo only)
+      final isMainPhoto = index == 0;
+      final result = await _faceDetection.validateFace(file, strictMode: isMainPhoto);
 
       if (!result.isValid) {
         setState(() {

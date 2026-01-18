@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../../theme/app_theme.dart';
-import '../registration_flow.dart';
+import 'package:flame/theme/app_theme.dart';
+import 'package:flame/screens/auth/registration/registration_flow.dart';
 
 class StepEmailPassword extends StatefulWidget {
   final RegistrationData data;

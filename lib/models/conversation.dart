@@ -1,5 +1,5 @@
-import 'message.dart';
-import 'user.dart';
+import 'package:flame/models/message.dart';
+import 'package:flame/models/user.dart';
 
 class Conversation {
   final String id;

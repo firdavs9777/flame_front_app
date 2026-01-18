@@ -1,5 +1,5 @@
-import '../models/user.dart';
-import 'api_client.dart';
+import 'package:flame/models/user.dart';
+import 'package:flame/services/api_client.dart';
 
 class AuthService {
   final ApiClient _apiClient = ApiClient();

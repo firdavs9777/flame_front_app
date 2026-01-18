@@ -1,7 +1,7 @@
-import '../models/user.dart';
-import '../models/match.dart';
-import 'api_client.dart';
-import 'user_service.dart';
+import 'package:flame/models/user.dart';
+import 'package:flame/models/match.dart';
+import 'package:flame/services/api_client.dart';
+import 'package:flame/services/user_service.dart';
 
 class SwipeService {
   final ApiClient _apiClient = ApiClient();

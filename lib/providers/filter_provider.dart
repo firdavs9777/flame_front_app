@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/models.dart';
+import 'package:flame/models/models.dart';
 
 final filterProvider = StateNotifierProvider<FilterNotifier, DiscoveryFilters>((ref) {
   return FilterNotifier();

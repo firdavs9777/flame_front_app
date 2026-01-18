@@ -1,8 +1,8 @@
 import 'dart:io';
-import '../models/message.dart';
-import '../models/conversation.dart';
-import 'api_client.dart';
-import 'user_service.dart';
+import 'package:flame/models/message.dart';
+import 'package:flame/models/conversation.dart';
+import 'package:flame/services/api_client.dart';
+import 'package:flame/services/user_service.dart';
 
 class ChatService {
   final ApiClient _apiClient = ApiClient();

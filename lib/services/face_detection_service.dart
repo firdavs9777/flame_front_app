@@ -19,7 +19,7 @@ class FaceDetectionService {
         enableContours: false,
         enableTracking: false,
         performanceMode: FaceDetectorMode.accurate,
-        minFaceSize: 0.15, // Minimum face size relative to image
+        minFaceSize: 0.05, // Relaxed: detect smaller faces
       ),
     );
     _initialized = true;
@@ -27,7 +27,8 @@ class FaceDetectionService {
 
   /// Validates an image file contains a real face
   /// Returns a FaceValidationResult with details about the validation
-  Future<FaceValidationResult> validateFace(File imageFile) async {
+  /// Set strictMode to true for main profile photo (single face required)
+  Future<FaceValidationResult> validateFace(File imageFile, {bool strictMode = false}) async {
     _initializeDetector();
 
     try {
@@ -37,51 +38,53 @@ class FaceDetectionService {
       if (faces.isEmpty) {
         return FaceValidationResult(
           isValid: false,
-          error: 'No face detected in the photo. Please upload a clear photo of your face.',
+          error: 'No face detected. Please upload a photo with your face visible.',
           faceCount: 0,
         );
       }
 
-      if (faces.length > 1) {
+      // Only enforce single face in strict mode (main profile photo)
+      if (strictMode && faces.length > 1) {
         return FaceValidationResult(
           isValid: false,
-          error: 'Multiple faces detected. Please upload a photo with only your face.',
+          error: 'Multiple faces detected. Your main photo should show only you.',
           faceCount: faces.length,
         );
       }
 
       final face = faces.first;
 
-      // Check face size (should be reasonably large in the frame)
+      // Check face size (relaxed - allow smaller faces)
       final boundingBox = face.boundingBox;
       final faceArea = boundingBox.width * boundingBox.height;
 
-      // Get image dimensions to calculate relative face size
-      // For now, we'll use a minimum absolute size
-      if (faceArea < 10000) { // Minimum 100x100 pixels roughly
+      // Very lenient minimum size - just needs to be detectable
+      if (faceArea < 2500) { // Minimum ~50x50 pixels
         return FaceValidationResult(
           isValid: false,
-          error: 'Face is too small. Please upload a closer photo of your face.',
+          error: 'Face is too small. Please upload a photo where your face is more visible.',
           faceCount: 1,
         );
       }
 
-      // Check head rotation (face should be mostly frontal)
+      // Check head rotation (relaxed - allow more angles)
       final headEulerAngleY = face.headEulerAngleY; // Left/right rotation
       final headEulerAngleZ = face.headEulerAngleZ; // Tilt
 
-      if (headEulerAngleY != null && headEulerAngleY.abs() > 35) {
+      // Only reject extreme angles (profile shots)
+      if (headEulerAngleY != null && headEulerAngleY.abs() > 55) {
         return FaceValidationResult(
           isValid: false,
-          error: 'Please face the camera more directly.',
+          error: 'Please upload a photo where your face is more visible.',
           faceCount: 1,
         );
       }
 
-      if (headEulerAngleZ != null && headEulerAngleZ.abs() > 25) {
+      // Very relaxed tilt check
+      if (headEulerAngleZ != null && headEulerAngleZ.abs() > 45) {
         return FaceValidationResult(
           isValid: false,
-          error: 'Please keep your head straight (not tilted).',
+          error: 'Please upload a photo where your face is more visible.',
           faceCount: 1,
         );
       }

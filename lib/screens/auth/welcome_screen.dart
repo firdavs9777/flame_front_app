@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../theme/app_theme.dart';
-import 'login_screen.dart';
+import 'package:flame/theme/app_theme.dart';
+import 'package:flame/screens/auth/login_screen.dart';
 import 'registration/registration_flow.dart';
 
 class WelcomeScreen extends StatelessWidget {
