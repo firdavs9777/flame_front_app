@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
+import 'package:flame/widgets/smart_image.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final Conversation conversation;
@@ -91,9 +91,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 children: [
                   CircleAvatar(
                     radius: 20,
-                    backgroundImage: CachedNetworkImageProvider(
-                      currentConversation.otherUser.primaryPhoto,
-                    ),
+                    backgroundImage: currentConversation.otherUser.primaryPhoto.toImageProvider(),
                   ),
                   if (currentConversation.otherUser.isOnline)
                     Positioned(
@@ -177,9 +175,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         children: [
           CircleAvatar(
             radius: 50,
-            backgroundImage: CachedNetworkImageProvider(
-              widget.conversation.otherUser.primaryPhoto,
-            ),
+            backgroundImage: widget.conversation.otherUser.primaryPhoto.toImageProvider(),
           ),
           const SizedBox(height: 16),
           Text(

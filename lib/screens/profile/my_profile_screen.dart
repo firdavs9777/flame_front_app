@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/widgets/smart_image.dart';
+import 'package:flame/screens/profile/edit_profile_screen.dart';
 
 class MyProfileScreen extends ConsumerStatefulWidget {
   const MyProfileScreen({super.key});
@@ -37,7 +40,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              // Navigate to edit profile
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+              );
             },
           ),
         ],
@@ -81,7 +87,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     CircleAvatar(
                       radius: 60,
                       backgroundImage: user.photos.isNotEmpty
-                          ? CachedNetworkImageProvider(user.primaryPhoto)
+                          ? user.primaryPhoto.toImageProvider()
                           : null,
                       child: user.photos.isEmpty
                           ? const Icon(Icons.person, size: 60)
@@ -90,17 +96,20 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     Positioned(
                       bottom: 0,
                       right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 20,
+                      child: GestureDetector(
+                        onTap: () => _showPhotoOptions(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
@@ -264,11 +273,11 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   Widget _buildPhotoTile(String photoUrl) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: CachedNetworkImage(
-        imageUrl: photoUrl,
+      child: SmartImage(
+        imageSource: photoUrl,
         fit: BoxFit.cover,
-        placeholder: (context, url) => Container(color: Colors.grey[300]),
-        errorWidget: (context, url, error) => Container(
+        placeholder: Container(color: Colors.grey[300]),
+        errorWidget: Container(
           color: Colors.grey[300],
           child: const Icon(Icons.error),
         ),
@@ -277,22 +286,94 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   }
 
   Widget _buildAddPhotoButton() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey[400]!,
-          width: 2,
-          style: BorderStyle.solid,
+    return GestureDetector(
+      onTap: () => _showPhotoOptions(context),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.grey[400]!,
+            width: 2,
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: Icon(
+          Icons.add,
+          size: 40,
+          color: Colors.grey[500],
         ),
       ),
-      child: Icon(
-        Icons.add,
-        size: 40,
-        color: Colors.grey[500],
+    );
+  }
+
+  void _showPhotoOptions(BuildContext context) {
+    final picker = ImagePicker();
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take a photo'),
+              onTap: () async {
+                Navigator.pop(context);
+                final photo = await picker.pickImage(
+                  source: ImageSource.camera,
+                  maxWidth: 1024,
+                  maxHeight: 1024,
+                  imageQuality: 85,
+                );
+                if (photo != null) {
+                  _uploadPhoto(File(photo.path));
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from gallery'),
+              onTap: () async {
+                Navigator.pop(context);
+                final photo = await picker.pickImage(
+                  source: ImageSource.gallery,
+                  maxWidth: 1024,
+                  maxHeight: 1024,
+                  imageQuality: 85,
+                );
+                if (photo != null) {
+                  _uploadPhoto(File(photo.path));
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _uploadPhoto(File photo) async {
+    final user = ref.read(currentUserProvider).valueOrNull;
+    final isPrimary = user?.photos.isEmpty ?? true;
+
+    final success = await ref.read(currentUserProvider.notifier).uploadPhoto(
+      photo,
+      isPrimary: isPrimary,
+    );
+
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Photo uploaded successfully')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to upload photo')),
+        );
+      }
+    }
   }
 
   Widget _buildPreferenceRow(String label, String value) {

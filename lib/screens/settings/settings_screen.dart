@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/screens/profile/edit_profile_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -9,6 +10,8 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
+    final userState = ref.watch(currentUserProvider);
+    final user = userState.valueOrNull;
 
     return Scaffold(
       appBar: AppBar(
@@ -23,19 +26,27 @@ class SettingsScreen extends ConsumerWidget {
           _buildListTile(
             icon: Icons.person_outline,
             title: 'Edit Profile',
-            onTap: () {},
-          ),
-          _buildListTile(
-            icon: Icons.phone_outlined,
-            title: 'Phone Number',
-            subtitle: '+1 (555) 123-4567',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+              );
+            },
           ),
           _buildListTile(
             icon: Icons.email_outlined,
             title: 'Email',
-            subtitle: 'user@example.com',
-            onTap: () {},
+            subtitle: user?.email ?? 'Not set',
+            onTap: () {
+              _showChangeEmailDialog(context);
+            },
+          ),
+          _buildListTile(
+            icon: Icons.lock_outline,
+            title: 'Change Password',
+            onTap: () {
+              _showChangePasswordDialog(context, ref);
+            },
           ),
 
           const SizedBox(height: 20),
@@ -152,7 +163,7 @@ class SettingsScreen extends ConsumerWidget {
             title: 'Delete Account',
             titleColor: AppTheme.errorColor,
             onTap: () {
-              _showDeleteAccountDialog(context);
+              _showDeleteAccountDialog(context, ref);
             },
           ),
 
@@ -268,13 +279,29 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _showDeleteAccountDialog(BuildContext context) {
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
+    final passwordController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Account'),
-        content: const Text(
-          'Are you sure you want to delete your account? This action cannot be undone.',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This action cannot be undone. Enter your password to confirm.',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -282,13 +309,111 @@ class SettingsScreen extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
+              if (passwordController.text.isEmpty) return;
               Navigator.pop(context);
-              // Handle delete account
+              // TODO: Call delete account API
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Account deletion requested')),
+              );
             },
             child: Text(
               'Delete',
               style: TextStyle(color: AppTheme.errorColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangeEmailDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Change Email'),
+        content: const Text(
+          'To change your email, please contact support.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context, WidgetRef ref) {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Change Password'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: currentPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Current Password',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: newPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'New Password',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: confirmPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm New Password',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (newPasswordController.text != confirmPasswordController.text) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Passwords do not match')),
+                );
+                return;
+              }
+              Navigator.pop(context);
+              final success = await ref.read(authProvider.notifier).changePassword(
+                currentPassword: currentPasswordController.text,
+                newPassword: newPasswordController.text,
+              );
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Password changed successfully')),
+                );
+              }
+            },
+            child: Text(
+              'Change',
+              style: TextStyle(color: AppTheme.primaryColor),
             ),
           ),
         ],

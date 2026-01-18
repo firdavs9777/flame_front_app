@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/widgets/smart_image.dart';
 
 class ProfileCard extends StatefulWidget {
   final User user;
@@ -62,16 +62,16 @@ class _ProfileCardState extends State<ProfileCard> {
                     _nextPhoto();
                   }
                 },
-                child: CachedNetworkImage(
-                  imageUrl: widget.user.photos[_currentPhotoIndex],
+                child: SmartImage(
+                  imageSource: widget.user.photos[_currentPhotoIndex],
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
+                  placeholder: Container(
                     color: Colors.grey[300],
                     child: const Center(
                       child: CircularProgressIndicator(),
                     ),
                   ),
-                  errorWidget: (context, url, error) => Container(
+                  errorWidget: Container(
                     color: Colors.grey[300],
                     child: const Icon(Icons.person, size: 100, color: Colors.grey),
                   ),
