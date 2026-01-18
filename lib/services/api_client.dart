@@ -191,12 +191,17 @@ class ApiClient {
     final statusCode = response.statusCode;
     Map<String, dynamic>? data;
 
+    // Debug logging
+    print('API Response [${response.request?.method} ${response.request?.url}]: $statusCode');
+
     try {
       if (response.body.isNotEmpty) {
         data = jsonDecode(response.body);
+        print('API Response Body: ${response.body.length > 500 ? response.body.substring(0, 500) : response.body}');
       }
-    } catch (_) {
+    } catch (e) {
       // Response is not JSON
+      print('API Response (non-JSON): ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}');
     }
 
     if (statusCode >= 200 && statusCode < 300) {
@@ -221,15 +226,43 @@ class ApiClient {
         } else if (data['message'] != null) {
           errorMessage = data['message'];
         }
+      } else {
+        // If no parsed data, use status code description
+        errorMessage = _getStatusCodeMessage(statusCode);
       }
+
+      print('API Error: $statusCode - $errorMessage');
 
       return ApiResponse(
         success: false,
         data: data,
-        error: errorMessage,
+        error: '$errorMessage (Status: $statusCode)',
         errorCode: errorCode,
         statusCode: statusCode,
       );
+    }
+  }
+
+  String _getStatusCodeMessage(int statusCode) {
+    switch (statusCode) {
+      case 400:
+        return 'Bad request';
+      case 401:
+        return 'Unauthorized - Please login again';
+      case 403:
+        return 'Access forbidden';
+      case 404:
+        return 'Not found';
+      case 422:
+        return 'Validation error';
+      case 500:
+        return 'Server error - Please try again later';
+      case 502:
+        return 'Server is temporarily unavailable';
+      case 503:
+        return 'Service unavailable';
+      default:
+        return 'Error occurred';
     }
   }
 
