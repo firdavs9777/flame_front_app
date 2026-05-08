@@ -1,8 +1,8 @@
 # Phase 1 — Chat Solidity (Realtime Layer Rebuild)
 
 **Date:** 2026-05-08
-**Status:** Draft, awaiting review
-**Revision:** 2 (addresses spec-review iteration 1)
+**Status:** Draft, awaiting user review
+**Revision:** 3 (addresses spec-review iterations 1 and 2)
 **Scope:** Rebuild the realtime chat layer end-to-end across the FastAPI backend (`flame_backend`) and the Flutter client (`flame`). Replace hand-rolled raw-WebSocket plumbing with a Socket.IO-based architecture modelled on the proven implementation in `language_exchange_backend_application/socket/socketHandler.js`, while keeping the dating-app backend's existing Redis pub/sub fan-out advantage and adding correctness guarantees the reference lacks (idempotency, persistent client outbox).
 
 ## Context
@@ -76,10 +76,10 @@ Hard pins to lock in this phase:
   | `notify_message_deleted` | same | `sio.emit("message:deleted", ..., room=f"user:{recipient_id}")` |
   | `notify_reaction_added/removed` | same | `sio.emit("reaction:update", ..., room=f"user:{recipient_id}")` |
   | `notify_message_pinned/unpinned` | same | `sio.emit("pin:update", ..., room=f"user:{recipient_id}")` |
-  | `notify_new_match` (used outside chat) | same | `sio.emit("match:new", match_data, room=f"user:{user_id}")` |
+  | `notify_new_match` (defined in `app/chat/websocket.py:270`, imported by `app/community/routes.py:353,417`) | same | `sio.emit("match:new", match_data, room=f"user:{user_id}")` |
   | `notify_user_online` | replaced by presence module | per-subscriber `presence:update` |
 
-  All call sites in `app/community/service.py`, `app/chat/routes.py`, `app/chat/service.py` etc. are updated to import from `app/realtime/emitters.py`. **Reactions, pins, mute, edit, delete are explicitly in Phase 1 scope** because their old code path goes away — they must be ported, not deferred.
+  All call sites — `app/community/routes.py` (notify_new_match), `app/chat/routes.py` and `app/chat/service.py` (notify_new_message, notify_message_edited, notify_message_deleted, notify_reaction_added/removed, notify_message_pinned/unpinned) — are updated to import from `app/realtime/emitters.py`. **Reactions, pins, mute, edit, delete are explicitly in Phase 1 scope** because their old code path goes away — they must be ported, not deferred.
 
 Mount path: `/ws/socket.io/`. Old `/ws` path (defined in current `app/chat/websocket.py`) is removed.
 
@@ -150,8 +150,8 @@ Client connects with token in Socket.IO `auth: {token, device_id}` payload (not 
 
 `app/realtime/auth.py` — `connect` handler:
 
-1. Decode JWT (reuse `app/core/security.py:decode_access_token`).
-2. Reject with `ConnectionRefusedError` if missing/expired/invalid. Reject if `device_id` is missing or longer than 64 chars. Anonymous sockets are never accepted.
+1. Decode JWT via `app/core/security.py:decode_token` (returns `Optional[dict]`; `None` on missing/expired/invalid signature). Verify the returned payload has `type == "access"` (refresh tokens must not be accepted on the socket).
+2. Reject with `ConnectionRefusedError` if `decode_token` returned `None`, the payload has the wrong type, or `device_id` is missing/longer than 64 chars. Anonymous sockets are never accepted.
 3. Load minimal user doc (id, blocked_users, is_banned) into Redis cache `user:hot:{id}` with 60s TTL — hot path lookup, not a DB hit per message.
 4. Register socket in user's room: `sio.enter_room(sid, f"user:{user_id}")`.
 5. Multi-device cap (3): enforced via Redis sorted-set `presence:sids:{user_id}` keyed by `connected_at` score. On connect, `ZADD` then `ZCARD`. If count > 3, `ZRANGE` lowest score, force-disconnect that sid.
@@ -164,7 +164,11 @@ Reviewer flagged that Redis hashes have no per-field TTL and orphaned sids would
 Implementation:
 - Use Redis sorted-set `presence:sids:{user_id}` with `score = connected_at_unix`, `member = sid`.
 - On connect: `ZADD`. On disconnect: `ZREM`.
-- **Reaper task** runs every 60s in a single worker (chosen by `socketio.Manager.is_leader()`-style election via Redis `SET NX EX`): for each user with non-empty sorted set, scan members not present in `sio.manager.rooms.get("/", f"user:{user_id}")`. Any sid not in the live room set whose score is older than `ping_timeout + 30s` is removed.
+- **Reaper task** runs every 60s, leader-elected so only one worker performs the sweep:
+  - Lock key: `realtime:reaper:lock`. Acquire with `SET realtime:reaper:lock <worker_id> NX EX 90`.
+  - The elected worker renews the lock every 30s with `SET ... XX EX 90` while iterating, releases with a Lua `if redis.call("get") == worker_id then DEL` on completion.
+  - If the lock is lost mid-cycle (slow worker, network blip), the worker aborts its current pass cleanly. Two workers briefly running the reaper concurrently is **safe**: the only mutation is `ZREM`, which is idempotent, and `force_disconnect` is no-op for an already-disconnected sid.
+  - Each pass: for each user with non-empty `presence:sids:*` sorted set, compare members against `sio.manager.rooms.get("/", f"user:{user_id}")`. Any sid not in the live room set whose score is older than `ping_timeout + 30s` is `ZREM`'d.
 - Source of truth for "is sid alive?" is `sio.manager` itself; the sorted-set is a Redis-side bookkeeping cache.
 
 Cap: **3 concurrent sockets per user**. On 4th connection, oldest gets `force_disconnect` event with `reason: "superseded"` and is dropped.
@@ -175,7 +179,7 @@ Sender's other devices receive `message:sent` mirror events so all devices stay 
 
 - Library-level: Socket.IO `ping_interval=25s`, `ping_timeout=60s`.
 - Application-level grace period: 10s after socket disconnects before marking user offline. Implemented as Redis key `presence:pending_offline:{user_id}` with 10s TTL; if user reconnects within 10s, key is deleted; if TTL expires (detected by keyspace notifications subscribed in `presence.py`), broadcast `presence:offline` to interested peers.
-- Fallback if keyspace notifications are not enabled in Redis: in-process `asyncio.sleep(10)` task per disconnect, with cancellation on reconnect. Spec mandates **keyspace notifications enabled** (`notify-keyspace-events Ex`); the in-process fallback is documented but discouraged.
+- **Production requires Redis keyspace notifications enabled** (`notify-keyspace-events Ex`). This is non-optional: the in-process `asyncio.sleep(10)` fallback is **valid only in single-worker dev** because the disconnect-handling worker may differ from the reconnect-handling worker, and an in-process timer cannot be cancelled across workers (it would broadcast `offline` even though the user is back online elsewhere). Implementation plan must verify keyspace notifications are enabled on staging/prod Redis before flipping `CHAT_V2_ENABLED`.
 
 ### Token expiry handling (timer cancellation fix)
 
@@ -223,7 +227,7 @@ Client emits `message:send`:
 
 Server handler `app/realtime/handlers.py:on_message_send`:
 
-1. **Validate (sync, no I/O)**: required fields, type whitelist (`gif` and `sticker` use existing `MessageType` enum — add `MessageType.GIF` to `app/models/message.py` if not present), content length cap (4000 chars), `client_message_id` length cap (64 chars), media schema if non-text, media URL must match `^https://(my-projects-media\.sfo3\.cdn\.digitaloceanspaces\.com|media\.tenor\.com)/...`.
+1. **Validate (sync, no I/O)**: required fields, type whitelist (uses existing `MessageType` enum — `GIF` is already present at `app/models/message.py:14`, no enum change needed), content length cap (4000 chars), `client_message_id` length cap (64 chars), media schema if non-text, media URL must match `^https://(my-projects-media\.sfo3\.cdn\.digitaloceanspaces\.com|media\.tenor\.com)/...`.
 2. **Idempotency check**: `GET idempotency:{user_id}:{client_message_id}` in Redis.
    - Hit → ack with cached canonical message dict. No duplicate persist, no duplicate broadcast.
    - Miss → continue.
@@ -276,7 +280,32 @@ participants: [
 
 Flow:
 - Client emits `message:read` with `{conversation_id, last_read_message_id}` when chat screen scrolls past unread messages (debounced 500ms).
-- Server: monotonic conditional write — only update if `_id > current last_read_message_id`. Use Mongo `$max` on `last_read_at` plus filter clause `participants.last_read_message_id < new_id`. Set `unread_count = 0`. Broadcast `read:update` to peer.
+- Server: monotonic conditional write. The exact Mongo query (so two engineers don't write two different versions):
+  ```python
+  await Conversation.get_motor_collection().update_one(
+      {
+          "_id": ObjectId(conversation_id),
+          "participants": {
+              "$elemMatch": {
+                  "user_id": ObjectId(user_id),
+                  "$or": [
+                      {"last_read_message_id": None},
+                      {"last_read_message_id": {"$lt": ObjectId(new_message_id)}},
+                  ],
+              }
+          },
+      },
+      {
+          "$set": {
+              "participants.$[me].last_read_message_id": ObjectId(new_message_id),
+              "participants.$[me].last_read_at": now_utc,
+              "participants.$[me].unread_count": 0,
+          }
+      },
+      array_filters=[{"me.user_id": ObjectId(user_id)}],
+  )
+  ```
+  The `$elemMatch` guard makes the update a no-op when an out-of-order `message:read` arrives (`last_read_message_id` of the participant is already greater). `last_read_at` is set in lockstep with `last_read_message_id` — they advance together, never independently. The `read:update` broadcast to the peer fires only when `result.modified_count == 1`.
 - Other participant's UI marks any message with `_id <= last_read_message_id` as "read."
 - Unread badge = `unread_count` directly.
 
@@ -291,7 +320,7 @@ Flow:
 ### Presence
 
 - Two-state: `online` / `offline`.
-- Backend stops writing `User.is_online` directly. The field stays in the schema for compatibility but is updated by a **background sync task every 60s** that reads `presence:sids:*` and computes online users — this exists only to keep historical reports working. Realtime presence is Redis-only.
+- Backend stops writing `User.is_online` directly. The field stays in the schema for backward compatibility but is no longer updated. Audit found no consumer reads it on critical paths; if a stale reader is discovered later, a background sync task can be added in a hotfix. Realtime presence is Redis-only.
 - `User.last_active` (already in schema) is updated on disconnect for "last seen" UX.
 - Subscriptions: client emits `presence:subscribe` with `[user_ids]` (matches list). Server adds to interested-set in Redis. Status changes fan out only to subscribers.
 
@@ -302,9 +331,9 @@ Currently the backend proxies multipart uploads through FastAPI → boto3 → Sp
 1. Client calls `POST /media/presign` with `{type: "image|video|audio|voice", mime, size_bytes, duration_ms?}`.
 2. Server validates: max-size by type (image 10MB, video 50MB, audio 20MB, voice 5MB), allowed mime list.
 3. **Server generates the object key** — client cannot specify it. Format: `flame_backend/{category}/{user_id}/{uuid4}.{ext}`. This prevents one user from overwriting another user's objects.
-4. Server signs a PUT URL with `boto3.client.generate_presigned_url('put_object', ...)`. Signed headers: `Content-Type`, `Content-Length`, `x-amz-acl=public-read`. Expires in 300s.
-5. Response: `{upload_url, public_url, required_headers: {...}}`. **Drop `fields` from the response** (that was POST-form syntax, not PUT — corrected from prior revision).
-6. Client `PUT`s bytes directly to Spaces with the exact `required_headers`.
+4. Server signs a PUT URL with `boto3.client.generate_presigned_url('put_object', ...)`. Signed headers: `Content-Type`, `Content-Length` only. **Do not include `x-amz-acl` in signed headers** — DO Spaces compatibility on `x-amz-acl` signing is inconsistent. Instead, configure the **bucket-level public-read policy** so newly-PUT objects are publicly readable by default. Implementation plan must include: `PutBucketPolicy` JSON granting `s3:GetObject` to `Principal: *` on `arn:aws:s3:::my-projects-media/flame_backend/*`.
+5. Expires in 300s. Response: `{upload_url, public_url, required_headers: {Content-Type, Content-Length}}`.
+6. Client `PUT`s bytes directly to Spaces with exactly those two headers.
 7. On success, client emits `message:send` with `media.url = public_url`.
 8. Server-side validation on `message:send`: URL must match the bucket's CDN host pattern (`my-projects-media.sfo3.cdn.digitaloceanspaces.com`) and the object key must start with `flame_backend/{category}/{user_id}/...` matching the sender. Phase 1 does **not** do a HEAD existence check (Phase 2).
 
@@ -355,7 +384,7 @@ final unreadProvider = Provider.family<int, String>(...);
 
 ### `OutboxNotifier`
 
-Persistent send queue backed by `SharedPreferences`. On every mutation, the entire queue is serialized to a single JSON key — fine at expected sizes (<100 pending entries).
+Persistent send queue backed by `SharedPreferences`. On every mutation, the entire queue is serialized to a single JSON key. Expected steady-state size <10 entries; an alarm threshold of 100 entries logs a WARN and surfaces a "messages backlog" UI hint. If outbox volume in production routinely exceeds that ceiling, switch to `sqflite` or an append-only JSONL file in a follow-up phase — `SharedPreferences` is not the right primitive for large persistent queues, but is fine at our expected scale.
 
 Flow:
 1. User taps send → message appended to outbox with `status: pending`, `client_message_id: uuid()`, `attempts: 0`.
@@ -368,7 +397,17 @@ Flow:
 
 `outbox.flush()` runs on every `connection:ready`. Crash-safe: on cold start, anything `pending`/`sending` is reset to `pending` and re-flushed once the socket connects. Server-side idempotency makes replay safe.
 
-**Dart API confirmation:** `socket_io_client: ^2.0.3+1` exposes `emitWithAck(event, data, ack: callback, ackTimeout: Duration)`. The implementation plan must verify the exact API at the pinned version; if the constructor differs, fall back to `emitWithAck(...)` returning `Future` wrapped with `.timeout()`.
+**Dart API call shape (pinned).** `socket_io_client: ^2.0.3+1` exposes `Socket.emitWithAck(String event, dynamic data, {Function? ack, bool binary = false})` which returns `void` and invokes `ack(response)` once. Wrap with a `Completer<dynamic>` and `Future.timeout(Duration(seconds: 8))` for the outbox flow:
+```dart
+Future<dynamic> emitWithAckTimeout(String event, dynamic data, {Duration timeout = const Duration(seconds: 8)}) {
+  final completer = Completer<dynamic>();
+  socket.emitWithAck(event, data, ack: (resp) {
+    if (!completer.isCompleted) completer.complete(resp);
+  });
+  return completer.future.timeout(timeout, onTimeout: () => throw TimeoutException('ack'));
+}
+```
+This is the exact wrapper the OutboxNotifier uses. If the package's API has shifted by the time of implementation, the implementer updates this wrapper only — call sites are unchanged.
 
 ### `SocketNotifier`
 
@@ -546,13 +585,13 @@ Phase 1 is shippable when **all** of the following are true and the verification
 
 ## Open questions
 
-- **Background sync of `User.is_online`:** the spec says a 60s task derives this from Redis presence for legacy reports. Confirm whether any consumer actually reads `User.is_online` (audit suggests no — it's written but not read on critical paths). If no consumer, the sync task can be skipped and the field allowed to drift (Phase 2 will drop the field).
-- **Redis keyspace notifications:** does the operator's Redis allow `notify-keyspace-events Ex`? If managed Redis (e.g. DigitalOcean managed) doesn't support it, fall back to in-process `asyncio.sleep(10)` for the offline grace timer (already specified as fallback).
-- **Tenor API key:** free tier requires no key but throttles aggressively. Confirm whether traffic warrants the keyed tier; if so, add `TENOR_API_KEY` to backend env. Phase 1 ships keyless and revisits in Phase 2 if rate-limited.
+- **Redis keyspace notifications on managed Redis:** if operator's prod Redis (e.g. DigitalOcean managed) does not allow `notify-keyspace-events Ex`, presence-grace-on-disconnect cannot work correctly across workers. Resolution path: (a) confirm with provider, (b) if not allowed, switch to a sentinel-list pattern (`ZADD presence:expiring {timestamp+10s} {user_id}`, swept by the same reaper task that handles orphaned sids) — implementation note for whoever picks up.
+- **Tenor API key:** free tier is keyless but throttles aggressively. If usage exceeds free-tier limits, add `TENOR_API_KEY` to backend env. Phase 1 ships keyless and revisits if rate-limited.
 
 ## References
 
 - Reference WebSocket implementation: `/Users/davis/Desktop/Personal/language_exchange_backend_application/socket/socketHandler.js`
 - Backend audit findings: `app/auth/`, `app/chat/`, `app/community/service.py:208-335`, `app/core/redis.py`
 - Client audit findings: `lib/services/websocket_service.dart`, `lib/screens/chat/chat_screen.dart`, `lib/services/api_client.dart:273-296`
-- Spec review iteration 1: see review report (7 critical issues, 11 material gaps, 8 nits) — all addressed in this revision.
+- Spec review iteration 1: 7 critical, 11 material, 8 nits — all addressed in revision 2.
+- Spec review iteration 2: 1 critical (wrong function name `decode_access_token`), 5 material, 3 minors — all addressed in revision 3.
