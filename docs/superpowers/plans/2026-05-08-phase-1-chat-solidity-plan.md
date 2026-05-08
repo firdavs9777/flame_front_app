@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Revision:** 2 (addresses plan-review iteration 1: 12 critical, 10 material, 7 nits)
+
 **Goal:** Rebuild the realtime chat layer end-to-end across the FastAPI backend (`flame_backend`) and the Flutter client (`flame`) — replacing raw WebSockets with Socket.IO, adding server-side idempotency, persistent client outbox, per-user `last_read_at` reads, multi-device sync, structured observability, and the first real test foundation in either repo.
 
 **Spec:** `/Users/davis/Desktop/Personal/flame/docs/superpowers/specs/2026-05-08-phase-1-chat-solidity-design.md` (revision 3, approved)
@@ -315,7 +317,7 @@ def build_asgi_app(fastapi_app):
 
 - [ ] **Step 2: Mount in `app/main.py`**
 
-At the end of `flame_backend/app/main.py`, after the existing `app.include_router(...)` block and before any conditionally-flagged code, append:
+Append exactly **one** block at the end of `flame_backend/app/main.py` (after the last `app.include_router(...)`). This block is the sole place `asgi_app` is defined — do not pre-declare it earlier:
 
 ```python
 # --- Realtime mount (Phase 1, gated by CHAT_V2_ENABLED) ---
@@ -324,15 +326,10 @@ if getattr(settings, "CHAT_V2_ENABLED", False):
     from app.realtime import handlers  # noqa: F401  (registers @sio.event handlers)
     asgi_app = build_asgi_app(app)
 else:
-    asgi_app = app
+    asgi_app = app  # uvicorn always serves `asgi_app`; pure FastAPI when flag off
 ```
 
-Also at module level, expose `asgi_app = app` initially (before the conditional) so uvicorn finds it whether the flag is on or off:
-
-```python
-# After `app = FastAPI(...)`:
-asgi_app = app  # default; replaced below if CHAT_V2_ENABLED
-```
+Uvicorn must be invoked as `uvicorn app.main:asgi_app` (not `app.main:app`) — update any deploy scripts and the local-dev README accordingly.
 
 - [ ] **Step 3: Add `CHAT_V2_ENABLED` to settings**
 
@@ -355,10 +352,11 @@ from app.realtime.server import sio  # noqa: F401
 cd /Users/davis/Desktop/Personal/flame_backend
 source venv/bin/activate
 CHAT_V2_ENABLED=true uvicorn app.main:asgi_app --host 0.0.0.0 --port 8000 &
+SERVER_PID=$!
 sleep 2
 curl -s http://localhost:8000/health | head
 curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/ws/socket.io/?EIO=4\&transport=polling
-kill %1
+kill $SERVER_PID
 ```
 Expected: health returns 200, the Socket.IO polling endpoint returns 200 (Engine.IO handshake response, not a 404).
 
@@ -392,15 +390,10 @@ filterwarnings =
 
 ```python
 """Shared fixtures for backend tests."""
-import asyncio
-import pytest
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+# Intentionally minimal. `asyncio_mode = auto` in pytest.ini means each test
+# function gets its own event loop; do not override `event_loop` (deprecated
+# in pytest-asyncio 0.23+). Module/session-scoped async fixtures use
+# `pytest_asyncio.fixture` decorator with explicit loop_scope where needed.
 ```
 
 - [ ] **Step 3: Create `tests/realtime/conftest.py`** with testcontainers + AsyncSimpleClient
@@ -437,18 +430,32 @@ def redis_container():
 
 @pytest_asyncio.fixture
 async def app_with_realtime(monkeypatch, mongo_container, redis_container) -> AsyncIterator:
-    """Spin up the FastAPI+Socket.IO app against test containers."""
-    monkeypatch.setenv("MONGODB_URL", mongo_container.get_connection_url())
+    """Spin up the FastAPI+Socket.IO app against test containers.
+
+    Strategy: build a slim FastAPI() with only the realtime mount + REST routers
+    that tests touch. Do NOT import `app.main` — it has lifespan side effects
+    (legacy ws_router, redis_pubsub.connect against prod Redis URL) that
+    contaminate test state."""
+    mongo_url = mongo_container.get_connection_url()
+    redis_url = (f"redis://{redis_container.get_container_host_ip()}:"
+                 f"{redis_container.get_exposed_port(6379)}")
+    monkeypatch.setenv("MONGODB_URL", mongo_url)
     monkeypatch.setenv("MONGODB_DB_NAME", "flame_test")
-    monkeypatch.setenv("REDIS_URL",
-        f"redis://{redis_container.get_container_host_ip()}:"
-        f"{redis_container.get_exposed_port(6379)}")
+    monkeypatch.setenv("REDIS_URL", redis_url)
     monkeypatch.setenv("CHAT_V2_ENABLED", "true")
 
-    # Reset settings + db modules to pick up new env vars.
+    # Reload settings module so env vars are picked up at instantiation.
     import importlib
     from app.core import config as cfg_mod
     importlib.reload(cfg_mod)
+    # Forcibly write through to the cached module-level `settings` object so
+    # downstream modules that imported it earlier still see the new values.
+    cfg_mod.settings.MONGODB_URL = mongo_url
+    cfg_mod.settings.MONGODB_DB_NAME = "flame_test"
+    cfg_mod.settings.REDIS_URL = redis_url
+    cfg_mod.settings.CHAT_V2_ENABLED = True
+
+    # Re-import any module that captured `settings` at top level.
     from app.core import database as db_mod
     importlib.reload(db_mod)
 
@@ -456,11 +463,20 @@ async def app_with_realtime(monkeypatch, mongo_container, redis_container) -> As
     await connect_to_mongo()
 
     from app.realtime.server import sio, build_asgi_app
+    from app.realtime import handlers  # noqa: F401  (registers @sio.event)
+    from app.realtime import ban_listener, reaper
+    await ban_listener.start()
+    await reaper.start()
+
     from fastapi import FastAPI
     fastapi_app = FastAPI()
-
-    # Register handlers (importing the module triggers @sio.event decorators)
-    from app.realtime import handlers  # noqa: F401
+    # Mount REST routers that tests touch. Each task that introduces a new
+    # router should append the import + include_router here.
+    try:
+        from app.media.routes import router as media_router
+        fastapi_app.include_router(media_router, prefix="/v1")
+    except ImportError:
+        pass  # media router not yet implemented (Tasks 5.2/5.3)
 
     asgi_app = build_asgi_app(fastapi_app)
 
@@ -476,31 +492,83 @@ async def app_with_realtime(monkeypatch, mongo_container, redis_container) -> As
 
     yield {"sio": sio, "url": f"http://127.0.0.1:{port}", "port": port}
 
+    await reaper.stop()
+    await ban_listener.stop()
     server.should_exit = True
     await server_task
     await close_mongo_connection()
 
 
+class TestClient:
+    """Wrapper around socketio.AsyncClient that adds .call() (emit + ack
+    via Future) and .receive() (queue-based event consumer). Decoupled from
+    AsyncSimpleClient to avoid version-dependent ack-helper semantics."""
+    def __init__(self):
+        self.sio = socketio.AsyncClient(reconnection=False)
+        self._queue: asyncio.Queue = asyncio.Queue()
+        self.sio.on("*", self._on_any)
+
+    async def _on_any(self, event, data=None):
+        await self._queue.put((event, data))
+
+    async def connect(self, url: str, *, auth: dict):
+        await self.sio.connect(
+            url, socketio_path="/ws/socket.io", auth=auth, transports=["websocket"],
+            wait=True, wait_timeout=5,
+        )
+
+    async def disconnect(self):
+        if self.sio.connected:
+            await self.sio.disconnect()
+
+    async def emit(self, event: str, data: dict | None = None):
+        await self.sio.emit(event, data or {})
+
+    async def call(self, event: str, data: dict, *, timeout: float = 3.0) -> dict:
+        """emit-with-ack — returns the server's ack payload."""
+        return await self.sio.call(event, data, timeout=timeout)
+
+    async def receive(self, *, timeout: float = 2.0):
+        try:
+            return await asyncio.wait_for(self._queue.get(), timeout=timeout)
+        except asyncio.TimeoutError:
+            raise
+
+
 @pytest_asyncio.fixture
 async def make_socket_client(app_with_realtime):
-    """Factory that creates an AsyncSimpleClient connected to the test server."""
-    clients = []
+    """Factory that creates a TestClient connected to the test server."""
+    clients: list[TestClient] = []
 
-    async def _factory(token: str, device_id: str = "test-device"):
-        client = socketio.AsyncSimpleClient()
-        await client.connect(
-            app_with_realtime["url"],
-            socketio_path="/ws/socket.io",
-            auth={"token": token, "device_id": device_id},
-            transports=["websocket"],
-        )
-        clients.append(client)
-        return client
+    async def _factory(token: str, device_id: str = "test-device") -> TestClient:
+        c = TestClient()
+        await c.connect(app_with_realtime["url"], auth={"token": token, "device_id": device_id})
+        clients.append(c)
+        return c
 
     yield _factory
 
     for c in clients:
         await c.disconnect()
+
+
+@pytest_asyncio.fixture
+async def conversation_pair(app_with_realtime, seed_user):
+    """Two users + a Conversation with both as participants. Shared by every
+    test that exchanges messages."""
+    from app.models.conversation import Conversation, Participant
+    u1 = await seed_user()
+    u2 = await seed_user()
+    conv = Conversation(
+        match_id=f"m-{u1.id}-{u2.id}",
+        user1_id=str(u1.id), user2_id=str(u2.id),
+        participants=[
+            Participant(user_id=str(u1.id)),
+            Participant(user_id=str(u2.id)),
+        ],
+    )
+    await conv.insert()
+    return u1, u2, conv
 ```
 
 - [ ] **Step 4: Verify the fixture lifecycle compiles & boots**
@@ -550,7 +618,7 @@ from app.core.security import create_access_token
 @pytest.mark.asyncio
 async def test_connect_with_valid_token(make_socket_client, seed_user):
     user = await seed_user()
-    token = create_access_token({"sub": str(user.id)})
+    token = create_access_token(str(user.id))
     client = await make_socket_client(token)
     event = await client.receive(timeout=2)
     assert event[0] == "connection:ready"
@@ -559,42 +627,33 @@ async def test_connect_with_valid_token(make_socket_client, seed_user):
 
 @pytest.mark.asyncio
 async def test_connect_rejects_missing_token(app_with_realtime):
-    client = socketio.AsyncSimpleClient()
+    from tests.realtime.conftest import TestClient
+    c = TestClient()
     with pytest.raises(socketio.exceptions.ConnectionError):
-        await client.connect(
-            app_with_realtime["url"],
-            socketio_path="/ws/socket.io",
-            transports=["websocket"],
-        )
+        await c.connect(app_with_realtime["url"], auth={})
 
 
 @pytest.mark.asyncio
 async def test_connect_rejects_refresh_token(app_with_realtime, seed_user):
-    user = await seed_user()
     from app.core.security import create_refresh_token
-    refresh, _ = create_refresh_token({"sub": str(user.id)})
-    client = socketio.AsyncSimpleClient()
+    from tests.realtime.conftest import TestClient
+    user = await seed_user()
+    refresh = create_refresh_token(str(user.id))
+    c = TestClient()
     with pytest.raises(socketio.exceptions.ConnectionError):
-        await client.connect(
-            app_with_realtime["url"],
-            socketio_path="/ws/socket.io",
-            auth={"token": refresh, "device_id": "d"},
-            transports=["websocket"],
-        )
+        await c.connect(app_with_realtime["url"],
+                        auth={"token": refresh, "device_id": "d"})
 
 
 @pytest.mark.asyncio
 async def test_connect_rejects_long_device_id(app_with_realtime, seed_user):
+    from tests.realtime.conftest import TestClient
     user = await seed_user()
-    token = create_access_token({"sub": str(user.id)})
-    client = socketio.AsyncSimpleClient()
+    token = create_access_token(str(user.id))
+    c = TestClient()
     with pytest.raises(socketio.exceptions.ConnectionError):
-        await client.connect(
-            app_with_realtime["url"],
-            socketio_path="/ws/socket.io",
-            auth={"token": token, "device_id": "x" * 65},
-            transports=["websocket"],
-        )
+        await c.connect(app_with_realtime["url"],
+                        auth={"token": token, "device_id": "x" * 65})
 ```
 
 Add a `seed_user` fixture in `tests/realtime/conftest.py`:
@@ -758,7 +817,7 @@ from app.core.security import create_access_token
 @pytest.mark.asyncio
 async def test_fourth_connection_evicts_oldest(make_socket_client, seed_user):
     user = await seed_user()
-    token = create_access_token({"sub": str(user.id)})
+    token = create_access_token(str(user.id))
     c1 = await make_socket_client(token, "d1")
     c2 = await make_socket_client(token, "d2")
     c3 = await make_socket_client(token, "d3")
@@ -777,7 +836,7 @@ async def test_zset_tracks_active_sids(make_socket_client, seed_user):
     from app.realtime.auth import get_redis
     from app.realtime import constants as rc
     user = await seed_user()
-    token = create_access_token({"sub": str(user.id)})
+    token = create_access_token(str(user.id))
     c1 = await make_socket_client(token, "d1")
     await c1.receive(timeout=2)
     r = get_redis()
@@ -885,7 +944,7 @@ from app.realtime import constants as rc
 @pytest.mark.asyncio
 async def test_disconnect_removes_sid_from_zset(make_socket_client, seed_user):
     user = await seed_user()
-    token = create_access_token({"sub": str(user.id)})
+    token = create_access_token(str(user.id))
     c = await make_socket_client(token)
     await c.receive(timeout=2)
     await c.disconnect()
@@ -899,7 +958,7 @@ async def test_grace_period_then_offline(make_socket_client, seed_user, monkeypa
     # Override grace ttl to 1s for the test.
     monkeypatch.setattr(rc, "PRESENCE_GRACE_TTL", 1)
     user = await seed_user()
-    token = create_access_token({"sub": str(user.id)})
+    token = create_access_token(str(user.id))
     c = await make_socket_client(token)
     await c.receive(timeout=2)
     await c.disconnect()
@@ -985,23 +1044,18 @@ from app.core.security import create_access_token
 from app.realtime import constants as rc
 
 
+from datetime import timedelta
+
+
 @pytest.mark.asyncio
 async def test_token_expiring_event_fires_before_expiry(make_socket_client, seed_user, monkeypatch):
     monkeypatch.setattr(rc, "TOKEN_EXPIRY_LEAD", 1)  # fire 1s before expiry
     user = await seed_user()
-    # Token expiring in 2s
-    payload = {"sub": str(user.id)}
-    token = create_access_token(payload, expires_minutes_override=None)  # use shortcut below
-    # The above helper must allow a custom expiry; if not, monkeypatch ACCESS_TOKEN_EXPIRE_MINUTES
-    # before token creation. Implementation may vary; below patches.
-    from app.core.config import settings
-    monkeypatch.setattr(settings, "ACCESS_TOKEN_EXPIRE_MINUTES", 1/30)  # ~2s
-    token = create_access_token({"sub": str(user.id)})
+    # Token expiring in 2s — use create_access_token's `expires_delta` kwarg
+    token = create_access_token(str(user.id), expires_delta=timedelta(seconds=2))
     c = await make_socket_client(token)
-    # First event is connection:ready
     ready = await c.receive(timeout=2)
     assert ready[0] == "connection:ready"
-    # Then within ~1s we expect token_expiring
     evt = await c.receive(timeout=2.5)
     assert evt[0] == "auth:token_expiring"
 
@@ -1009,23 +1063,20 @@ async def test_token_expiring_event_fires_before_expiry(make_socket_client, seed
 @pytest.mark.asyncio
 async def test_token_refreshed_cancels_old_timer(make_socket_client, seed_user, monkeypatch):
     monkeypatch.setattr(rc, "TOKEN_EXPIRY_LEAD", 1)
-    from app.core.config import settings
-    monkeypatch.setattr(settings, "ACCESS_TOKEN_EXPIRE_MINUTES", 1/30)
     user = await seed_user()
-    token = create_access_token({"sub": str(user.id)})
+    token = create_access_token(str(user.id), expires_delta=timedelta(seconds=2))
     c = await make_socket_client(token)
     await c.receive(timeout=2)  # connection:ready
-    new_token = create_access_token({"sub": str(user.id)})
+
+    # Refresh well before original expiry. New token has 60min expiry —
+    # so no token_expiring event should arrive within original schedule window.
+    new_token = create_access_token(str(user.id))
     await c.emit("auth:token_refreshed", {"token": new_token})
-    # The old token_expiring should not arrive within window of original expiry.
-    # We allow new token's expiring event to arrive though.
-    try:
-        evt = await c.receive(timeout=1.0)
-        # If we get an event, it's the new token's expiring (not the cancelled old one,
-        # which would have a timestamp identical to original schedule).
-        assert evt[0] in ("auth:token_expiring",)
-    except asyncio.TimeoutError:
-        pass  # also acceptable
+
+    # Wait past the original expiring time. We must NOT receive the old
+    # token_expiring event. Receiving any event in this window is a failure.
+    with pytest.raises(asyncio.TimeoutError):
+        await c.receive(timeout=2.0)
 ```
 
 - [ ] **Step 2: Run, verify red**
@@ -1139,7 +1190,7 @@ async def test_banned_pubsub_forces_disconnect(make_socket_client, seed_user):
     from app.realtime.auth import get_redis
     from app.realtime import constants as rc
     user = await seed_user()
-    token = create_access_token({"sub": str(user.id)})
+    token = create_access_token(str(user.id))
     c = await make_socket_client(token)
     await c.receive(timeout=2)
     await get_redis().publish(rc.CHAN_USER_BANNED, str(user.id))
@@ -1310,19 +1361,23 @@ async def _release_lock() -> None:
 
 
 async def run_one_pass() -> None:
-    """Single sweep — used directly in tests."""
+    """Single sweep — used directly in tests.
+
+    Liveness check: with AsyncRedisManager, room membership lives in Redis,
+    not in `sio.manager.rooms` (which is per-process). Use TTL-based reasoning:
+    any sid whose `connected_at` score is older than `ping_timeout + 30s` is
+    a candidate; if it were genuinely live, Socket.IO would have refreshed it
+    via heartbeat. This is a SLA-based reaper, not a synchronous liveness
+    check, and is correct for our 60s reap cadence."""
     r = get_redis()
     threshold = time.time() - (rc.PING_TIMEOUT + 30)
     cursor = 0
     while True:
         cursor, keys = await r.scan(cursor=cursor, match="presence:sids:*", count=200)
         for key in keys:
-            user_id = key.split(":", 2)[-1]
-            members = await r.zrange(key, 0, -1, withscores=True)
-            live_sids = sio.manager.rooms.get("/", {}).get(f"user:{user_id}", set())
-            stale = [m for (m, s) in members if s < threshold and m not in live_sids]
-            if stale:
-                await r.zrem(key, *stale)
+            members = await r.zrangebyscore(key, "-inf", threshold)
+            if members:
+                await r.zrem(key, *members)
         if cursor == 0:
             break
 
@@ -1377,6 +1432,49 @@ git commit -m "feat(realtime): orphan-sid reaper with leader election"
 ---
 
 # Section 3 — Backend message flow
+
+### Task 3.0: Extend `Message` model with `client_message_id` and media URL fields
+
+**Files:**
+- Modify: `flame_backend/app/models/message.py`
+
+This task lands the model fields the rest of Section 3 depends on. **Must run before any Section 3 test is written.**
+
+- [ ] **Step 1: Add fields**
+
+In `app/models/message.py`'s `Message` class (alongside existing fields, before `class Settings`):
+```python
+    # Phase 1 (Chat solidity): client-supplied idempotency key + lightweight
+    # media URL field. The legacy {image,video,audio,file}_url + media_info
+    # fields stay for back-compat; new code reads/writes only `media_url` and
+    # `media`.
+    client_message_id: Optional[str] = None
+    media_url: Optional[str] = None
+    media: Optional[dict] = None
+```
+
+In `Message.Settings.indexes`, append:
+```python
+            [("client_message_id", 1)],
+```
+
+- [ ] **Step 2: Smoke import**
+
+```bash
+cd /Users/davis/Desktop/Personal/flame_backend
+source venv/bin/activate
+python -c "from app.models.message import Message; m = Message(conversation_id='c', sender_id='s', content='x', client_message_id='cm'); print(m.client_message_id)"
+```
+Expected: `cm`.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add app/models/message.py
+git commit -m "feat(chat): add client_message_id and media fields to Message"
+```
+
+---
 
 ### Task 3.1: Conversation schema migration script
 
@@ -1761,31 +1859,15 @@ git commit -m "feat(realtime): emitters module replacing notify_*"
 
 ```python
 # tests/realtime/test_send.py
+# (conversation_pair fixture is shared from tests/realtime/conftest.py)
 import pytest, asyncio, uuid
 from app.core.security import create_access_token
-
-
-@pytest.fixture
-async def conversation_pair(app_with_realtime, seed_user):
-    from app.models.conversation import Conversation, Participant
-    u1 = await seed_user()
-    u2 = await seed_user()
-    conv = Conversation(
-        match_id=f"m-{u1.id}-{u2.id}",
-        user1_id=str(u1.id), user2_id=str(u2.id),
-        participants=[
-            Participant(user_id=str(u1.id)),
-            Participant(user_id=str(u2.id)),
-        ],
-    )
-    await conv.insert()
-    return u1, u2, conv
 
 
 @pytest.mark.asyncio
 async def test_send_text_persists_and_acks(make_socket_client, conversation_pair):
     u1, u2, conv = conversation_pair
-    t = create_access_token({"sub": str(u1.id)})
+    t = create_access_token(str(u1.id))
     c = await make_socket_client(t)
     await c.receive(timeout=2)  # ready
 
@@ -1808,7 +1890,7 @@ async def test_send_text_persists_and_acks(make_socket_client, conversation_pair
 @pytest.mark.asyncio
 async def test_send_idempotent_returns_same_id(make_socket_client, conversation_pair):
     u1, u2, conv = conversation_pair
-    t = create_access_token({"sub": str(u1.id)})
+    t = create_access_token(str(u1.id))
     c = await make_socket_client(t)
     await c.receive(timeout=2)
     cmid = str(uuid.uuid4())
@@ -1825,8 +1907,8 @@ async def test_send_idempotent_returns_same_id(make_socket_client, conversation_
 @pytest.mark.asyncio
 async def test_recipient_receives_message_new(make_socket_client, conversation_pair):
     u1, u2, conv = conversation_pair
-    t1 = create_access_token({"sub": str(u1.id)})
-    t2 = create_access_token({"sub": str(u2.id)})
+    t1 = create_access_token(str(u1.id))
+    t2 = create_access_token(str(u2.id))
     s = await make_socket_client(t1)
     r = await make_socket_client(t2)
     await s.receive(timeout=2); await r.receive(timeout=2)
@@ -1923,8 +2005,24 @@ async def on_message_send(sid: str, data: dict) -> dict:
             return {"ok": False, "error": {"code": "BLOCKED"}}
 
     # 4. Persist
-    from app.models.message import Message, MessageType
+    from app.models.message import Message, MessageType, ReplyInfo
     now = datetime.now(timezone.utc)
+
+    # If client included reply_to_message_id, build a ReplyInfo from the
+    # referenced message (best-effort; skip silently if not found).
+    reply_info = None
+    reply_id = data.get("reply_to_message_id")
+    if reply_id:
+        replied = await Message.get(reply_id)
+        if replied:
+            reply_info = ReplyInfo(
+                message_id=str(replied.id),
+                sender_id=replied.sender_id,
+                sender_name="",  # Resolved client-side; or fetch if cheap
+                content=replied.content[:80],
+                type=replied.type,
+            )
+
     msg = Message(
         conversation_id=conversation_id,
         sender_id=user_id,
@@ -1933,7 +2031,8 @@ async def on_message_send(sid: str, data: dict) -> dict:
         client_message_id=cmid,
         timestamp=now,
         media=media,
-        reply_to_message_id=data.get("reply_to_message_id"),
+        media_url=(media or {}).get("url"),
+        reply_to=reply_info,
     )
     await msg.insert()
 
@@ -1946,7 +2045,7 @@ async def on_message_send(sid: str, data: dict) -> dict:
         "media": media,
         "client_message_id": cmid,
         "server_timestamp": now.isoformat(),
-        "reply_to_message_id": data.get("reply_to_message_id"),
+        "reply_to_message_id": reply_id,
     }
 
     # 5. Idempotency cache
@@ -2030,7 +2129,7 @@ from app.core.security import create_access_token
 @pytest.mark.asyncio
 async def test_originator_does_not_receive_message_sent(make_socket_client, conversation_pair):
     u1, _, conv = conversation_pair
-    t = create_access_token({"sub": str(u1.id)})
+    t = create_access_token(str(u1.id))
     c1 = await make_socket_client(t, "d1")
     c2 = await make_socket_client(t, "d2")
     await c1.receive(timeout=2); await c2.receive(timeout=2)
@@ -2056,7 +2155,7 @@ from app.core.security import create_access_token
 @pytest.mark.asyncio
 async def test_recipient_receives_queued_messages_on_connect(make_socket_client, conversation_pair):
     u1, u2, conv = conversation_pair
-    ts1 = create_access_token({"sub": str(u1.id)})
+    ts1 = create_access_token(str(u1.id))
     s = await make_socket_client(ts1)
     await s.receive(timeout=2)
     # Send 2 messages while u2 is offline
@@ -2065,7 +2164,7 @@ async def test_recipient_receives_queued_messages_on_connect(make_socket_client,
             "conversation_id": str(conv.id), "type": "text", "content": "x"})
     await asyncio.sleep(0.5)
     # u2 connects
-    ts2 = create_access_token({"sub": str(u2.id)})
+    ts2 = create_access_token(str(u2.id))
     r = await make_socket_client(ts2)
     await r.receive(timeout=2)  # ready
     received = []
@@ -2141,8 +2240,8 @@ from app.models.conversation import Conversation
 @pytest.mark.asyncio
 async def test_message_read_advances_last_read(make_socket_client, conversation_pair):
     u1, u2, conv = conversation_pair
-    s = await make_socket_client(create_access_token({"sub": str(u1.id)}))
-    r = await make_socket_client(create_access_token({"sub": str(u2.id)}))
+    s = await make_socket_client(create_access_token(str(u1.id)))
+    r = await make_socket_client(create_access_token(str(u2.id)))
     await s.receive(timeout=2); await r.receive(timeout=2)
     ack = await s.call("message:send", {"client_message_id": str(uuid.uuid4()),
         "conversation_id": str(conv.id), "type": "text", "content": "x"}, timeout=3)
@@ -2160,8 +2259,8 @@ async def test_message_read_advances_last_read(make_socket_client, conversation_
 @pytest.mark.asyncio
 async def test_read_monotonic(make_socket_client, conversation_pair):
     u1, u2, conv = conversation_pair
-    s = await make_socket_client(create_access_token({"sub": str(u1.id)}))
-    r = await make_socket_client(create_access_token({"sub": str(u2.id)}))
+    s = await make_socket_client(create_access_token(str(u1.id)))
+    r = await make_socket_client(create_access_token(str(u2.id)))
     await s.receive(timeout=2); await r.receive(timeout=2)
     ack1 = await s.call("message:send", {"client_message_id": str(uuid.uuid4()),
         "conversation_id": str(conv.id), "type": "text", "content": "1"}, timeout=3)
@@ -2272,8 +2371,8 @@ from app.core.security import create_access_token
 @pytest.mark.asyncio
 async def test_typing_start_broadcasts(make_socket_client, conversation_pair):
     u1, u2, conv = conversation_pair
-    s = await make_socket_client(create_access_token({"sub": str(u1.id)}))
-    r = await make_socket_client(create_access_token({"sub": str(u2.id)}))
+    s = await make_socket_client(create_access_token(str(u1.id)))
+    r = await make_socket_client(create_access_token(str(u2.id)))
     await s.receive(timeout=2); await r.receive(timeout=2)
     await s.emit("typing:start", {"conversation_id": str(conv.id)})
     evt = await r.receive(timeout=2)
@@ -2284,8 +2383,8 @@ async def test_typing_start_broadcasts(make_socket_client, conversation_pair):
 @pytest.mark.asyncio
 async def test_typing_cleared_on_disconnect(make_socket_client, conversation_pair):
     u1, u2, conv = conversation_pair
-    s = await make_socket_client(create_access_token({"sub": str(u1.id)}))
-    r = await make_socket_client(create_access_token({"sub": str(u2.id)}))
+    s = await make_socket_client(create_access_token(str(u1.id)))
+    r = await make_socket_client(create_access_token(str(u2.id)))
     await s.receive(timeout=2); await r.receive(timeout=2)
     await s.emit("typing:start", {"conversation_id": str(conv.id)})
     await r.receive(timeout=2)  # is_typing: true
@@ -2404,12 +2503,12 @@ from app.core.security import create_access_token
 async def test_presence_subscribe_receives_online_event(make_socket_client, seed_user):
     u1 = await seed_user()
     u2 = await seed_user()
-    c1 = await make_socket_client(create_access_token({"sub": str(u1.id)}))
+    c1 = await make_socket_client(create_access_token(str(u1.id)))
     await c1.receive(timeout=2)
     await c1.emit("presence:subscribe", {"user_ids": [str(u2.id)]})
     await asyncio.sleep(0.2)
     # u2 connects → c1 should receive presence:update
-    c2 = await make_socket_client(create_access_token({"sub": str(u2.id)}))
+    c2 = await make_socket_client(create_access_token(str(u2.id)))
     await c2.receive(timeout=2)
     evt = await c1.receive(timeout=2)
     assert evt[0] == "presence:update"
@@ -2498,47 +2597,97 @@ git commit -m "feat(realtime): presence subscribe + change broadcast"
 - Modify: `flame_backend/app/main.py` (remove `from app.chat.websocket import router as ws_router` and `app.include_router(ws_router)`)
 - Modify: `flame_backend/app/core/redis.py` (remove `RedisPubSub` and `redis_pubsub` singleton; keep file as connection helper)
 
-- [ ] **Step 1: List all callers and the migration mapping**
+- [ ] **Step 1: Verify the call-site inventory** (snapshot below from `grep` at plan-write time; re-run before starting in case the source moved)
 
 ```bash
 cd /Users/davis/Desktop/Personal/flame_backend
 grep -rn "from app.chat.websocket import" app/
-grep -rn "redis_pubsub" app/
-grep -rn "notify_new_message\|notify_message_edited\|notify_message_deleted\|notify_reaction_added\|notify_reaction_removed\|notify_message_pinned\|notify_message_unpinned\|notify_new_match\|notify_user_online" app/
 ```
-The migration table is in the spec. Each call site swaps to `from app.realtime import emitters` and the matching `emit_*` function.
 
-- [ ] **Step 2: Update each caller**
+**14 call sites in 2 files:**
 
-Example (apply analogously to all):
+| File | Line | Function called | Context |
+| --- | --- | --- | --- |
+| `app/chat/routes.py` | 189–190 | `notify_new_message` | text send |
+| `app/chat/routes.py` | 221–222 | `notify_new_message` | image send |
+| `app/chat/routes.py` | 271–272 | `notify_new_message` | video send |
+| `app/chat/routes.py` | 311–312 | `notify_new_message` | audio send |
+| `app/chat/routes.py` | 351–352 | `notify_new_message` | voice send |
+| `app/chat/routes.py` | 383–384 | `notify_new_message` | file send |
+| `app/chat/routes.py` | 404–405 | `notify_message_edited` | edit endpoint |
+| `app/chat/routes.py` | 424–425 | `notify_message_deleted` | delete endpoint |
+| `app/chat/routes.py` | 448–449 | `notify_reaction_added` | reaction add |
+| `app/chat/routes.py` | 481–482 | `notify_reaction_removed` | reaction remove |
+| `app/chat/routes.py` | 517–518 | `notify_message_pinned` | pin |
+| `app/chat/routes.py` | 546–547 | `notify_message_unpinned` | unpin |
+| `app/community/routes.py` | 353–354 | `notify_new_match` | accept match |
+| `app/community/routes.py` | 417–418 | `notify_new_match` | super-like match |
+
+- [ ] **Step 2: Migrate every call site (concrete pattern)**
+
+For the **6 `notify_new_message` sites in chat/routes.py**, all follow the same shape:
 ```python
 # Old
 from app.chat.websocket import notify_new_message
-await notify_new_message(conv_id, msg_dict, sender_id)
+await notify_new_message(conversation_id, message_data, str(current_user.id))
 
-# New
+# New — recipient_id derived from the loaded Conversation already in scope
 from app.realtime import emitters
-await emitters.emit_message_new(recipient_id, msg_dict)
+recipient_id = conversation.get_other_user_id(str(current_user.id))
+await emitters.emit_message_new(recipient_id, message_data)
+await emitters.emit_message_sent(str(current_user.id), message_data)  # mirror to sender's other devices
 ```
 
-For `notify_new_match` in `app/community/routes.py:353,417`:
+For **`notify_message_edited` (404–405)**:
+```python
+from app.realtime import emitters
+recipient_id = conversation.get_other_user_id(str(current_user.id))
+await emitters.emit_message_edited(recipient_id, message_data)
+```
+
+For **`notify_message_deleted` (424–425)**:
+```python
+from app.realtime import emitters
+recipient_id = conversation.get_other_user_id(str(current_user.id))
+await emitters.emit_message_deleted(recipient_id, conversation_id, message_id)
+```
+
+For **`notify_reaction_added` (448–449)** — adapt the keyword-args call:
+```python
+from app.realtime import emitters
+recipient_id = conversation.get_other_user_id(str(current_user.id))
+await emitters.emit_reaction_update(
+    recipient_id, conversation_id, message_id, str(current_user.id), emoji, "added")
+```
+
+For **`notify_reaction_removed` (481–482)**:
+```python
+await emitters.emit_reaction_update(
+    recipient_id, conversation_id, message_id, str(current_user.id), None, "removed")
+```
+
+For **`notify_message_pinned/unpinned` (517–518, 546–547)**:
+```python
+await emitters.emit_pin_update(
+    recipient_id, conversation_id, message_id_or_data,
+    "pinned" if pinning else "unpinned",
+    str(current_user.id) if pinning else None)
+```
+
+For **`notify_new_match` (community/routes.py:353–354, 417–418)** — drop the conversation-subscription leg (rooms are joined at connect time now):
 ```python
 from app.realtime import emitters
 await emitters.emit_match_new(data.user_id, match_data)
-# (Conversation subscription was a Redis-pubsub-only concept that
-# the new architecture handles via room joining at connect time.
-# The 2nd publish to subscribe_conversation is dropped.)
 ```
 
-For `notify_message_edited`/`deleted`/`reaction_*`/`pin_*`: each call site needs to know `recipient_id`. The legacy code computed it from the conversation; do the same lookup:
-```python
-from app.models.conversation import Conversation
-conv = await Conversation.get(conversation_id)
-recipient_id = conv.get_other_user_id(actor_id)
-await emitters.emit_message_edited(recipient_id, msg_dict)
-```
+- [ ] **Step 3: Verify no `from app.chat.websocket import` remains**
 
-- [ ] **Step 3: Strip `app/chat/websocket.py` imports from `main.py`**
+```bash
+grep -rn "from app.chat.websocket import" app/
+```
+Expected: empty.
+
+- [ ] **Step 4: Strip `app/chat/websocket.py` imports from `main.py`**
 
 Remove these lines:
 ```python
@@ -2548,28 +2697,29 @@ app.include_router(ws_router)
 ```
 Also remove `from app.chat.websocket import handle_redis_message` and any `redis_pubsub` usage in the lifespan — the new realtime layer initializes itself via `build_asgi_app`.
 
-- [ ] **Step 4: Delete `app/chat/websocket.py`**
+- [ ] **Step 5: Delete `app/chat/websocket.py`**
 
 ```bash
 git rm app/chat/websocket.py
 ```
 
-- [ ] **Step 5: Strip `RedisPubSub` and `redis_pubsub` from `app/core/redis.py`**
+- [ ] **Step 6: Strip `RedisPubSub` and `redis_pubsub` from `app/core/redis.py`**
 
 Edit `app/core/redis.py` to keep only the `aioredis.from_url` connection helper (if any other module uses it). Remove the class `RedisPubSub`, the `redis_pubsub = RedisPubSub()` singleton, and any `print` statements (the spec mandated their removal).
 
-- [ ] **Step 6: Verify backend smoke**
+- [ ] **Step 7: Verify backend smoke**
 
 ```bash
 pytest tests/realtime/ -v
 CHAT_V2_ENABLED=true uvicorn app.main:asgi_app --host 0.0.0.0 --port 8000 &
+SERVER_PID=$!
 sleep 2
 curl -s http://localhost:8000/health
-kill %1
+kill $SERVER_PID
 ```
 Expected: tests still pass; server still boots.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add -A
@@ -2670,7 +2820,7 @@ from app.core.security import create_access_token
 @pytest.mark.asyncio
 async def test_presign_returns_put_url(app_with_realtime, seed_user):
     user = await seed_user()
-    t = create_access_token({"sub": str(user.id)})
+    t = create_access_token(str(user.id))
     async with httpx.AsyncClient(base_url=app_with_realtime["url"]) as client:
         resp = await client.post("/v1/media/presign",
             json={"type": "image", "mime": "image/jpeg", "size_bytes": 100_000},
@@ -2685,7 +2835,7 @@ async def test_presign_returns_put_url(app_with_realtime, seed_user):
 @pytest.mark.asyncio
 async def test_presign_rejects_oversize(app_with_realtime, seed_user):
     user = await seed_user()
-    t = create_access_token({"sub": str(user.id)})
+    t = create_access_token(str(user.id))
     async with httpx.AsyncClient(base_url=app_with_realtime["url"]) as client:
         resp = await client.post("/v1/media/presign",
             json={"type": "image", "mime": "image/jpeg", "size_bytes": 50_000_000},
@@ -2762,14 +2912,11 @@ from app.media.routes import router as media_router
 app.include_router(media_router, prefix=settings.API_V1_PREFIX)
 ```
 
-- [ ] **Step 3: Update `app_with_realtime` fixture to include the FastAPI router**
+- [ ] **Step 3: Verify the conftest fixture's media-router import now resolves**
 
-In `tests/realtime/conftest.py`, replace `fastapi_app = FastAPI()` with:
-```python
-from app.main import app as fastapi_app
-```
+The `app_with_realtime` fixture (Task 1.2) wraps the `from app.media.routes import router as media_router` import in a `try/except ImportError` so it's a no-op until this task lands. Once `app/media/routes.py` exists, the import succeeds and the router is mounted at `/v1/media`.
 
-- [ ] **Step 4: Verify**
+- [ ] **Step 4: Run**
 
 ```bash
 pytest tests/realtime/test_presign.py -v
@@ -2778,7 +2925,7 @@ pytest tests/realtime/test_presign.py -v
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/media/ app/main.py tests/realtime/conftest.py tests/realtime/test_presign.py
+git add app/media/ app/main.py tests/realtime/test_presign.py
 git commit -m "feat(media): POST /media/presign for direct PUT to Spaces"
 ```
 
@@ -2811,7 +2958,7 @@ async def test_gif_search_returns_results(app_with_realtime, seed_user, monkeypa
     monkeypatch.setattr(httpx.AsyncClient, "get", fake_get)
 
     user = await seed_user()
-    t = create_access_token({"sub": str(user.id)})
+    t = create_access_token(str(user.id))
     async with httpx.AsyncClient(base_url=app_with_realtime["url"]) as client:
         resp = await client.get("/v1/media/gif/search?q=cat&limit=5",
                                 headers={"Authorization": f"Bearer {t}"})
@@ -3241,26 +3388,34 @@ void main() {
       final client = SocketClient();
       expect(client.state.status, SocketStatus.disconnected);
     });
+  });
 
-    test('emitWithAckTimeout times out when no ack', () async {
-      final client = SocketClient();
-      // Inject a fake socket that never invokes ack
-      client.injectFakeSocket(FakeNeverAckSocket());
+  group('emitWithAckTimeoutVia (testable helper)', () {
+    test('completes with ack payload', () async {
+      final result = await SocketClient.emitWithAckTimeoutVia(
+        (event, data, ack) => Future.delayed(
+          const Duration(milliseconds: 10), () => ack({'ok': true})),
+        'foo', const {},
+        timeout: const Duration(seconds: 1),
+      );
+      expect(result, {'ok': true});
+    });
+
+    test('times out when ack never invoked', () async {
       expect(
-        () => client.emitWithAckTimeout('foo', {}, timeout: const Duration(milliseconds: 100)),
+        () => SocketClient.emitWithAckTimeoutVia(
+          (event, data, ack) {/* never acks */},
+          'foo', const {},
+          timeout: const Duration(milliseconds: 50),
+        ),
         throwsA(isA<TimeoutException>()),
       );
     });
   });
 }
-
-class FakeNeverAckSocket implements FakeSocket {
-  @override
-  void emitWithAck(String event, dynamic data, {Function? ack, bool binary = false}) {}
-}
 ```
 
-- [ ] **Step 2: Implement** (split into a thin testable interface + a real-socket adapter)
+- [ ] **Step 2: Implement**
 
 ```dart
 // lib/realtime/socket_client.dart
@@ -3269,13 +3424,8 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../config/env.dart';
 import 'socket_state.dart';
 
-abstract class FakeSocket {
-  void emitWithAck(String event, dynamic data, {Function? ack, bool binary = false});
-}
-
 class SocketClient {
   io.Socket? _socket;
-  FakeSocket? _fakeSocket;
   SocketState _state = const SocketState(status: SocketStatus.disconnected);
   final _stateCtl = StreamController<SocketState>.broadcast();
   final _eventCtl = StreamController<(String, dynamic)>.broadcast();
@@ -3284,7 +3434,25 @@ class SocketClient {
   Stream<SocketState> get stateStream => _stateCtl.stream;
   Stream<(String, dynamic)> get eventStream => _eventCtl.stream;
 
-  void injectFakeSocket(FakeSocket fake) { _fakeSocket = fake; }
+  /// Pure helper, testable without a socket. The caller passes an `emit`
+  /// function that takes (event, data, ack-callback). On real socket use,
+  /// emit is `(e, d, cb) => socket.emitWithAck(e, d, ack: cb)`. In tests,
+  /// emit is a closure that may or may not invoke `ack`.
+  static Future<dynamic> emitWithAckTimeoutVia(
+    void Function(String event, dynamic data, void Function(dynamic) ack) emit,
+    String event,
+    dynamic data, {
+    Duration timeout = const Duration(seconds: 8),
+  }) {
+    final completer = Completer<dynamic>();
+    emit(event, data, (resp) {
+      if (!completer.isCompleted) completer.complete(resp);
+    });
+    return completer.future.timeout(
+      timeout,
+      onTimeout: () => throw TimeoutException('ack'),
+    );
+  }
 
   void connect({required String token, required String deviceId}) {
     _setState(const SocketState(status: SocketStatus.connecting));
@@ -3321,21 +3489,12 @@ class SocketClient {
 
   Future<dynamic> emitWithAckTimeout(String event, dynamic data,
       {Duration timeout = const Duration(seconds: 8)}) {
-    final completer = Completer<dynamic>();
-    final s = _fakeSocket ?? _socket;
-    if (s == null) {
-      return Future.error(StateError('no socket'));
-    }
-    if (s is io.Socket) {
-      s.emitWithAck(event, data, ack: (resp) {
-        if (!completer.isCompleted) completer.complete(resp);
-      });
-    } else {
-      (s as FakeSocket).emitWithAck(event, data, ack: (resp) {
-        if (!completer.isCompleted) completer.complete(resp);
-      });
-    }
-    return completer.future.timeout(timeout, onTimeout: () => throw TimeoutException('ack'));
+    final socket = _socket;
+    if (socket == null) return Future.error(StateError('no socket'));
+    return emitWithAckTimeoutVia(
+      (e, d, ack) => socket.emitWithAck(e, d, ack: ack),
+      event, data, timeout: timeout,
+    );
   }
 
   void _setState(SocketState s) {
@@ -3724,24 +3883,30 @@ In `api_client.dart`:
 Future<http.Response> _authenticated(Future<http.Response> Function(http.Client) op) async {
   var resp = await op(_httpClient);
   if (resp.statusCode == 401 && !_isRefreshUrl(resp)) {
-    if (_refreshing == null) {
-      _refreshing = Completer<void>();
+    // Atomic test-and-set on the mutex. If another caller is already
+    // refreshing, we await that completer; otherwise we own the refresh.
+    final localCompleter = _refreshing;
+    final isLeader = localCompleter == null;
+    final mutex = isLeader ? (_refreshing = Completer<void>()) : localCompleter;
+    if (isLeader) {
       try {
         final ok = await _doRefresh();
         if (!ok) {
-          _refreshing!.completeError('refresh_failed');
+          mutex.completeError('refresh_failed');
           await _onAuthLost?.call();
           throw _AuthLost();
         }
-        _refreshing!.complete();
+        mutex.complete();
       } catch (e) {
-        if (!_refreshing!.isCompleted) _refreshing!.completeError(e);
+        if (!mutex.isCompleted) mutex.completeError(e);
         rethrow;
       } finally {
-        _refreshing = null;
+        // Only the leader clears the field, and only if it still points
+        // at our completer (defensive against re-entry).
+        if (identical(_refreshing, mutex)) _refreshing = null;
       }
     } else {
-      await _refreshing!.future;
+      await mutex.future;
     }
     resp = await op(_httpClient);
   }
@@ -4008,7 +4173,7 @@ import pytest, asyncio, uuid
 async def test_idempotency_under_concurrency(make_socket_client, conversation_pair):
     from app.core.security import create_access_token
     u1, _, conv = conversation_pair
-    t = create_access_token({"sub": str(u1.id)})
+    t = create_access_token(str(u1.id))
     c = await make_socket_client(t)
     await c.receive(timeout=2)
     cmid = str(uuid.uuid4())
