@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/env.dart';
 
 class ApiClient {
-  static const String baseUrl = 'https://flame.banatalk.com/v1';
+  static String get baseUrl => EnvConfig.current.apiBase;
 
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
