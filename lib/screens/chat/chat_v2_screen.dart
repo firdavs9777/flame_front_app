@@ -5,6 +5,8 @@ import '../../realtime/typing_provider.dart';
 import '../../realtime/providers.dart';
 import '../../realtime/constants.dart';
 import '../../realtime/widgets/connection_banner.dart';
+import '../../realtime/widgets/gif_picker.dart';
+import '../../realtime/widgets/sticker_picker.dart';
 
 class ChatV2Screen extends ConsumerStatefulWidget {
   final String conversationId;
@@ -25,6 +27,7 @@ class ChatV2Screen extends ConsumerStatefulWidget {
 class _ChatV2ScreenState extends ConsumerState<ChatV2Screen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
+  String? _openPicker; // null | 'gif' | 'sticker'
 
   @override
   void dispose() {
@@ -113,11 +116,44 @@ class _ChatV2ScreenState extends ConsumerState<ChatV2Screen> {
                         color: Colors.grey, fontStyle: FontStyle.italic)),
               ),
             ),
+          if (_openPicker == 'gif')
+            GifPicker(
+              onPick: (url, w, h) {
+                ref.read(outboxProvider.notifier).sendGif(
+                      conversationId: widget.conversationId,
+                      gifUrl: url,
+                      width: w,
+                      height: h,
+                    );
+                setState(() => _openPicker = null);
+              },
+            ),
+          if (_openPicker == 'sticker')
+            StickerPicker(
+              onPick: (id, url) {
+                ref.read(outboxProvider.notifier).sendSticker(
+                      conversationId: widget.conversationId,
+                      stickerId: id,
+                      stickerUrl: url,
+                    );
+                setState(() => _openPicker = null);
+              },
+            ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(8),
               child: Row(
                 children: [
+                  IconButton(
+                    icon: const Icon(Icons.gif_box_outlined),
+                    onPressed: () => setState(() =>
+                        _openPicker = _openPicker == 'gif' ? null : 'gif'),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.emoji_emotions_outlined),
+                    onPressed: () => setState(() => _openPicker =
+                        _openPicker == 'sticker' ? null : 'sticker'),
+                  ),
                   Expanded(
                     child: TextField(
                       controller: _textController,
@@ -125,6 +161,7 @@ class _ChatV2ScreenState extends ConsumerState<ChatV2Screen> {
                       decoration: const InputDecoration(
                         hintText: 'Message',
                         border: OutlineInputBorder(),
+                        isDense: true,
                       ),
                       onSubmitted: (_) => _send(),
                     ),

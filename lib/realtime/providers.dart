@@ -59,6 +59,73 @@ class OutboxNotifier extends StateNotifier<List<OutboxEntry>> {
     await _flushOne(entry);
   }
 
+  Future<void> sendGif({
+    required String conversationId,
+    required String gifUrl,
+    int? width,
+    int? height,
+  }) async {
+    final repo = ref.read(outboxRepoProvider);
+    final entry = OutboxEntry(
+      clientMessageId: const Uuid().v4(),
+      conversationId: conversationId,
+      type: 'gif',
+      content: '',
+      media: {
+        'url': gifUrl,
+        if (width != null) 'width': width,
+        if (height != null) 'height': height,
+      },
+      createdAt: DateTime.now(),
+    );
+    await repo.enqueue(entry);
+    state = repo.all;
+    await _flushOne(entry);
+  }
+
+  Future<void> sendSticker({
+    required String conversationId,
+    required String stickerId,
+    required String stickerUrl,
+  }) async {
+    final repo = ref.read(outboxRepoProvider);
+    final entry = OutboxEntry(
+      clientMessageId: const Uuid().v4(),
+      conversationId: conversationId,
+      type: 'sticker',
+      content: '',
+      media: {'url': stickerUrl, 'sticker_id': stickerId},
+      createdAt: DateTime.now(),
+    );
+    await repo.enqueue(entry);
+    state = repo.all;
+    await _flushOne(entry);
+  }
+
+  Future<void> sendImage({
+    required String conversationId,
+    required String imageUrl,
+    int? width,
+    int? height,
+  }) async {
+    final repo = ref.read(outboxRepoProvider);
+    final entry = OutboxEntry(
+      clientMessageId: const Uuid().v4(),
+      conversationId: conversationId,
+      type: 'image',
+      content: '',
+      media: {
+        'url': imageUrl,
+        if (width != null) 'width': width,
+        if (height != null) 'height': height,
+      },
+      createdAt: DateTime.now(),
+    );
+    await repo.enqueue(entry);
+    state = repo.all;
+    await _flushOne(entry);
+  }
+
   Future<void> retry(String cmid) async {
     final repo = ref.read(outboxRepoProvider);
     final e = repo.all.firstWhere((x) => x.clientMessageId == cmid);
