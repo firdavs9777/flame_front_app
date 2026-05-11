@@ -10,6 +10,7 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/screens/chat/widgets/widgets.dart';
+import '../../realtime/widgets/connection_banner.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final Conversation conversation;
@@ -528,6 +529,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       appBar: _buildAppBar(currentConversation, isOtherUserTyping),
       body: Column(
         children: [
+          const ConnectionBanner(),
           Expanded(child: _buildMessageList(currentUserId)),
           if (isOtherUserTyping)
             TypingIndicator(userPhotoUrl: currentConversation.otherUser.primaryPhoto),
