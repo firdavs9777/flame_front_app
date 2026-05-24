@@ -14,14 +14,10 @@ class SettingsScreen extends ConsumerWidget {
     final user = userState.valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
           const SizedBox(height: 20),
-
-          // Account section
           _buildSectionHeader('Account'),
           _buildListTile(
             icon: Icons.person_outline,
@@ -48,10 +44,7 @@ class SettingsScreen extends ConsumerWidget {
               _showChangePasswordDialog(context, ref);
             },
           ),
-
           const SizedBox(height: 20),
-
-          // Discovery section
           _buildSectionHeader('Discovery'),
           _buildSwitchTile(
             icon: Icons.explore_outlined,
@@ -59,9 +52,9 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Show me in discovery',
             value: settings.discoveryEnabled,
             onChanged: (_) {
-              ref.read(settingsProvider.notifier).setDiscoveryEnabled(
-                    !settings.discoveryEnabled,
-                  );
+              ref
+                  .read(settingsProvider.notifier)
+                  .setDiscoveryEnabled(!settings.discoveryEnabled);
             },
           ),
           _buildSwitchTile(
@@ -82,7 +75,6 @@ class SettingsScreen extends ConsumerWidget {
               ref.read(settingsProvider.notifier).toggleShowOnlineStatus();
             },
           ),
-
           const SizedBox(height: 20),
 
           // Notifications section
@@ -185,10 +177,7 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Flame v1.0.0',
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey[500], fontSize: 14),
                 ),
               ],
             ),
@@ -317,10 +306,7 @@ class SettingsScreen extends ConsumerWidget {
                 const SnackBar(content: Text('Account deletion requested')),
               );
             },
-            child: Text(
-              'Delete',
-              style: TextStyle(color: AppTheme.errorColor),
-            ),
+            child: Text('Delete', style: TextStyle(color: AppTheme.errorColor)),
           ),
         ],
       ),
@@ -332,9 +318,7 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Change Email'),
-        content: const Text(
-          'To change your email, please contact support.',
-        ),
+        content: const Text('To change your email, please contact support.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -394,20 +378,25 @@ class SettingsScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () async {
-              if (newPasswordController.text != confirmPasswordController.text) {
+              if (newPasswordController.text !=
+                  confirmPasswordController.text) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Passwords do not match')),
                 );
                 return;
               }
               Navigator.pop(context);
-              final success = await ref.read(authProvider.notifier).changePassword(
-                currentPassword: currentPasswordController.text,
-                newPassword: newPasswordController.text,
-              );
+              final success = await ref
+                  .read(authProvider.notifier)
+                  .changePassword(
+                    currentPassword: currentPasswordController.text,
+                    newPassword: newPasswordController.text,
+                  );
               if (success) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Password changed successfully')),
+                  const SnackBar(
+                    content: Text('Password changed successfully'),
+                  ),
                 );
               }
             },

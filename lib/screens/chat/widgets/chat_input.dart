@@ -52,6 +52,8 @@ class _ChatInputState extends State<ChatInput> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
+    _hasText = widget.controller.text.trim().isNotEmpty;
+    widget.controller.addListener(_updateHasText);
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -63,12 +65,22 @@ class _ChatInputState extends State<ChatInput> with SingleTickerProviderStateMix
 
   @override
   void dispose() {
+    widget.controller.removeListener(_updateHasText);
     _pulseController.dispose();
     _recorder.dispose();
     super.dispose();
   }
 
-  bool get _hasText => widget.controller.text.trim().isNotEmpty;
+  bool _hasText = false;
+
+  void _updateHasText() {
+    final newHasText = widget.controller.text.trim().isNotEmpty;
+    if (newHasText != _hasText) {
+      setState(() {
+        _hasText = newHasText;
+      });
+    }
+  }
 
   Future<void> _startRecording() async {
     if (widget.onVoiceRecorded == null) return;
@@ -413,7 +425,10 @@ class _ChatInputState extends State<ChatInput> with SingleTickerProviderStateMix
                   ),
                 ),
                 textCapitalization: TextCapitalization.sentences,
-                onChanged: widget.onTextChanged,
+                onChanged: (value) {
+                  _updateHasText();
+                  widget.onTextChanged(value);
+                },
                 onSubmitted: (_) => widget.onSend(),
               ),
             ),

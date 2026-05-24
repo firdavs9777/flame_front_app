@@ -515,14 +515,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final currentUserId = currentUserState.valueOrNull?.id ?? '';
     final isOtherUserTyping = typingUsers[widget.conversation.id] != null;
 
-    // Update local messages when conversation messages change
-    if (currentConversation.messages.length > _messages.length) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() => _messages = currentConversation.messages);
-          _scrollToBottom(animated: true);
-        }
-      });
+    // Check for new messages from WebSocket and add them to local list
+    for (final msg in currentConversation.messages) {
+      if (!_messages.any((m) => m.id == msg.id)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _messages = [..._messages, msg];
+            });
+            _scrollToBottom(animated: true);
+          }
+        });
+        break; // Only add one at a time to avoid multiple setState calls
+      }
     }
 
     return Scaffold(

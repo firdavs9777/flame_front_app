@@ -250,8 +250,17 @@ class _StepVerifyEmailState extends ConsumerState<StepVerifyEmail> {
 
             // Code input fields
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(6, (index) => _buildCodeField(index)),
+              children: List.generate(6, (index) {
+                return Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: index == 0 ? 0 : 4,
+                      right: index == 5 ? 0 : 4,
+                    ),
+                    child: _buildCodeField(index),
+                  ),
+                );
+              }),
             ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
 
             const SizedBox(height: 32),
@@ -349,9 +358,8 @@ class _StepVerifyEmailState extends ConsumerState<StepVerifyEmail> {
   }
 
   Widget _buildCodeField(int index) {
-    return SizedBox(
-      width: 45,
-      height: 56,
+    return AspectRatio(
+      aspectRatio: 1,
       child: TextField(
         controller: _controllers[index],
         focusNode: _focusNodes[index],
@@ -363,20 +371,21 @@ class _StepVerifyEmailState extends ConsumerState<StepVerifyEmail> {
         autocorrect: false,
         obscureText: false,
         style: const TextStyle(
-          fontSize: 24,
+          fontSize: 22,
           fontWeight: FontWeight.bold,
           color: AppTheme.textPrimary,
         ),
         decoration: InputDecoration(
           counterText: '',
+          contentPadding: EdgeInsets.zero,
           filled: true,
           fillColor: Colors.grey[100],
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
           ),
         ),

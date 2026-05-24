@@ -123,28 +123,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  TextButton(
-                    onPressed: () {
-                      ref.read(swipeProvider.notifier).clearNewMatch();
-                      Navigator.pop(context);
-                    },
-                    child: const Text(
-                      'Keep Swiping',
-                      style: TextStyle(color: Colors.white70),
+                  Flexible(
+                    child: TextButton(
+                      onPressed: () {
+                        ref.read(swipeProvider.notifier).clearNewMatch();
+                        Navigator.pop(context);
+                      },
+                      child: const Text(
+                        'Keep Swiping',
+                        style: TextStyle(color: Colors.white70),
+                      ),
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      ref.read(swipeProvider.notifier).clearNewMatch();
-                      Navigator.pop(context);
-                      // Navigate to chat - load conversations first
-                      ref.read(conversationsProvider.notifier).loadConversations(refresh: true);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppTheme.primaryColor,
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        ref.read(swipeProvider.notifier).clearNewMatch();
+                        Navigator.pop(context);
+                        // Navigate to chat - load conversations first
+                        ref.read(conversationsProvider.notifier).loadConversations(refresh: true);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppTheme.primaryColor,
+                      ),
+                      child: const Text('Send Message'),
                     ),
-                    child: const Text('Send Message'),
                   ),
                 ],
               ),

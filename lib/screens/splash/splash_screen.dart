@@ -4,16 +4,13 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 class SplashScreen extends StatefulWidget {
   final Widget child;
-
   const SplashScreen({super.key, required this.child});
-
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
   bool _showSplash = true;
-
   @override
   void initState() {
     super.initState();
@@ -47,11 +44,7 @@ class _SplashScreenState extends State<SplashScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFF6B6B),
-              Color(0xFFE75A7C),
-              Color(0xFFFF8E53),
-            ],
+            colors: [Color(0xFFFF6B6B), Color(0xFFE75A7C), Color(0xFFFF8E53)],
             stops: [0.0, 0.5, 1.0],
           ),
         ),
@@ -59,12 +52,11 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Flame Icon
               const Icon(
-                Icons.local_fire_department_rounded,
-                size: 80,
-                color: Colors.white,
-              )
+                    Icons.local_fire_department_rounded,
+                    size: 80,
+                    color: Colors.white,
+                  )
                   .animate()
                   .fadeIn(duration: 600.ms)
                   .scale(
@@ -73,33 +65,30 @@ class _SplashScreenState extends State<SplashScreen> {
                     duration: 600.ms,
                     curve: Curves.elasticOut,
                   ),
-
               const SizedBox(height: 24),
-
-              // App Name
               ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [Colors.white, Color(0xFFFFE0E0)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ).createShader(bounds),
-                child: const Text(
-                  'Flame',
-                  style: TextStyle(
-                    fontSize: 56,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 4,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black26,
-                        offset: Offset(0, 4),
-                        blurRadius: 8,
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: [Colors.white, Color(0xFFFFE0E0)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ).createShader(bounds),
+                    child: const Text(
+                      'Flame',
+                      style: TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 4,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black26,
+                            offset: Offset(0, 4),
+                            blurRadius: 8,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              )
+                    ),
+                  )
                   .animate()
                   .fadeIn(delay: 300.ms, duration: 600.ms)
                   .slideY(
@@ -109,19 +98,16 @@ class _SplashScreenState extends State<SplashScreen> {
                     duration: 600.ms,
                     curve: Curves.easeOutCubic,
                   ),
-
               const SizedBox(height: 12),
-
-              // Tagline
               Text(
-                'Find Your Match',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.white.withValues(alpha: 0.9),
-                  letterSpacing: 2,
-                ),
-              )
+                    'Find Your Match',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      letterSpacing: 2,
+                    ),
+                  )
                   .animate()
                   .fadeIn(delay: 600.ms, duration: 600.ms)
                   .slideY(
@@ -131,9 +117,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     duration: 600.ms,
                     curve: Curves.easeOutCubic,
                   ),
-
               const SizedBox(height: 60),
-
               // Loading indicator
               SizedBox(
                 width: 24,
@@ -144,9 +128,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
-              )
-                  .animate()
-                  .fadeIn(delay: 900.ms, duration: 400.ms),
+              ).animate().fadeIn(delay: 900.ms, duration: 400.ms),
             ],
           ),
         ),

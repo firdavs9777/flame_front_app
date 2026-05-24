@@ -1,12 +1,14 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as img;
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/models/user.dart';
 import 'package:flame/services/location_service.dart';
+import 'package:flame/services/user_service.dart';
 import 'steps/step_email_password.dart';
 import 'steps/step_profile_info.dart';
 import 'steps/step_looking_for.dart';
@@ -334,21 +336,27 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
       _data.latitude = locationResult.latitude;
       _data.longitude = locationResult.longitude;
 
-      // Convert photos to base64
-      final base64Photos = <String>[];
+      // Upload photos FIRST and get URLs back
+      final photoUrls = await _uploadPhotosForRegistration();
 
-      for (final file in _data.photoFiles) {
-        final bytes = await file.readAsBytes();
-        final base64String = base64Encode(bytes);
-        // Add data URI prefix for the backend to recognize the format
-        final extension = file.path.split('.').last.toLowerCase();
-        final mimeType = extension == 'png' ? 'image/png' : 'image/jpeg';
-        base64Photos.add('data:$mimeType;base64,$base64String');
+      if (photoUrls.isEmpty) {
+        setState(() => _isUploading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Failed to upload photos. Please try again.'),
+              backgroundColor: AppTheme.errorColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+        return;
       }
 
-      _data.photos = base64Photos;
-
-      // Register user
+      // Register user with photo URLs
       final success = await ref.read(authProvider.notifier).register(
             email: _data.email,
             password: _data.password,
@@ -358,7 +366,7 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
             lookingFor: _data.lookingFor,
             bio: _data.bio,
             interests: _data.interests,
-            photos: _data.photos,
+            photos: photoUrls,
             latitude: _data.latitude!,
             longitude: _data.longitude!,
           );
@@ -383,6 +391,79 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
           ),
         );
       }
+    }
+  }
+
+  Future<List<String>> _uploadPhotosForRegistration() async {
+    if (_data.photoFiles.isEmpty) return [];
+
+    final userService = UserService();
+    final photoUrls = <String>[];
+    final tempDir = await getTemporaryDirectory();
+
+    for (int i = 0; i < _data.photoFiles.length; i++) {
+      final file = _data.photoFiles[i];
+      final isPrimary = i == 0; // First photo is primary
+
+      try {
+        // Compress image before upload
+        final compressedFile = await _compressImage(file, tempDir.path, i);
+
+        final result = await userService.uploadPhotoForRegistration(
+          compressedFile,
+          isPrimary: isPrimary,
+        );
+
+        if (result.success && result.data != null) {
+          photoUrls.add(result.data!.url);
+          debugPrint('Uploaded photo ${i + 1}: ${result.data!.url}');
+        } else {
+          debugPrint('Failed to upload photo ${i + 1}: ${result.error}');
+        }
+      } catch (e) {
+        debugPrint('Error uploading photo ${i + 1}: $e');
+      }
+    }
+
+    return photoUrls;
+  }
+
+  Future<File> _compressImage(File file, String tempPath, int index) async {
+    try {
+      final bytes = await file.readAsBytes();
+      final originalSize = bytes.length;
+      debugPrint('Original photo ${index + 1} size: ${(originalSize / 1024).toStringAsFixed(0)} KB');
+
+      // Decode image
+      img.Image? image = img.decodeImage(bytes);
+      if (image == null) {
+        debugPrint('Could not decode image, using original');
+        return file;
+      }
+
+      // Resize if larger than 800px
+      const maxSize = 800;
+      if (image.width > maxSize || image.height > maxSize) {
+        if (image.width > image.height) {
+          image = img.copyResize(image, width: maxSize);
+        } else {
+          image = img.copyResize(image, height: maxSize);
+        }
+      }
+
+      // Encode as JPEG with 70% quality
+      final compressedBytes = img.encodeJpg(image, quality: 70);
+      debugPrint('Compressed photo ${index + 1} size: ${(compressedBytes.length / 1024).toStringAsFixed(0)} KB');
+
+      // Save to temp file
+      final compressedPath = '$tempPath/compressed_$index.jpg';
+      final compressedFile = File(compressedPath);
+      await compressedFile.writeAsBytes(compressedBytes);
+
+      return compressedFile;
+    } catch (e) {
+      debugPrint('Compression error: $e, using original');
+      return file;
     }
   }
 
