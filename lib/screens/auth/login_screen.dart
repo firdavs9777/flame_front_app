@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/screens/auth/forgot_password_screen.dart';
+import 'package:flame/services/social_auth_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -401,18 +402,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildSocialButton(Icons.g_mobiledata_rounded, 'Google'),
+            _buildSocialButton(
+              icon: Icons.g_mobiledata_rounded,
+              label: 'Google',
+              onTap: _handleGoogleSignIn,
+            ),
             const SizedBox(width: 16),
-            _buildSocialButton(Icons.apple_rounded, 'Apple'),
+            _buildSocialButton(
+              icon: Icons.apple_rounded,
+              label: 'Apple',
+              onTap: _handleAppleSignIn,
+            ),
             const SizedBox(width: 16),
-            _buildSocialButton(Icons.facebook_rounded, 'Facebook'),
+            _buildSocialButton(
+              icon: Icons.facebook_rounded,
+              label: 'Facebook',
+              onTap: _handleFacebookSignIn,
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildSocialButton(IconData icon, String label) {
+  Widget _buildSocialButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return Container(
       width: 60,
       height: 60,
@@ -428,9 +445,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ],
       ),
       child: IconButton(
-        onPressed: () {
-          // TODO: Implement social login
-        },
+        onPressed: onTap,
         icon: Icon(
           icon,
           size: 28,
@@ -447,5 +462,54 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _passwordController.text,
           );
     }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    final socialResult = await SocialAuthService.signInWithGoogle();
+    if (!mounted) return;
+    if (!socialResult.success) {
+      if (socialResult.error != 'Sign-in cancelled') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(socialResult.error ?? 'Google sign-in failed')),
+        );
+      }
+      return;
+    }
+    await ref.read(authProvider.notifier).socialLogin(
+          googleIdToken: socialResult.idToken,
+        );
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    final socialResult = await SocialAuthService.signInWithApple();
+    if (!mounted) return;
+    if (!socialResult.success) {
+      if (socialResult.error != 'Sign-in cancelled') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(socialResult.error ?? 'Apple sign-in failed')),
+        );
+      }
+      return;
+    }
+    await ref.read(authProvider.notifier).socialLogin(
+          appleIdToken: socialResult.appleIdToken,
+          appleAuthorizationCode: socialResult.appleAuthorizationCode,
+        );
+  }
+
+  Future<void> _handleFacebookSignIn() async {
+    final socialResult = await SocialAuthService.signInWithFacebook();
+    if (!mounted) return;
+    if (!socialResult.success) {
+      if (socialResult.error != 'Sign-in cancelled') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(socialResult.error ?? 'Facebook sign-in failed')),
+        );
+      }
+      return;
+    }
+    await ref.read(authProvider.notifier).socialLogin(
+          facebookAccessToken: socialResult.facebookAccessToken,
+        );
   }
 }
