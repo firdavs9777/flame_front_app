@@ -7,6 +7,7 @@ import 'providers/providers.dart';
 import 'screens/main_shell.dart';
 import 'screens/discover/discover_screen.dart';
 import 'screens/auth/welcome_screen.dart';
+import 'screens/auth/registration/social_profile_completion_flow.dart';
 import 'screens/splash/splash_screen.dart';
 
 void main() {
@@ -34,7 +35,11 @@ class FlameApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       home: SplashScreen(
-        child: authState.isAuthenticated ? const MainShell() : const WelcomeScreen(),
+        child: authState.isAuthenticated
+            ? const MainShell()
+            : authState.isProfileIncomplete
+                ? const SocialProfileCompletionFlow()
+                : const WelcomeScreen(),
       ),
       routes: {
         '/discover': (context) => const DiscoverScreen(),
