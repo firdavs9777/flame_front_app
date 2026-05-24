@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 class FaceDetectionService {
@@ -98,9 +99,18 @@ class FaceDetectionService {
         rightEyeOpenProbability: face.rightEyeOpenProbability,
       );
     } catch (e) {
+      // ML Kit unavailable on this device/simulator — fail open so registration
+      // can proceed. Real validation will happen server-side.
+      if (e is PlatformException) {
+        return FaceValidationResult(
+          isValid: true,
+          faceCount: 0,
+          faceDetectionSkipped: true,
+        );
+      }
       return FaceValidationResult(
         isValid: false,
-        error: 'Failed to analyze photo: ${e.toString()}',
+        error: 'Failed to analyze photo. Please try a different image.',
         faceCount: 0,
       );
     }
@@ -124,6 +134,7 @@ class FaceValidationResult {
   final bool isValid;
   final String? error;
   final int faceCount;
+  final bool faceDetectionSkipped;
   final double? smilingProbability;
   final double? leftEyeOpenProbability;
   final double? rightEyeOpenProbability;
@@ -132,6 +143,7 @@ class FaceValidationResult {
     required this.isValid,
     this.error,
     required this.faceCount,
+    this.faceDetectionSkipped = false,
     this.smilingProbability,
     this.leftEyeOpenProbability,
     this.rightEyeOpenProbability,

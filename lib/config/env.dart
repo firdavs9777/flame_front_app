@@ -15,16 +15,14 @@ class EnvConfig {
 
   static const _prod = EnvConfig._(
     AppEnv.prod,
-    'https://flame.banatalk.com/v1',
-    'wss://flame.banatalk.com',
+    'https://api.flame.banatalk.com/v1',
+    'wss://api.flame.banatalk.com',
   );
 
   static EnvConfig get current {
     const raw = String.fromEnvironment('APP_ENV', defaultValue: '');
     if (raw.toLowerCase() == 'local') return _local;
-    if (raw.toLowerCase() == 'prod') return _prod;
-    // Default by build mode: debug → local, release → prod.
-    const isRelease = bool.fromEnvironment('dart.vm.product');
-    return isRelease ? _prod : _local;
+    // Default to prod unless explicitly set to local.
+    return _prod;
   }
 }

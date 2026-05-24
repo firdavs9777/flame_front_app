@@ -399,15 +399,22 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
 
     final userService = UserService();
     final photoUrls = <String>[];
-    final tempDir = await getTemporaryDirectory();
+
+    String tempPath;
+    try {
+      tempPath = (await getTemporaryDirectory()).path;
+    } catch (_) {
+      // path_provider unavailable on some simulators; fall back to system temp
+      tempPath = Directory.systemTemp.path;
+    }
 
     for (int i = 0; i < _data.photoFiles.length; i++) {
       final file = _data.photoFiles[i];
       final isPrimary = i == 0; // First photo is primary
 
       try {
-        // Compress image before upload
-        final compressedFile = await _compressImage(file, tempDir.path, i);
+        // Compress + convert to JPEG before upload
+        final compressedFile = await _compressImage(file, tempPath, i);
 
         final result = await userService.uploadPhotoForRegistration(
           compressedFile,

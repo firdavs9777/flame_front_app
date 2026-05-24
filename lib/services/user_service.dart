@@ -140,7 +140,7 @@ class UserService {
       '/auth/upload-photo',
       photo,
       fieldName: 'photo',
-      fields: {'is_primary': isPrimary.toString()},
+      queryParams: {'is_primary': isPrimary.toString()},
     );
 
     if (response.success && response.data != null) {

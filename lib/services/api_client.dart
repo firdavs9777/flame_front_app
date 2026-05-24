@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/env.dart';
 
@@ -241,10 +242,14 @@ class ApiClient {
     File file, {
     String fieldName = 'photo',
     Map<String, String>? fields,
+    Map<String, String>? queryParams,
     String method = 'POST',
   }) async {
     try {
-      final uri = Uri.parse('$baseUrl$endpoint');
+      var uri = Uri.parse('$baseUrl$endpoint');
+      if (queryParams != null) {
+        uri = uri.replace(queryParameters: queryParams);
+      }
       final request = http.MultipartRequest(method, uri);
 
       // Add auth header
@@ -252,7 +257,11 @@ class ApiClient {
         request.headers['Authorization'] = 'Bearer $_accessToken';
       }
 
-      request.files.add(await http.MultipartFile.fromPath(fieldName, file.path));
+      request.files.add(await http.MultipartFile.fromPath(
+        fieldName,
+        file.path,
+        contentType: _mimeTypeForFile(file.path),
+      ));
 
       if (fields != null) {
         request.fields.addAll(fields);
@@ -267,6 +276,18 @@ class ApiClient {
       return ApiResponse.error('Server error');
     } catch (e) {
       return ApiResponse.error(e.toString());
+    }
+  }
+
+  MediaType _mimeTypeForFile(String path) {
+    final ext = path.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'png':
+        return MediaType('image', 'png');
+      case 'webp':
+        return MediaType('image', 'webp');
+      default:
+        return MediaType('image', 'jpeg');
     }
   }
 
@@ -306,7 +327,23 @@ class ApiClient {
         } else if (data['error'] is String) {
           errorMessage = data['error'];
         } else if (data['detail'] != null) {
-          errorMessage = data['detail'];
+          final detail = data['detail'];
+          if (detail is Map) {
+            // App exception: {"code": "EMAIL_EXISTS", "message": "..."}
+            errorMessage = detail['message'] ?? errorMessage;
+            errorCode = detail['code']?.toString();
+          } else if (detail is List && detail.isNotEmpty) {
+            // Pydantic validation error: [{"type": "...", "msg": "..."}]
+            final first = detail[0];
+            if (first is Map) {
+              String msg = first['msg']?.toString() ?? errorMessage;
+              // Strip Pydantic's "Value error, " prefix
+              if (msg.startsWith('Value error, ')) {
+                msg = msg.substring('Value error, '.length);
+              }
+              errorMessage = msg;
+            }
+          }
         } else if (data['message'] != null) {
           errorMessage = data['message'];
         }
