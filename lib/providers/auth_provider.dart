@@ -7,6 +7,7 @@ enum AuthStatus {
   unauthenticated,
   authenticated,
   registering,
+  profileIncomplete,
 }
 
 class AuthState {
@@ -37,6 +38,7 @@ class AuthState {
   }
 
   bool get isAuthenticated => status == AuthStatus.authenticated;
+  bool get isProfileIncomplete => status == AuthStatus.profileIncomplete;
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
@@ -143,6 +145,55 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return false;
     }
+  }
+
+  // Social login (Google / Apple / Facebook)
+  Future<bool> socialLogin({
+    String? googleIdToken,
+    String? appleIdToken,
+    String? appleAuthorizationCode,
+    String? facebookAccessToken,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    AuthResult result;
+
+    if (googleIdToken != null) {
+      result = await _authService.googleSignIn(idToken: googleIdToken);
+    } else if (appleIdToken != null && appleAuthorizationCode != null) {
+      result = await _authService.appleSignIn(
+        idToken: appleIdToken,
+        authorizationCode: appleAuthorizationCode,
+      );
+    } else if (facebookAccessToken != null) {
+      result = await _authService.facebookSignIn(accessToken: facebookAccessToken);
+    } else {
+      state = state.copyWith(isLoading: false, error: 'No social token provided');
+      return false;
+    }
+
+    if (result.success && result.user != null) {
+      final user = result.user!;
+      final incomplete = user.photos.isEmpty || user.interests.isEmpty;
+
+      state = state.copyWith(
+        status: incomplete ? AuthStatus.profileIncomplete : AuthStatus.authenticated,
+        user: user,
+        isLoading: false,
+      );
+      return true;
+    }
+
+    state = state.copyWith(
+      isLoading: false,
+      error: result.error ?? 'Social login failed',
+    );
+    return false;
+  }
+
+  // Promote profileIncomplete user to authenticated (after completion flow)
+  void markAuthenticated() {
+    state = state.copyWith(status: AuthStatus.authenticated);
   }
 
   // Start registration flow
