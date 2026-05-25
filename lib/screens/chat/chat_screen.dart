@@ -166,7 +166,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final replyToId = _replyingTo?.id;
     setState(() => _replyingTo = null);
 
-    final success = await ref.read(conversationsProvider.notifier).sendMessage(
+    final error = await ref.read(conversationsProvider.notifier).sendMessage(
       widget.conversation.id,
       content,
       replyToId: replyToId,
@@ -175,11 +175,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (mounted) {
       setState(() => _isSending = false);
 
-      if (success) {
+      if (error == null) {
         await _refreshMessages();
         _scrollToBottom(animated: true);
       } else {
-        _showError('Failed to send message');
+        _showError(error);
       }
     }
   }
@@ -240,7 +240,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final replyToId = _replyingTo?.id;
       setState(() => _replyingTo = null);
 
-      final success = await ref.read(conversationsProvider.notifier).sendImageMessage(
+      final error = await ref.read(conversationsProvider.notifier).sendImageMessage(
         widget.conversation.id,
         File(image.path),
         replyToId: replyToId,
@@ -249,11 +249,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (mounted) {
         setState(() => _isSending = false);
 
-        if (success) {
+        if (error == null) {
           await _refreshMessages();
           _scrollToBottom(animated: true);
         } else {
-          _showError('Failed to send image');
+          _showError(error);
         }
       }
     } catch (e) {
@@ -275,7 +275,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final replyToId = _replyingTo?.id;
       setState(() => _replyingTo = null);
 
-      final success = await ref.read(conversationsProvider.notifier).sendVideoMessage(
+      final error = await ref.read(conversationsProvider.notifier).sendVideoMessage(
         widget.conversation.id,
         File(video.path),
         replyToId: replyToId,
@@ -284,11 +284,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (mounted) {
         setState(() => _isSending = false);
 
-        if (success) {
+        if (error == null) {
           await _refreshMessages();
           _scrollToBottom(animated: true);
         } else {
-          _showError('Failed to send video');
+          _showError(error);
         }
       }
     } catch (e) {
@@ -303,7 +303,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final replyToId = _replyingTo?.id;
     setState(() => _replyingTo = null);
 
-    final success = await ref.read(conversationsProvider.notifier).sendVoiceMessage(
+    final error = await ref.read(conversationsProvider.notifier).sendVoiceMessage(
       widget.conversation.id,
       voiceFile,
       duration: durationSeconds,
@@ -313,11 +313,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (mounted) {
       setState(() => _isSending = false);
 
-      if (success) {
+      if (error == null) {
         await _refreshMessages();
         _scrollToBottom(animated: true);
       } else {
-        _showError('Failed to send voice message');
+        _showError(error);
       }
     }
   }
@@ -339,7 +339,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final replyToId = _replyingTo?.id;
     setState(() => _replyingTo = null);
 
-    final success = await ref.read(conversationsProvider.notifier).sendStickerMessage(
+    final error = await ref.read(conversationsProvider.notifier).sendStickerMessage(
       widget.conversation.id,
       sticker.id,
       replyToId: replyToId,
@@ -348,11 +348,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (mounted) {
       setState(() => _isSending = false);
 
-      if (success) {
+      if (error == null) {
         await _refreshMessages();
         _scrollToBottom(animated: true);
       } else {
-        _showError('Failed to send sticker');
+        _showError(error);
       }
     }
   }

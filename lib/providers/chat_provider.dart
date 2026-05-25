@@ -188,7 +188,11 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
     await loadConversations();
   }
 
-  Future<bool> sendMessage(String conversationId, String content, {String? replyToId}) async {
+  // Send methods return null on success and an error message on failure.
+  // The error string is what should be shown to the user — for 429 it's the
+  // friendly "slow down" message set by ApiClient; for other failures it's
+  // the backend's message or a sensible fallback.
+  Future<String?> sendMessage(String conversationId, String content, {String? replyToId}) async {
     final result = await _chatService.sendMessage(conversationId, content, replyToId: replyToId);
 
     if (result.success && result.data != null) {
@@ -204,12 +208,12 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
         }
         return conversation;
       }).toList());
-      return true;
+      return null;
     }
-    return false;
+    return result.error ?? 'Failed to send message';
   }
 
-  Future<bool> sendImageMessage(String conversationId, File image, {String? replyToId}) async {
+  Future<String?> sendImageMessage(String conversationId, File image, {String? replyToId}) async {
     final result = await _chatService.sendImageMessage(conversationId, image, replyToId: replyToId);
 
     if (result.success && result.data != null) {
@@ -225,12 +229,12 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
         }
         return conversation;
       }).toList());
-      return true;
+      return null;
     }
-    return false;
+    return result.error ?? 'Failed to send image';
   }
 
-  Future<bool> sendVideoMessage(String conversationId, File video, {int? duration, String? replyToId}) async {
+  Future<String?> sendVideoMessage(String conversationId, File video, {int? duration, String? replyToId}) async {
     final result = await _chatService.sendVideoMessage(conversationId, video, duration: duration, replyToId: replyToId);
 
     if (result.success && result.data != null) {
@@ -246,12 +250,12 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
         }
         return conversation;
       }).toList());
-      return true;
+      return null;
     }
-    return false;
+    return result.error ?? 'Failed to send video';
   }
 
-  Future<bool> sendVoiceMessage(String conversationId, File voice, {int? duration, String? replyToId}) async {
+  Future<String?> sendVoiceMessage(String conversationId, File voice, {int? duration, String? replyToId}) async {
     final result = await _chatService.sendVoiceMessage(conversationId, voice, duration: duration, replyToId: replyToId);
 
     if (result.success && result.data != null) {
@@ -267,12 +271,12 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
         }
         return conversation;
       }).toList());
-      return true;
+      return null;
     }
-    return false;
+    return result.error ?? 'Failed to send voice message';
   }
 
-  Future<bool> sendStickerMessage(String conversationId, String stickerId, {String? replyToId}) async {
+  Future<String?> sendStickerMessage(String conversationId, String stickerId, {String? replyToId}) async {
     final result = await _chatService.sendStickerMessage(conversationId, stickerId, replyToId: replyToId);
 
     if (result.success && result.data != null) {
@@ -288,9 +292,9 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
         }
         return conversation;
       }).toList());
-      return true;
+      return null;
     }
-    return false;
+    return result.error ?? 'Failed to send sticker';
   }
 
   Future<bool> editMessage(String conversationId, String messageId, String newContent) async {

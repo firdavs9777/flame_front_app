@@ -53,27 +53,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _handleLike(User user) async {
-    final success = await ref.read(swipeProvider.notifier).like(user);
-    if (success) {
-      final swipeState = ref.read(swipeProvider);
-      if (swipeState.newMatch != null) {
-        _showMatchDialog(user, swipeState.newMatch!);
-      }
+    final error = await ref.read(swipeProvider.notifier).like(user);
+    if (error != null) {
+      _showSwipeError(error);
+      return;
+    }
+    final swipeState = ref.read(swipeProvider);
+    if (swipeState.newMatch != null) {
+      _showMatchDialog(user, swipeState.newMatch!);
     }
   }
 
   Future<void> _handleDislike(User user) async {
-    await ref.read(swipeProvider.notifier).pass(user);
+    final error = await ref.read(swipeProvider.notifier).pass(user);
+    if (error != null) {
+      _showSwipeError(error);
+    }
   }
 
   Future<void> _handleSuperLike(User user) async {
-    final success = await ref.read(swipeProvider.notifier).superLike(user);
-    if (success) {
-      final swipeState = ref.read(swipeProvider);
-      if (swipeState.newMatch != null) {
-        _showMatchDialog(user, swipeState.newMatch!);
-      }
+    final error = await ref.read(swipeProvider.notifier).superLike(user);
+    if (error != null) {
+      _showSwipeError(error);
+      return;
     }
+    final swipeState = ref.read(swipeProvider);
+    if (swipeState.newMatch != null) {
+      _showMatchDialog(user, swipeState.newMatch!);
+    }
+  }
+
+  void _showSwipeError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red[400]),
+    );
   }
 
   void _showMatchDialog(User user, Match match) {

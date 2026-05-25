@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/user.dart';
+import 'package:flame/services/api_client.dart';
 import 'package:flame/services/auth_service.dart';
+import 'package:flame/services/billing_service.dart';
 
 enum AuthStatus {
   initial,
@@ -43,9 +45,29 @@ class AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService = AuthService();
+  final BillingService _billingService = BillingService();
 
   AuthNotifier() : super(const AuthState()) {
+    // Wire the ApiClient's session-lost signal so refresh-failure / revoked
+    // tokens / server-side logouts immediately flip the app to the login
+    // screen without waiting for the next user action.
+    ApiClient().onAuthLost = _handleAuthLost;
     _init();
+  }
+
+  Future<void> _handleAuthLost() async {
+    if (state.status == AuthStatus.unauthenticated) return;
+    await _authService.logout();
+    state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  // Decides which post-auth screen the user belongs on. Prefers the backend's
+  // server-evaluated is_profile_complete; falls back to a local heuristic for
+  // older API versions / during the deploy window where the field is missing.
+  AuthStatus _statusFor(User user) {
+    final complete = user.isProfileComplete ??
+        (user.photos.isNotEmpty && user.interests.isNotEmpty);
+    return complete ? AuthStatus.authenticated : AuthStatus.profileIncomplete;
   }
 
   // Initialize and check for existing session
@@ -58,9 +80,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final result = await _authService.getCurrentUser();
 
       if (result.success && result.user != null) {
+        final user = await _withPremiumFromBilling(result.user!);
         state = state.copyWith(
-          status: AuthStatus.authenticated,
-          user: result.user,
+          status: _statusFor(user),
+          user: user,
           isLoading: false,
         );
       } else {
@@ -76,6 +99,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  // Fetches billing status from the backend and returns a copy of [user] with
+  // isPremium and premiumExpiresAt updated. If the billing call fails, the
+  // original user is returned unchanged — billing is non-critical for login.
+  Future<User> _withPremiumFromBilling(User user) async {
+    final status = await _billingService.getStatus();
+    if (!status.isKnown) return user;
+    return user.copyWith(
+      isPremium: status.isPremium,
+      premiumExpiresAt: status.expiresAt,
+    );
+  }
+
+  // Public method so screens (e.g., settings, profile) can refresh premium
+  // state after a purchase or when the user pulls-to-refresh.
+  Future<void> refreshBillingStatus() async {
+    final user = state.user;
+    if (user == null) return;
+    final updated = await _withPremiumFromBilling(user);
+    state = state.copyWith(user: updated);
+  }
+
   // Login
   Future<bool> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
@@ -86,9 +130,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
 
     if (result.success && result.user != null) {
+      final user = await _withPremiumFromBilling(result.user!);
       state = state.copyWith(
-        status: AuthStatus.authenticated,
-        user: result.user,
+        status: _statusFor(user),
+        user: user,
         isLoading: false,
       );
       return true;
@@ -132,9 +177,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
 
     if (result.success && result.user != null) {
+      final user = await _withPremiumFromBilling(result.user!);
       state = state.copyWith(
-        status: AuthStatus.authenticated,
-        user: result.user,
+        status: _statusFor(user),
+        user: user,
         isLoading: false,
       );
       return true;
@@ -173,11 +219,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
 
     if (result.success && result.user != null) {
-      final user = result.user!;
-      final incomplete = user.photos.isEmpty || user.interests.isEmpty;
-
+      final user = await _withPremiumFromBilling(result.user!);
       state = state.copyWith(
-        status: incomplete ? AuthStatus.profileIncomplete : AuthStatus.authenticated,
+        status: _statusFor(user),
         user: user,
         isLoading: false,
       );

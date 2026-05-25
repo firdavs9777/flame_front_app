@@ -20,9 +20,19 @@ class ApiClient {
   // Injected http client (for test injection). In production uses default http.Client.
   final http.Client _httpClient;
 
-  // Mutex completer that serializes concurrent refresh attempts. When non-null
-  // a refresh is already in flight; followers await the same future.
-  Completer<void>? _refreshing;
+  // Singleflight mutex for concurrent refresh attempts. When non-null a
+  // refresh is already in flight; followers await the same future. The bool
+  // value is the refresh outcome (true = success). We deliberately don't use
+  // completeError here — unobserved error futures get reported as unhandled
+  // exceptions when no follower happens to be awaiting.
+  Completer<bool>? _refreshing;
+
+  // Registered by AuthNotifier so that when ApiClient detects the session is
+  // gone (refresh failed, token revoked, session expired), the UI can react
+  // immediately — clear local state, route to login. Without this callback,
+  // the user would only discover they're logged out on their next manual
+  // navigation.
+  Future<void> Function()? onAuthLost;
 
   // Singleton pattern
   static final ApiClient _instance = ApiClient._internal();
@@ -97,6 +107,8 @@ class ApiClient {
       final response = await _authenticated((c) =>
           c.get(uri, headers: _headers).timeout(const Duration(seconds: 30)));
       return _handleResponse(response);
+    } on _AuthLost {
+      return await _onAuthLost();
     } on SocketException {
       return ApiResponse.error('No internet connection');
     } on HttpException {
@@ -118,6 +130,8 @@ class ApiClient {
           )
           .timeout(const Duration(seconds: 30)));
       return _handleResponse(response);
+    } on _AuthLost {
+      return await _onAuthLost();
     } on SocketException {
       return ApiResponse.error('No internet connection');
     } on HttpException {
@@ -139,6 +153,8 @@ class ApiClient {
           )
           .timeout(const Duration(seconds: 30)));
       return _handleResponse(response);
+    } on _AuthLost {
+      return await _onAuthLost();
     } on SocketException {
       return ApiResponse.error('No internet connection');
     } on HttpException {
@@ -166,6 +182,8 @@ class ApiClient {
         return http.Response.fromStream(streamedResponse);
       });
       return _handleResponse(response);
+    } on _AuthLost {
+      return await _onAuthLost();
     } on SocketException {
       return ApiResponse.error('No internet connection');
     } on HttpException {
@@ -175,42 +193,164 @@ class ApiClient {
     }
   }
 
-  // Wraps an HTTP operation so a single 401 triggers a single shared refresh
-  // across concurrent in-flight calls. On successful refresh the operation is
-  // retried once; the underlying op closure re-reads `_headers` so the new
-  // access token is picked up on retry.
+  // Single point that handles a lost session: clears local tokens, notifies
+  // the app (so AuthNotifier can flip to unauthenticated and route to login),
+  // and returns a clean user-facing error. Idempotent and safe to call from
+  // every public method's _AuthLost catch.
+  Future<ApiResponse> _onAuthLost() async {
+    await clearTokens();
+    try {
+      await onAuthLost?.call();
+    } catch (_) {
+      // Don't let a listener exception mask the auth-lost outcome.
+    }
+    return ApiResponse(
+      success: false,
+      error: 'Your session has ended. Please sign in again.',
+      errorCode: 'AUTH_LOST',
+      statusCode: 401,
+    );
+  }
+
+  // Wraps an HTTP operation with two behaviors:
+  // 1. Proactive refresh: if the access token's JWT exp claim is within
+  //    _proactiveRefreshWindow, refresh before sending. Keeps mid-session
+  //    requests from getting unexpected 401s when tokens expire at 15 min.
+  // 2. Reactive refresh: a single 401 triggers a single shared refresh across
+  //    concurrent in-flight calls. On successful refresh the op is retried
+  //    once; the closure re-reads `_headers` so the new token is picked up.
+  //    If the 401 is a deliberate revoke/expiry (logout from another device,
+  //    explicit revoke), skip the refresh attempt and surface _AuthLost so
+  //    the app forces re-login.
+  static const Duration _proactiveRefreshWindow = Duration(seconds: 120);
+
   Future<http.Response> _authenticated(
       Future<http.Response> Function(http.Client) op) async {
+    if (_shouldProactivelyRefresh()) {
+      // Best-effort proactive refresh. If it fails (e.g., flaky network,
+      // refresh token actually invalid), fall through to the request — the
+      // reactive 401 path below will catch real auth failures cleanly.
+      try {
+        await _runRefreshThroughMutex();
+      } catch (_) {}
+    }
     var resp = await op(_httpClient);
     if (resp.statusCode == 401 && !_isRefreshUrl(resp)) {
-      final existing = _refreshing;
-      final isLeader = existing == null;
-      final mutex = isLeader ? (_refreshing = Completer<void>()) : existing;
-      if (isLeader) {
-        try {
-          final ok = await _doRefresh();
-          if (!ok) {
-            mutex.completeError(_AuthLost());
-            throw _AuthLost();
-          }
-          mutex.complete();
-        } catch (e) {
-          if (!mutex.isCompleted) mutex.completeError(e);
-          rethrow;
-        } finally {
-          if (identical(_refreshing, mutex)) _refreshing = null;
-        }
-      } else {
-        await mutex.future;
+      // No access token means this 401 came from an unauthenticated request
+      // — login, register, social sign-in — where there's no session to lose
+      // and nothing to refresh. Pass the response through so the caller sees
+      // the backend's real error (e.g. "Invalid Google token") instead of
+      // our generic "session ended" message.
+      if (_accessToken == null) {
+        return resp;
       }
+      if (_isRevokedTokenResponse(resp)) {
+        throw _AuthLost();
+      }
+      await _runRefreshThroughMutex();
       resp = await op(_httpClient);
     }
     return resp;
   }
 
+  // Run _doRefresh through the singleflight mutex. Concurrent callers await
+  // the same in-flight refresh; the leader performs the work, completes the
+  // shared future with the outcome, and (if failure) throws so the caller's
+  // error path runs. We never call completeError on the mutex — followers
+  // read the bool result and throw themselves on failure.
+  Future<void> _runRefreshThroughMutex() async {
+    final existing = _refreshing;
+    final isLeader = existing == null;
+    final mutex = isLeader ? (_refreshing = Completer<bool>()) : existing;
+    if (isLeader) {
+      var ok = false;
+      try {
+        ok = await _doRefresh();
+      } catch (_) {
+        ok = false;
+      } finally {
+        if (identical(_refreshing, mutex)) _refreshing = null;
+        if (!mutex.isCompleted) mutex.complete(ok);
+      }
+      if (!ok) throw _AuthLost();
+    } else {
+      final ok = await mutex.future;
+      if (!ok) throw _AuthLost();
+    }
+  }
+
   bool _isRefreshUrl(http.Response resp) {
     final p = resp.request?.url.path ?? '';
     return p.endsWith('/auth/refresh');
+  }
+
+  // Returns true if the access token's exp claim is within
+  // _proactiveRefreshWindow of now. Returns false if no token, no refresh
+  // token, malformed JWT, missing exp, or a refresh is already in flight.
+  bool _shouldProactivelyRefresh() {
+    if (_accessToken == null || _refreshToken == null) return false;
+    if (_refreshing != null) return false;
+    final remaining = _accessTokenLifetimeRemaining();
+    if (remaining == null) return false;
+    return remaining <= _proactiveRefreshWindow;
+  }
+
+  // Decode the JWT exp claim and return how much lifetime is left. Returns
+  // null on any parse failure or missing exp — caller should treat null as
+  // "don't refresh proactively, let the reactive 401 path handle it."
+  Duration? _accessTokenLifetimeRemaining() {
+    final token = _accessToken;
+    if (token == null) return null;
+    final parts = token.split('.');
+    if (parts.length != 3) return null;
+    try {
+      final payloadStr =
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+      final payload = jsonDecode(payloadStr) as Map<String, dynamic>;
+      final exp = payload['exp'];
+      if (exp is! int) return null;
+      final expiresAt = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      return expiresAt.difference(DateTime.now());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Detects 401 responses that mean "this session is dead, don't bother
+  // refreshing." Matched against backend messages like "Token revoked" and
+  // "Session expired, please log in again."
+  bool _isRevokedTokenResponse(http.Response resp) {
+    if (resp.body.isEmpty) return false;
+    try {
+      final data = jsonDecode(resp.body);
+      if (data is! Map<String, dynamic>) return false;
+      final message = _extractErrorMessage(data)?.toLowerCase();
+      if (message == null) return false;
+      return message.contains('revoked') ||
+          (message.contains('session') && message.contains('expired'));
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // Extract a user-readable error message from common backend error shapes.
+  // Mirrors the parsing in _handleResponse so both stay in sync.
+  String? _extractErrorMessage(Map<String, dynamic> data) {
+    final err = data['error'];
+    if (err is Map && err['message'] is String) return err['message'] as String;
+    if (err is String) return err;
+    final detail = data['detail'];
+    if (detail is Map && detail['message'] is String) {
+      return detail['message'] as String;
+    }
+    if (detail is String) return detail;
+    if (detail is List && detail.isNotEmpty && detail.first is Map) {
+      final msg = (detail.first as Map)['msg'];
+      if (msg is String) return msg;
+    }
+    final message = data['message'];
+    if (message is String) return message;
+    return null;
   }
 
   // Performs the refresh through the injected HTTP client so tests can
@@ -314,6 +454,18 @@ class ApiClient {
         success: data?['success'] ?? true,
         data: data?['data'] ?? data,
         message: data?['message'],
+        statusCode: statusCode,
+      );
+    } else if (statusCode == 429) {
+      // Rate limited. Surface as a typed errorCode so callers can render a
+      // friendly "slow down" UI instead of the raw backend message.
+      final retryAfter = response.headers['retry-after'];
+      final retryHint = retryAfter != null ? ' (retry in ${retryAfter}s)' : '';
+      return ApiResponse(
+        success: false,
+        data: data,
+        error: 'Slow down — too many requests. Please try again in a moment.$retryHint',
+        errorCode: 'RATE_LIMITED',
         statusCode: statusCode,
       );
     } else {

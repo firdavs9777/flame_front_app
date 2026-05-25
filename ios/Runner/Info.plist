@@ -72,8 +72,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<!-- REPLACE: reversed Google iOS client ID, e.g. com.googleusercontent.apps.123456789-abc -->
-				<string>YOUR_REVERSED_GOOGLE_CLIENT_ID</string>
+				<string>com.googleusercontent.apps.55426082662-s2fr9c5c8ttur8mmk0njf48o78knlqee</string>
 			</array>
 		</dict>
 		<dict>
@@ -87,9 +86,8 @@
 		</dict>
 	</array>
 
-	<!-- REPLACE: full Google iOS client ID -->
 	<key>GIDClientID</key>
-	<string>YOUR_GOOGLE_CLIENT_ID</string>
+	<string>55426082662-s2fr9c5c8ttur8mmk0njf48o78knlqee.apps.googleusercontent.com</string>
 
 	<!-- REPLACE: Facebook credentials from Meta Developer Console -->
 	<key>FacebookAppID</key>

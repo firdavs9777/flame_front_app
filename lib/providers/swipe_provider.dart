@@ -61,7 +61,10 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
 
   SwipeNotifier(this._swipeService, this._ref) : super(const SwipeState());
 
-  Future<bool> like(User user) async {
+  // Swipe methods return null on success and an error message on failure.
+  // The error string is what should be shown to the user — for 429 it's the
+  // friendly "slow down" message set by ApiClient.
+  Future<String?> like(User user) async {
     state = state.copyWith(isLoading: true, error: null);
 
     final result = await _swipeService.likeUser(user.id);
@@ -91,17 +94,15 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
           canUndo: _canUndo(),
         );
       }
-      return true;
+      return null;
     }
 
-    state = state.copyWith(
-      isLoading: false,
-      error: result.error ?? 'Failed to like user',
-    );
-    return false;
+    final error = result.error ?? 'Failed to like user';
+    state = state.copyWith(isLoading: false, error: error);
+    return error;
   }
 
-  Future<bool> pass(User user) async {
+  Future<String?> pass(User user) async {
     state = state.copyWith(isLoading: true, error: null);
 
     final result = await _swipeService.passUser(user.id);
@@ -116,23 +117,20 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
         lastSwipeAction: 'pass',
         canUndo: _canUndo(),
       );
-      return true;
+      return null;
     }
 
-    state = state.copyWith(
-      isLoading: false,
-      error: result.error ?? 'Failed to pass user',
-    );
-    return false;
+    final error = result.error ?? 'Failed to pass user';
+    state = state.copyWith(isLoading: false, error: error);
+    return error;
   }
 
-  Future<bool> superLike(User user) async {
+  Future<String?> superLike(User user) async {
     // Check if user has remaining super likes
     if (state.remainingSuperLikes != null && state.remainingSuperLikes! <= 0) {
-      state = state.copyWith(
-        error: 'No super likes remaining today. Resets at midnight.',
-      );
-      return false;
+      const error = 'No super likes remaining today. Resets at midnight.';
+      state = state.copyWith(error: error);
+      return error;
     }
 
     state = state.copyWith(isLoading: true, error: null);
@@ -166,7 +164,7 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
           canUndo: _canUndo(),
         );
       }
-      return true;
+      return null;
     }
 
     // Check for specific error about super like limit
@@ -175,7 +173,7 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
       isLoading: false,
       error: errorMessage,
     );
-    return false;
+    return errorMessage;
   }
 
   bool _canUndo() {

@@ -1,6 +1,6 @@
 import UIKit
 import Flutter
-import FacebookCore
+import FBSDKCoreKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {

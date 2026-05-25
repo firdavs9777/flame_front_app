@@ -23,6 +23,10 @@ class User {
   final bool isPremium;
   final DateTime? premiumExpiresAt;
   final int superLikesRemaining;
+  // Server-evaluated profile completeness. Null when the backend hasn't
+  // returned the field (e.g., during the deploy window or for old API
+  // versions) — callers should fall back to a local heuristic in that case.
+  final bool? isProfileComplete;
 
   const User({
     required this.id,
@@ -49,6 +53,7 @@ class User {
     this.isPremium = false,
     this.premiumExpiresAt,
     this.superLikesRemaining = 3,
+    this.isProfileComplete,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -116,6 +121,7 @@ class User {
           ? DateTime.parse(json['premium_expires_at'])
           : null,
       superLikesRemaining: json['super_likes_remaining'] ?? 3,
+      isProfileComplete: json['is_profile_complete'] as bool?,
     );
   }
 
@@ -171,6 +177,7 @@ class User {
     bool? isPremium,
     DateTime? premiumExpiresAt,
     int? superLikesRemaining,
+    bool? isProfileComplete,
   }) {
     return User(
       id: id ?? this.id,
@@ -197,6 +204,7 @@ class User {
       isPremium: isPremium ?? this.isPremium,
       premiumExpiresAt: premiumExpiresAt ?? this.premiumExpiresAt,
       superLikesRemaining: superLikesRemaining ?? this.superLikesRemaining,
+      isProfileComplete: isProfileComplete ?? this.isProfileComplete,
     );
   }
 

@@ -46,7 +46,16 @@ class SocialAuthResult {
 }
 
 class SocialAuthService {
-  static final _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+  // serverClientId is the Google **Web** OAuth client ID. Setting it makes
+  // the iOS/Android SDKs mint an ID token whose `aud` claim is the Web
+  // client ID, which is what the backend verifies against. Without this,
+  // tokens are audienced to the iOS client ID and the backend rejects them
+  // with "Invalid Google token".
+  static final _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    serverClientId:
+        '55426082662-47qes5149r092q7tkmmngntiur3r1i9c.apps.googleusercontent.com',
+  );
 
   static Future<SocialAuthResult> signInWithGoogle() async {
     try {

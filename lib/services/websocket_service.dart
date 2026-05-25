@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:flame/config/env.dart';
 import 'package:flame/services/api_client.dart';
 
 /// WebSocket events that can be sent to the server
@@ -36,7 +37,7 @@ class WebSocketServerEvent {
 typedef WebSocketEventCallback = void Function(Map<String, dynamic> data);
 
 class WebSocketService {
-  static const String _wsBaseUrl = 'wss://flame.banatalk.com/ws';
+  static String get _wsBaseUrl => '${EnvConfig.current.wsBase}/ws';
 
   WebSocketChannel? _channel;
   StreamSubscription? _subscription;
