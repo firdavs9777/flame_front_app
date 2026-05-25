@@ -1,7 +1,23 @@
 {
   "@@locale": "en",
   "appName": "Flame",
-  "@appName": {
-    "description": "The app name shown on the welcome screen"
-  }
+  "@appName": {"description": "The app name shown on the welcome screen"},
+
+  "errorInvalidCredentials": "Incorrect email or password.",
+  "@errorInvalidCredentials": {"description": "Shown when login fails due to bad credentials"},
+
+  "errorEmailExists": "An account with this email already exists.",
+  "@errorEmailExists": {"description": "Shown during registration when email is taken"},
+
+  "errorRateLimited": "You're doing that too often. Please try again in a moment.",
+  "@errorRateLimited": {"description": "Shown when the backend returns 429"},
+
+  "errorAuthLost": "Your session has ended. Please sign in again.",
+  "@errorAuthLost": {"description": "Shown when the access token can't be refreshed"},
+
+  "errorNoInternet": "No internet connection.",
+  "@errorNoInternet": {"description": "Shown when the device is offline"},
+
+  "errorGeneric": "Something went wrong. Please try again.",
+  "@errorGeneric": {"description": "Fallback for unknown errors"}
 }

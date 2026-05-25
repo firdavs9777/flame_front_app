@@ -1,4 +1,10 @@
 {
   "@@locale": "fr",
-  "appName": "Flame"
+  "appName": "Flame",
+  "errorInvalidCredentials": "Incorrect email or password.",
+  "errorEmailExists": "An account with this email already exists.",
+  "errorRateLimited": "You're doing that too often. Please try again in a moment.",
+  "errorAuthLost": "Your session has ended. Please sign in again.",
+  "errorNoInternet": "No internet connection.",
+  "errorGeneric": "Something went wrong. Please try again."
 }
