@@ -206,7 +206,7 @@ class ApiClient {
     }
     return ApiResponse(
       success: false,
-      error: 'Your session has ended. Please sign in again.',
+      error: 'Auth lost',
       errorCode: 'AUTH_LOST',
       statusCode: 401,
     );
@@ -457,14 +457,15 @@ class ApiClient {
         statusCode: statusCode,
       );
     } else if (statusCode == 429) {
-      // Rate limited. Surface as a typed errorCode so callers can render a
-      // friendly "slow down" UI instead of the raw backend message.
+      // Rate limited. Surface only errorCode — UI translates via
+      // translateApiError(). Retry-after preserved in error string for any
+      // log/diagnostic display.
       final retryAfter = response.headers['retry-after'];
-      final retryHint = retryAfter != null ? ' (retry in ${retryAfter}s)' : '';
+      final retryHint = retryAfter != null ? ' (retry-after: ${retryAfter}s)' : '';
       return ApiResponse(
         success: false,
         data: data,
-        error: 'Slow down — too many requests. Please try again in a moment.$retryHint',
+        error: 'Rate limited$retryHint',
         errorCode: 'RATE_LIMITED',
         statusCode: statusCode,
       );
