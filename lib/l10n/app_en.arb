@@ -10,6 +10,12 @@
   "@welcomeSignIn": {"description": "Button to go to login screen"},
   "welcomeCreateAccount": "Create account",
   "@welcomeCreateAccount": {"description": "Button to start registration"},
+  "welcomeHeadline": "Find Your Match",
+  "@welcomeHeadline": {"description": "Top hero heading on the welcome screen"},
+  "welcomeSubheadline": "Swipe right to like, left to pass.\nIt's that simple.",
+  "@welcomeSubheadline": {"description": "Subtitle under the welcome heading"},
+  "welcomeTermsNotice": "By continuing, you agree to our Terms of Service\nand Privacy Policy",
+  "@welcomeTermsNotice": {"description": "Footer notice on the welcome screen before sign-in / create account"},
 
   "loginTitle": "Welcome back",
   "loginEmailLabel": "Email",

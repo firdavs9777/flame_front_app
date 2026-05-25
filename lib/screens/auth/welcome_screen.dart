@@ -42,7 +42,7 @@ class WelcomeScreen extends StatelessWidget {
                 const Spacer(flex: 1),
 
                 // Tagline
-                _buildTagline()
+                _buildTagline(context)
                     .animate()
                     .fadeIn(delay: 400.ms, duration: 600.ms)
                     .slideY(begin: 0.3, end: 0, delay: 400.ms, duration: 600.ms),
@@ -58,7 +58,7 @@ class WelcomeScreen extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // Terms text
-                _buildTermsText()
+                _buildTermsText(context)
                     .animate()
                     .fadeIn(delay: 800.ms, duration: 600.ms),
 
@@ -112,11 +112,11 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTagline() {
+  Widget _buildTagline(BuildContext context) {
     return Column(
       children: [
         Text(
-          'Find Your Match',
+          context.l10n.welcomeHeadline,
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w600,
@@ -125,7 +125,7 @@ class WelcomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          'Swipe right to like, left to pass.\nIt\'s that simple.',
+          context.l10n.welcomeSubheadline,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 16,
@@ -191,9 +191,9 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTermsText() {
+  Widget _buildTermsText(BuildContext context) {
     return Text(
-      'By continuing, you agree to our Terms of Service\nand Privacy Policy',
+      context.l10n.welcomeTermsNotice,
       textAlign: TextAlign.center,
       style: TextStyle(
         fontSize: 12,
