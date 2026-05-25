@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/services/user_service.dart';
+import 'package:flame/core/i18n/error_strings_for.dart';
 
 final userServiceProvider = Provider<UserService>((ref) => UserService());
 
@@ -21,7 +22,7 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
     if (result.success && result.data != null) {
       state = AsyncValue.data(result.data);
     } else {
-      state = AsyncValue.error(result.error ?? 'Failed to load user', StackTrace.current);
+      state = AsyncValue.error(ErrorStringsFor.fromString(result.error), StackTrace.current);
     }
   }
 

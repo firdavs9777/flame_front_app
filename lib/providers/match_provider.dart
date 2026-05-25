@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/services/match_service.dart';
+import 'package:flame/core/i18n/error_strings_for.dart';
 
 final matchServiceProvider = Provider<MatchService>((ref) => MatchService());
 
@@ -43,7 +44,7 @@ class MatchesNotifier extends StateNotifier<AsyncValue<List<Match>>> {
       }
       _offset += matchesResult.matches.length;
     } else {
-      state = AsyncValue.error(result.error ?? 'Failed to load matches', StackTrace.current);
+      state = AsyncValue.error(ErrorStringsFor.fromString(result.error), StackTrace.current);
     }
   }
 

@@ -12,6 +12,7 @@ import 'screens/auth/registration/social_profile_completion_flow.dart';
 import 'screens/splash/splash_screen.dart';
 import 'core/i18n/locale_provider.dart';
 import 'core/i18n/supported_locales.dart';
+import 'core/i18n/error_strings_for.dart';
 import 'l10n/gen/app_localizations.dart';
 
 void main() async {
@@ -70,6 +71,10 @@ class FlameApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      builder: (context, child) {
+        ErrorStringsFor.prime(AppLocalizations.of(context));
+        return child!;
+      },
       home: SplashScreen(
         child: authState.isAuthenticated
             ? const MainShell()

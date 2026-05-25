@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/services/chat_service.dart';
 import 'package:flame/services/websocket_service.dart';
+import 'package:flame/core/i18n/error_strings_for.dart';
 
 final chatServiceProvider = Provider<ChatService>((ref) => ChatService());
 final webSocketServiceProvider = Provider<WebSocketService>((ref) => WebSocketService());
@@ -179,7 +180,7 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
       }
       _offset += conversationsResult.conversations.length;
     } else {
-      state = AsyncValue.error(result.error ?? 'Failed to load conversations', StackTrace.current);
+      state = AsyncValue.error(ErrorStringsFor.fromString(result.error), StackTrace.current);
     }
   }
 
@@ -210,7 +211,7 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
       }).toList());
       return null;
     }
-    return result.error ?? 'Failed to send message';
+    return ErrorStringsFor.fromString(result.error);
   }
 
   Future<String?> sendImageMessage(String conversationId, File image, {String? replyToId}) async {
@@ -231,7 +232,7 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
       }).toList());
       return null;
     }
-    return result.error ?? 'Failed to send image';
+    return ErrorStringsFor.fromString(result.error);
   }
 
   Future<String?> sendVideoMessage(String conversationId, File video, {int? duration, String? replyToId}) async {
@@ -252,7 +253,7 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
       }).toList());
       return null;
     }
-    return result.error ?? 'Failed to send video';
+    return ErrorStringsFor.fromString(result.error);
   }
 
   Future<String?> sendVoiceMessage(String conversationId, File voice, {int? duration, String? replyToId}) async {
@@ -273,7 +274,7 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
       }).toList());
       return null;
     }
-    return result.error ?? 'Failed to send voice message';
+    return ErrorStringsFor.fromString(result.error);
   }
 
   Future<String?> sendStickerMessage(String conversationId, String stickerId, {String? replyToId}) async {
@@ -294,7 +295,7 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
       }).toList());
       return null;
     }
-    return result.error ?? 'Failed to send sticker';
+    return ErrorStringsFor.fromString(result.error);
   }
 
   Future<bool> editMessage(String conversationId, String messageId, String newContent) async {
@@ -559,7 +560,7 @@ final conversationMessagesProvider = FutureProvider.family<List<Message>, String
   if (result.success && result.data != null) {
     return result.data!.messages;
   }
-  throw Exception(result.error ?? 'Failed to load messages');
+  throw Exception(ErrorStringsFor.fromString(result.error));
 });
 
 final selectedConversationProvider = StateProvider<Conversation?>((ref) => null);

@@ -4,6 +4,7 @@ import 'package:flame/services/swipe_service.dart';
 import 'package:flame/providers/discovery_provider.dart';
 import 'package:flame/providers/match_provider.dart';
 import 'package:flame/providers/user_provider.dart';
+import 'package:flame/core/i18n/error_strings_for.dart';
 
 final swipeServiceProvider = Provider<SwipeService>((ref) => SwipeService());
 
@@ -97,7 +98,7 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
       return null;
     }
 
-    final error = result.error ?? 'Failed to like user';
+    final error = ErrorStringsFor.fromString(result.error);
     state = state.copyWith(isLoading: false, error: error);
     return error;
   }
@@ -120,7 +121,7 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
       return null;
     }
 
-    final error = result.error ?? 'Failed to pass user';
+    final error = ErrorStringsFor.fromString(result.error);
     state = state.copyWith(isLoading: false, error: error);
     return error;
   }
@@ -168,7 +169,7 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
     }
 
     // Check for specific error about super like limit
-    final errorMessage = result.error ?? 'Failed to super like user';
+    final errorMessage = ErrorStringsFor.fromString(result.error);
     state = state.copyWith(
       isLoading: false,
       error: errorMessage,
@@ -227,7 +228,7 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
 
     state = state.copyWith(
       isLoading: false,
-      error: result.error ?? 'Failed to undo swipe',
+      error: ErrorStringsFor.fromString(result.error),
     );
     return false;
   }
