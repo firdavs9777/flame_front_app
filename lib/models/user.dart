@@ -27,6 +27,9 @@ class User {
   // returned the field (e.g., during the deploy window or for old API
   // versions) — callers should fall back to a local heuristic in that case.
   final bool? isProfileComplete;
+  // BCP 47 short form (e.g. "en", "es", "pt-BR"). Null when the user hasn't
+  // explicitly picked a language in app settings.
+  final String? preferredLanguage;
 
   const User({
     required this.id,
@@ -54,6 +57,7 @@ class User {
     this.premiumExpiresAt,
     this.superLikesRemaining = 3,
     this.isProfileComplete,
+    this.preferredLanguage,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -122,6 +126,7 @@ class User {
           : null,
       superLikesRemaining: json['super_likes_remaining'] ?? 3,
       isProfileComplete: json['is_profile_complete'] as bool?,
+      preferredLanguage: json['preferred_language'] as String?,
     );
   }
 
@@ -149,6 +154,7 @@ class User {
       'is_premium': isPremium,
       'premium_expires_at': premiumExpiresAt?.toIso8601String(),
       'super_likes_remaining': superLikesRemaining,
+      'preferred_language': preferredLanguage,
     };
   }
 
@@ -178,6 +184,7 @@ class User {
     DateTime? premiumExpiresAt,
     int? superLikesRemaining,
     bool? isProfileComplete,
+    String? preferredLanguage,
   }) {
     return User(
       id: id ?? this.id,
@@ -205,6 +212,7 @@ class User {
       premiumExpiresAt: premiumExpiresAt ?? this.premiumExpiresAt,
       superLikesRemaining: superLikesRemaining ?? this.superLikesRemaining,
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
+      preferredLanguage: preferredLanguage ?? this.preferredLanguage,
     );
   }
 
