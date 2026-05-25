@@ -158,6 +158,16 @@ class AuthService {
     );
   }
 
+  /// Persists the user's preferred language to the backend.
+  ///
+  /// Best-effort — failures are returned but the app continues using the
+  /// local preference. Backend may not have the field yet during deploy.
+  Future<ApiResponse> updatePreferredLanguage(String code) async {
+    return _apiClient.patch('/users/me', body: {
+      'preferred_language': code,
+    });
+  }
+
   // Forgot password
   Future<AuthResult> forgotPassword(String email) async {
     final response = await _apiClient.post('/auth/forgot-password', body: {
