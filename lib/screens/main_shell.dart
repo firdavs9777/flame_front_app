@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'home/home_screen.dart';
 import 'chat/matches_screen.dart';
 import 'profile/my_profile_screen.dart';
@@ -80,10 +81,10 @@ class _MainShellState extends ConsumerState<MainShell> {
           showSelectedLabels: true,
           showUnselectedLabels: true,
           items: [
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.local_fire_department_outlined),
-              activeIcon: Icon(Icons.local_fire_department),
-              label: 'Discover',
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.local_fire_department_outlined),
+              activeIcon: const Icon(Icons.local_fire_department),
+              label: context.l10n.navDiscover,
             ),
             BottomNavigationBarItem(
               icon: Stack(
@@ -148,17 +149,17 @@ class _MainShellState extends ConsumerState<MainShell> {
                     ),
                 ],
               ),
-              label: 'Messages',
+              label: context.l10n.navChat,
             ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile',
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.person_outline),
+              activeIcon: const Icon(Icons.person),
+              label: context.l10n.navProfile,
             ),
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
-              label: 'Settings',
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.settings_outlined),
+              activeIcon: const Icon(Icons.settings),
+              label: context.l10n.navSettings,
             ),
           ],
         ),

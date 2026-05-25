@@ -30,6 +30,7 @@
   "loginGoogleFailed": "Google sign-in failed",
   "loginAppleFailed": "Apple sign-in failed",
   "loginFacebookFailed": "Facebook sign-in failed",
+  "navDiscover": "Discover",
   "navHome": "Home",
   "navMatches": "Matches",
   "navChat": "Chat",

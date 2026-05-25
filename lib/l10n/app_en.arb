@@ -55,6 +55,7 @@
   "loginFacebookFailed": "Facebook sign-in failed",
   "@loginFacebookFailed": {"description": "Snackbar when Facebook sign-in errors out"},
 
+  "navDiscover": "Discover",
   "navHome": "Home",
   "navMatches": "Matches",
   "navChat": "Chat",
