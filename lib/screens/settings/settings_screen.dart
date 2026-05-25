@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/profile/edit_profile_screen.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/screens/settings/language_screen.dart';
+import 'package:flame/core/i18n/locale_provider.dart';
+import 'package:flame/core/i18n/supported_locales.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -14,11 +18,11 @@ class SettingsScreen extends ConsumerWidget {
     final user = userState.valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(context.l10n.settingsTitle)),
       body: ListView(
         children: [
           const SizedBox(height: 20),
-          _buildSectionHeader('Account'),
+          _buildSectionHeader(context.l10n.settingsAccount),
           _buildListTile(
             icon: Icons.person_outline,
             title: 'Edit Profile',
@@ -78,7 +82,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 20),
 
           // Notifications section
-          _buildSectionHeader('Notifications'),
+          _buildSectionHeader(context.l10n.settingsNotifications),
           _buildSwitchTile(
             icon: Icons.notifications_outlined,
             title: 'Push Notifications',
@@ -86,6 +90,25 @@ class SettingsScreen extends ConsumerWidget {
             value: settings.notificationsEnabled,
             onChanged: (_) {
               ref.read(settingsProvider.notifier).toggleNotifications();
+            },
+          ),
+
+          // Language entry
+          ListTile(
+            leading: const Icon(Icons.language_outlined),
+            title: Text(context.l10n.settingsLanguage),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(displayNameOf(ref.watch(localeProvider) ?? const Locale('en'))),
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right),
+              ],
+            ),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const LanguageScreen()),
+              );
             },
           ),
 
@@ -144,7 +167,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader('Account Actions'),
           _buildListTile(
             icon: Icons.logout,
-            title: 'Log Out',
+            title: context.l10n.settingsLogout,
             titleColor: AppTheme.primaryColor,
             onTap: () {
               _showLogoutDialog(context, ref);
@@ -152,7 +175,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           _buildListTile(
             icon: Icons.delete_outline,
-            title: 'Delete Account',
+            title: context.l10n.settingsDeleteAccount,
             titleColor: AppTheme.errorColor,
             onTap: () {
               _showDeleteAccountDialog(context, ref);
@@ -246,12 +269,12 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out?'),
+        title: Text(context.l10n.settingsLogoutConfirmTitle),
+        content: Text(context.l10n.settingsLogoutConfirmBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.settingsCancel),
           ),
           TextButton(
             onPressed: () {
@@ -259,7 +282,7 @@ class SettingsScreen extends ConsumerWidget {
               ref.read(authProvider.notifier).logout();
             },
             child: Text(
-              'Log Out',
+              context.l10n.settingsLogout,
               style: TextStyle(color: AppTheme.primaryColor),
             ),
           ),
@@ -273,7 +296,7 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Account'),
+        title: Text(context.l10n.settingsDeleteAccount),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,7 +318,7 @@ class SettingsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.settingsCancel),
           ),
           TextButton(
             onPressed: () async {
@@ -306,7 +329,7 @@ class SettingsScreen extends ConsumerWidget {
                 const SnackBar(content: Text('Account deletion requested')),
               );
             },
-            child: Text('Delete', style: TextStyle(color: AppTheme.errorColor)),
+            child: Text(context.l10n.settingsDelete, style: TextStyle(color: AppTheme.errorColor)),
           ),
         ],
       ),
