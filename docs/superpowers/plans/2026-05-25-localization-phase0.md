@@ -10,6 +10,13 @@
 
 **Scope refinement from the spec:** The spec listed "Login / register / welcome screens" for Phase 0. This plan migrates **welcome, login, settings, main_shell (bottom-nav)** plus the new language picker. Registration entry and the multi-step registration flow are inseparable in `registration_flow.dart`, so the entire registration UI moves to Phase 1 as a coherent unit. If you want registration in Phase 0 instead, add it as an extra task after Task 18.
 
+**Flutter 3.38.7 tooling realities discovered during Task 1 (overrides spec details):**
+1. `gen-l10n` **fatally errors** on a missing base locale for a regional variant. Spec said 6 ARB files; reality requires **7** — a `lib/l10n/app_pt.arb` base file alongside `app_pt_BR.arb`. The base `app_pt.arb` is kept identical to `app_pt_BR.arb` (every key + value copied) so they stay in sync. The ARB parity test in Task 20 enforces this.
+2. `synthetic-package: false` is **deprecated and ignored** by gen-l10n with a warning. It is omitted from `l10n.yaml` even though the original spec listed it. `output-dir: lib/l10n/gen` alone is sufficient to produce non-synthetic output.
+3. `intl` was bumped from `^0.19.0` to `^0.20.2` to satisfy `flutter_localizations` SDK pinning. Mechanical dependency-resolution upgrade.
+
+`kSupportedLocales` (Task 2) still has **6 entries** (no bare `Locale('pt')`). Generated `AppLocalizations.supportedLocales` will have 7, but we pass our 6-entry list to `MaterialApp.supportedLocales` so the custom resolver in Task 4 still handles `pt → pt_BR` fallback as designed.
+
 **Phase 0 file inventory:**
 | File | Action | Responsibility |
 |---|---|---|
@@ -95,9 +102,11 @@ Append to `.gitignore`:
 lib/l10n/gen/
 ```
 
-- [ ] **Step 4: Create the six minimal ARB files**
+- [ ] **Step 4: Create the seven minimal ARB files**
 
-Each contains just the locale header for now — strings get added in Task 13.
+(See the "Flutter 3.38.7 tooling realities" note in the header for why 7, not 6.)
+
+Each contains just the locale header for now — strings get added in Task 13. The `app_pt.arb` base file is kept identical to `app_pt_BR.arb`.
 
 `lib/l10n/app_en.arb`:
 ```json
@@ -122,6 +131,14 @@ Each contains just the locale header for now — strings get added in Task 13.
 ```json
 {
   "@@locale": "pt_BR",
+  "appName": "Flame"
+}
+```
+
+`lib/l10n/app_pt.arb` (base locale — identical to pt_BR; required by gen-l10n):
+```json
+{
+  "@@locale": "pt",
   "appName": "Flame"
 }
 ```
@@ -991,9 +1008,9 @@ Insert (alongside `appName`):
 }
 ```
 
-- [ ] **Step 2: Mirror the keys (English values, no metadata) into the other 5 ARBs**
+- [ ] **Step 2: Mirror the keys (English values, no metadata) into the other 6 ARBs**
 
-Each of `app_es.arb`, `app_pt_BR.arb`, `app_fr.arb`, `app_de.arb`, `app_ru.arb` gets the same keys with English values for now. Real translations land later. Example for `app_es.arb`:
+Each of `app_es.arb`, `app_pt.arb`, `app_pt_BR.arb`, `app_fr.arb`, `app_de.arb`, `app_ru.arb` gets the same keys with English values for now. Real translations land later. `app_pt.arb` and `app_pt_BR.arb` must stay in sync — every key in both, with identical values. Example for `app_es.arb`:
 
 ```json
 {
@@ -1798,7 +1815,7 @@ void main() {
     final en = _stringKeys(_readArb('app_en.arb'));
     expect(en, isNotEmpty, reason: 'app_en.arb should define some keys');
 
-    const others = ['app_es.arb', 'app_pt_BR.arb', 'app_fr.arb', 'app_de.arb', 'app_ru.arb'];
+    const others = ['app_es.arb', 'app_pt.arb', 'app_pt_BR.arb', 'app_fr.arb', 'app_de.arb', 'app_ru.arb'];
 
     for (final name in others) {
       final keys = _stringKeys(_readArb(name));
