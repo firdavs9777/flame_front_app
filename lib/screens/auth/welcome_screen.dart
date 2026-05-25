@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/auth/login_screen.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'registration/registration_flow.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -96,13 +97,15 @@ class WelcomeScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        const Text(
-          'Flame',
-          style: TextStyle(
-            fontSize: 48,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 2,
+        Builder(
+          builder: (context) => Text(
+            context.l10n.appName,
+            style: const TextStyle(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 2,
+            ),
           ),
         ),
       ],
@@ -151,9 +154,9 @@ class WelcomeScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(28),
               ),
             ),
-            child: const Text(
-              'Create Account',
-              style: TextStyle(
+            child: Text(
+              context.l10n.welcomeCreateAccount,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -175,9 +178,9 @@ class WelcomeScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(28),
               ),
             ),
-            child: const Text(
-              'Sign In',
-              style: TextStyle(
+            child: Text(
+              context.l10n.welcomeSignIn,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
