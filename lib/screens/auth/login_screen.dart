@@ -5,6 +5,9 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/screens/auth/forgot_password_screen.dart';
 import 'package:flame/services/social_auth_service.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/core/i18n/error_messages.dart';
+import 'package:flame/services/api_client.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -36,9 +39,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
       if (next.error != null) {
+        final message = translateApiError(
+          context.l10n,
+          ApiResponse(
+            success: false,
+            error: next.error,
+            errorCode: null, // AuthState doesn't carry errorCode yet — Phase 1 work
+            statusCode: 0,
+          ),
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(next.error!),
+            content: Text(message),
             backgroundColor: AppTheme.errorColor,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -133,9 +145,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Welcome\nBack',
-          style: TextStyle(
+        Text(
+          context.l10n.loginTitle,
+          style: const TextStyle(
             fontSize: 40,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -174,13 +186,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Email Field
-            _buildInputLabel('Email'),
+            _buildInputLabel(context.l10n.loginEmailLabel),
             const SizedBox(height: 8),
             _buildEmailField(),
             const SizedBox(height: 24),
 
             // Password Field
-            _buildInputLabel('Password'),
+            _buildInputLabel(context.l10n.loginPasswordLabel),
             const SizedBox(height: 8),
             _buildPasswordField(),
             const SizedBox(height: 16),
@@ -331,9 +343,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             );
           },
-          child: const Text(
-            'Forgot Password?',
-            style: TextStyle(
+          child: Text(
+            context.l10n.loginForgotPassword,
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: AppTheme.primaryColor,
@@ -368,9 +380,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   strokeWidth: 2.5,
                 ),
               )
-            : const Text(
-                'Sign In',
-                style: TextStyle(
+            : Text(
+                context.l10n.loginSubmit,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -404,19 +416,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           children: [
             _buildSocialButton(
               icon: Icons.g_mobiledata_rounded,
-              label: 'Google',
+              label: context.l10n.loginGoogle,
               onTap: _handleGoogleSignIn,
             ),
             const SizedBox(width: 16),
             _buildSocialButton(
               icon: Icons.apple_rounded,
-              label: 'Apple',
+              label: context.l10n.loginApple,
               onTap: _handleAppleSignIn,
             ),
             const SizedBox(width: 16),
             _buildSocialButton(
               icon: Icons.facebook_rounded,
-              label: 'Facebook',
+              label: context.l10n.loginFacebook,
               onTap: _handleFacebookSignIn,
             ),
           ],
