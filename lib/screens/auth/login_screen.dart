@@ -156,7 +156,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Sign in to continue',
+          context.l10n.loginSubtitle,
           style: TextStyle(
             fontSize: 16,
             color: Colors.white.withOpacity(0.85),
@@ -221,12 +221,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildEmailField() {
+    final emailRequired = context.l10n.loginEmailRequired;
+    final emailInvalid = context.l10n.loginEmailInvalid;
     return TextFormField(
       controller: _emailController,
       keyboardType: TextInputType.emailAddress,
       style: const TextStyle(fontSize: 16),
       decoration: InputDecoration(
-        hintText: 'Enter your email',
+        hintText: context.l10n.loginEmailHint,
         hintStyle: TextStyle(color: Colors.grey[400]),
         prefixIcon: Icon(
           Icons.email_outlined,
@@ -249,10 +251,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Please enter your email';
+          return emailRequired;
         }
         if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-          return 'Please enter a valid email';
+          return emailInvalid;
         }
         return null;
       },
@@ -260,12 +262,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildPasswordField() {
+    final passwordRequired = context.l10n.loginPasswordRequired;
+    final passwordTooShort = context.l10n.loginPasswordTooShort;
     return TextFormField(
       controller: _passwordController,
       obscureText: _obscurePassword,
       style: const TextStyle(fontSize: 16),
       decoration: InputDecoration(
-        hintText: 'Enter your password',
+        hintText: context.l10n.loginPasswordHint,
         hintStyle: TextStyle(color: Colors.grey[400]),
         prefixIcon: Icon(
           Icons.lock_outline_rounded,
@@ -297,10 +301,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Please enter your password';
+          return passwordRequired;
         }
         if (value.length < 6) {
-          return 'Password must be at least 6 characters';
+          return passwordTooShort;
         }
         return null;
       },
@@ -327,7 +331,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Remember me',
+              context.l10n.loginRememberMe,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[600],
@@ -400,7 +404,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'Or continue with',
+                context.l10n.loginOrContinueWith,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.85),
                   fontSize: 14,
@@ -482,7 +486,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!socialResult.success) {
       if (socialResult.error != 'Sign-in cancelled') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(socialResult.error ?? 'Google sign-in failed')),
+          SnackBar(content: Text(socialResult.error ?? context.l10n.loginGoogleFailed)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.loginCancelled)),
         );
       }
       return;
@@ -498,7 +506,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!socialResult.success) {
       if (socialResult.error != 'Sign-in cancelled') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(socialResult.error ?? 'Apple sign-in failed')),
+          SnackBar(content: Text(socialResult.error ?? context.l10n.loginAppleFailed)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.loginCancelled)),
         );
       }
       return;
@@ -515,7 +527,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!socialResult.success) {
       if (socialResult.error != 'Sign-in cancelled') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(socialResult.error ?? 'Facebook sign-in failed')),
+          SnackBar(content: Text(socialResult.error ?? context.l10n.loginFacebookFailed)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.loginCancelled)),
         );
       }
       return;
