@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/i18n/locale_provider.dart';
 import 'package:flame/core/i18n/supported_locales.dart';
+import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/services/auth_service.dart';
 
 class LanguageScreen extends ConsumerWidget {
@@ -37,7 +40,7 @@ class LanguageScreen extends ConsumerWidget {
   Future<void> _select(BuildContext context, WidgetRef ref, Locale? picked) async {
     if (picked == null) return;
     await ref.read(localeProvider.notifier).setLocale(picked);
-    AuthService().updatePreferredLanguage(picked.toLanguageTag());
+    _syncBackend(ref, picked.toLanguageTag());
   }
 
   Future<void> _useDevice(BuildContext context, WidgetRef ref) async {
@@ -46,7 +49,16 @@ class LanguageScreen extends ConsumerWidget {
     );
     final resolved = ref.read(localeProvider);
     if (resolved != null) {
-      AuthService().updatePreferredLanguage(resolved.toLanguageTag());
+      _syncBackend(ref, resolved.toLanguageTag());
     }
+  }
+
+  void _syncBackend(WidgetRef ref, String tag) {
+    if (!ref.read(authProvider).isAuthenticated) return;
+    unawaited(
+      AuthService().updatePreferredLanguage(tag).then((_) {}, onError: (e) {
+        debugPrint('preferred_language sync failed: $e');
+      }),
+    );
   }
 }

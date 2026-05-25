@@ -49,11 +49,16 @@ class FlameApp extends ConsumerWidget {
     ref.listen<AuthState>(authProvider, (previous, next) {
       final user = next.user;
       if (user == null || user.preferredLanguage == null) return;
+      // Only apply backend language on the launch/login transition (user id
+      // changes from null to a value, or from one account to another). Without
+      // this gate any later AuthState mutation that reloads the user would
+      // clobber a manual language pick that hasn't yet synced back from the
+      // server.
+      if (previous?.user?.id == user.id) return;
       final desired = _parseLocaleTag(user.preferredLanguage!);
       if (desired == null) return;
       final current = ref.read(localeProvider);
       if (current == desired) return;
-      // Backend wins on launch (user may have changed language on another device).
       ref.read(localeProvider.notifier).setLocale(desired);
     });
 
