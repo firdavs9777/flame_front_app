@@ -1,23 +1,55 @@
 {
   "@@locale": "en",
+
   "appName": "Flame",
-  "@appName": {"description": "The app name shown on the welcome screen"},
+  "@appName": {"description": "The app name"},
+  "appTagline": "Where conversations spark",
+  "@appTagline": {"description": "Subtitle on the welcome screen"},
+
+  "welcomeSignIn": "Sign in",
+  "@welcomeSignIn": {"description": "Button to go to login screen"},
+  "welcomeCreateAccount": "Create account",
+  "@welcomeCreateAccount": {"description": "Button to start registration"},
+
+  "loginTitle": "Welcome back",
+  "loginEmailLabel": "Email",
+  "loginPasswordLabel": "Password",
+  "loginForgotPassword": "Forgot password?",
+  "loginSubmit": "Sign in",
+  "loginGoogle": "Continue with Google",
+  "loginApple": "Continue with Apple",
+  "loginFacebook": "Continue with Facebook",
+  "loginNoAccount": "Don't have an account?",
+  "loginSignUpLink": "Sign up",
+
+  "navHome": "Home",
+  "navMatches": "Matches",
+  "navChat": "Chat",
+  "navProfile": "Profile",
+  "navSettings": "Settings",
+
+  "settingsTitle": "Settings",
+  "settingsAccount": "Account",
+  "settingsNotifications": "Notifications",
+  "settingsLanguage": "Language",
+  "@settingsLanguage": {"description": "Row label for the language picker"},
+  "settingsPrivacy": "Privacy",
+  "settingsLogout": "Log out",
+  "settingsLogoutConfirmTitle": "Log out",
+  "settingsLogoutConfirmBody": "Are you sure you want to log out?",
+  "settingsCancel": "Cancel",
+  "settingsDelete": "Delete",
+  "settingsDeleteAccount": "Delete account",
+  "settingsDeleteAccountBody": "This permanently deletes your account and all your data.",
+
+  "languagePickerTitle": "Language",
+  "languageUseDevice": "Use device language",
+  "@languageUseDevice": {"description": "Row that clears the override and uses the system language"},
 
   "errorInvalidCredentials": "Incorrect email or password.",
-  "@errorInvalidCredentials": {"description": "Shown when login fails due to bad credentials"},
-
   "errorEmailExists": "An account with this email already exists.",
-  "@errorEmailExists": {"description": "Shown during registration when email is taken"},
-
   "errorRateLimited": "You're doing that too often. Please try again in a moment.",
-  "@errorRateLimited": {"description": "Shown when the backend returns 429"},
-
   "errorAuthLost": "Your session has ended. Please sign in again.",
-  "@errorAuthLost": {"description": "Shown when the access token can't be refreshed"},
-
   "errorNoInternet": "No internet connection.",
-  "@errorNoInternet": {"description": "Shown when the device is offline"},
-
-  "errorGeneric": "Something went wrong. Please try again.",
-  "@errorGeneric": {"description": "Fallback for unknown errors"}
+  "errorGeneric": "Something went wrong. Please try again."
 }
