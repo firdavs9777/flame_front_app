@@ -1,0 +1,7 @@
+{
+  "@@locale": "en",
+  "appName": "Flame",
+  "@appName": {
+    "description": "The app name shown on the welcome screen"
+  }
+}
