@@ -2,6 +2,27 @@ import 'dart:io';
 import 'package:flame/models/user.dart';
 import 'package:flame/services/api_client.dart';
 
+/// Builds the PATCH /users/me request body. The flame backend reads camelCase
+/// (`lookingFor`); snake_case (`looking_for`) is included for forward-compat.
+Map<String, dynamic> buildUpdateProfileBody({
+  String? name,
+  String? bio,
+  List<String>? interests,
+  Gender? lookingFor,
+  int? age,
+}) {
+  final body = <String, dynamic>{};
+  if (name != null) body['name'] = name;
+  if (bio != null) body['bio'] = bio;
+  if (interests != null) body['interests'] = interests;
+  if (lookingFor != null) {
+    body['lookingFor'] = lookingFor.toApiString();
+    body['looking_for'] = lookingFor.toApiString();
+  }
+  if (age != null) body['age'] = age;
+  return body;
+}
+
 class UserService {
   final ApiClient _apiClient = ApiClient();
 
@@ -37,12 +58,13 @@ class UserService {
     Gender? lookingFor,
     int? age,
   }) async {
-    final body = <String, dynamic>{};
-    if (name != null) body['name'] = name;
-    if (bio != null) body['bio'] = bio;
-    if (interests != null) body['interests'] = interests;
-    if (lookingFor != null) body['looking_for'] = lookingFor.toApiString();
-    if (age != null) body['age'] = age;
+    final body = buildUpdateProfileBody(
+      name: name,
+      bio: bio,
+      interests: interests,
+      lookingFor: lookingFor,
+      age: age,
+    );
 
     final response = await _apiClient.patch('/users/me', body: body);
 
