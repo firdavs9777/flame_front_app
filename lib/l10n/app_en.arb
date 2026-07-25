@@ -96,5 +96,14 @@
   "errorRateLimited": "You're doing that too often. Please try again in a moment.",
   "errorAuthLost": "Your session has ended. Please sign in again.",
   "errorNoInternet": "No internet connection.",
-  "errorGeneric": "Something went wrong. Please try again."
+  "errorGeneric": "Something went wrong. Please try again.",
+
+  "chatTranslate": "Translate",
+  "@chatTranslate": {"description": "Button to translate an incoming chat message"},
+  "chatHideTranslation": "Hide translation",
+  "@chatHideTranslation": {"description": "Button to hide the translation of a chat message"},
+  "chatTranslating": "Translating…",
+  "@chatTranslating": {"description": "Status shown while a chat message is being translated"},
+  "chatTranslationUnavailable": "Translation unavailable",
+  "@chatTranslationUnavailable": {"description": "Message shown when a chat message could not be translated"}
 }

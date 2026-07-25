@@ -60,5 +60,10 @@
   "errorRateLimited": "您操作太频繁了，请稍后再试。",
   "errorAuthLost": "您的会话已结束，请重新登录。",
   "errorNoInternet": "无网络连接。",
-  "errorGeneric": "出错了，请重试。"
+  "errorGeneric": "出错了，请重试。",
+
+  "chatTranslate": "翻译",
+  "chatHideTranslation": "隐藏翻译",
+  "chatTranslating": "翻译中…",
+  "chatTranslationUnavailable": "无法翻译"
 }

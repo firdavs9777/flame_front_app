@@ -60,5 +60,10 @@
   "errorRateLimited": "You're doing that too often. Please try again in a moment.",
   "errorAuthLost": "Your session has ended. Please sign in again.",
   "errorNoInternet": "No internet connection.",
-  "errorGeneric": "Something went wrong. Please try again."
+  "errorGeneric": "Something went wrong. Please try again.",
+
+  "chatTranslate": "Übersetzen",
+  "chatHideTranslation": "Übersetzung ausblenden",
+  "chatTranslating": "Wird übersetzt…",
+  "chatTranslationUnavailable": "Übersetzung nicht verfügbar"
 }

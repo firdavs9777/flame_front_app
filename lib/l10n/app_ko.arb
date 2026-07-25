@@ -60,5 +60,10 @@
   "errorRateLimited": "너무 자주 시도하고 있습니다. 잠시 후 다시 시도해 주세요.",
   "errorAuthLost": "세션이 종료되었습니다. 다시 로그인해 주세요.",
   "errorNoInternet": "인터넷 연결이 없습니다.",
-  "errorGeneric": "문제가 발생했습니다. 다시 시도해 주세요."
+  "errorGeneric": "문제가 발생했습니다. 다시 시도해 주세요.",
+
+  "chatTranslate": "번역",
+  "chatHideTranslation": "번역 숨기기",
+  "chatTranslating": "번역 중…",
+  "chatTranslationUnavailable": "번역할 수 없습니다"
 }

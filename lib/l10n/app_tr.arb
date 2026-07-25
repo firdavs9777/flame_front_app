@@ -60,5 +60,10 @@
   "errorRateLimited": "Bunu çok sık yapıyorsun. Lütfen birazdan tekrar dene.",
   "errorAuthLost": "Oturumun sona erdi. Lütfen tekrar giriş yap.",
   "errorNoInternet": "İnternet bağlantısı yok.",
-  "errorGeneric": "Bir şeyler ters gitti. Lütfen tekrar dene."
+  "errorGeneric": "Bir şeyler ters gitti. Lütfen tekrar dene.",
+
+  "chatTranslate": "Çevir",
+  "chatHideTranslation": "Çeviriyi gizle",
+  "chatTranslating": "Çevriliyor…",
+  "chatTranslationUnavailable": "Çeviri kullanılamıyor"
 }

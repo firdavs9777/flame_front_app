@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/chat/widgets/voice_message_player.dart';
+import 'package:flame/providers/translation_provider.dart';
+import 'package:flame/core/i18n/locale_provider.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 class MessageBubble extends StatelessWidget {
   final Message message;
@@ -184,12 +188,22 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildTextContent() {
-    return Text(
+    final text = Text(
       message.content,
       style: TextStyle(
         color: isMe ? Colors.white : Colors.black87,
         fontSize: 15,
       ),
+    );
+    // Offer translation only for incoming, non-empty text messages.
+    if (isMe || message.content.trim().isEmpty) return text;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        text,
+        _TranslateSection(message: message),
+      ],
     );
   }
 
@@ -405,5 +419,99 @@ class MessageBubble extends StatelessWidget {
     final minutes = seconds ~/ 60;
     final secs = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
+}
+
+/// Tap-to-translate affordance shown under incoming text messages. Reads the
+/// per-message [translationProvider] cache and the app's target language.
+class _TranslateSection extends ConsumerWidget {
+  const _TranslateSection({required this.message});
+
+  final Message message;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final entry = ref.watch(translationProvider)[message.id];
+    final target = ref.watch(localeProvider)?.languageCode ?? 'en';
+    final status = entry?.status ?? TranslationStatus.idle;
+    final showingTranslation =
+        status == TranslationStatus.done && (entry?.visible ?? false);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 6),
+        InkWell(
+          onTap: status == TranslationStatus.loading
+              ? null
+              : () => ref.read(translationProvider.notifier).toggle(
+                    messageId: message.id,
+                    text: message.content,
+                    targetLang: target,
+                  ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.translate, size: 14, color: AppTheme.primaryColor),
+              const SizedBox(width: 4),
+              Text(
+                showingTranslation
+                    ? context.l10n.chatHideTranslation
+                    : context.l10n.chatTranslate,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (status == TranslationStatus.loading)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  context.l10n.chatTranslating,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (showingTranslation && entry?.text != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              entry!.text!,
+              style: const TextStyle(fontSize: 15, color: Colors.black87),
+            ),
+          ),
+        if (status == TranslationStatus.error)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              context.l10n.chatTranslationUnavailable,
+              style: TextStyle(
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+                color: Colors.grey[500],
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

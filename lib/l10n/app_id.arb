@@ -60,5 +60,10 @@
   "errorRateLimited": "Kamu terlalu sering melakukannya. Coba lagi sebentar lagi.",
   "errorAuthLost": "Sesimu telah berakhir. Silakan masuk lagi.",
   "errorNoInternet": "Tidak ada koneksi internet.",
-  "errorGeneric": "Terjadi kesalahan. Silakan coba lagi."
+  "errorGeneric": "Terjadi kesalahan. Silakan coba lagi.",
+
+  "chatTranslate": "Terjemahkan",
+  "chatHideTranslation": "Sembunyikan terjemahan",
+  "chatTranslating": "Menerjemahkan…",
+  "chatTranslationUnavailable": "Terjemahan tidak tersedia"
 }
