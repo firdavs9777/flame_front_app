@@ -103,19 +103,24 @@ class User {
       distance: (json['distance'] ?? 0).toDouble(),
       interests: List<String>.from(json['interests'] ?? []),
       gender: _parseGender(json['gender']),
-      lookingFor: _parseGender(json['looking_for']),
-      minAgePreference: preferences['min_age'] ?? 18,
-      maxAgePreference: preferences['max_age'] ?? 50,
-      maxDistancePreference: (preferences['max_distance'] ?? 50).toDouble(),
-      showDistance: preferences['show_distance'] ?? true,
-      showOnlineStatus: preferences['show_online_status'] ?? true,
-      lastActive: json['last_active'] != null
-          ? DateTime.parse(json['last_active'])
+      lookingFor: _parseGender(json['looking_for'] ?? json['lookingFor']),
+      minAgePreference: preferences['min_age'] ?? preferences['minAge'] ?? 18,
+      maxAgePreference: preferences['max_age'] ?? preferences['maxAge'] ?? 50,
+      maxDistancePreference:
+          (preferences['max_distance'] ?? preferences['maxDistance'] ?? 50)
+              .toDouble(),
+      showDistance:
+          preferences['show_distance'] ?? preferences['showDistance'] ?? true,
+      showOnlineStatus: preferences['show_online_status'] ??
+          preferences['showOnlineStatus'] ??
+          true,
+      lastActive: (json['last_active'] ?? json['lastActive']) != null
+          ? DateTime.parse(json['last_active'] ?? json['lastActive'])
           : DateTime.now(),
-      isOnline: json['is_online'] ?? false,
-      isVerified: json['is_verified'] ?? false,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
+      isOnline: json['is_online'] ?? json['isOnline'] ?? false,
+      isVerified: json['is_verified'] ?? json['isVerified'] ?? false,
+      createdAt: (json['created_at'] ?? json['createdAt']) != null
+          ? DateTime.parse(json['created_at'] ?? json['createdAt'])
           : null,
       commonInterests: json['common_interests'] != null
           ? List<String>.from(json['common_interests'])
