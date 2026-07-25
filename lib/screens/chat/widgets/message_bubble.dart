@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/screens/chat/widgets/voice_message_player.dart';
 
 class MessageBubble extends StatelessWidget {
   final Message message;
@@ -273,49 +274,12 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildAudioContent() {
-    final duration = message.mediaInfo?.duration ?? 0;
-    return Container(
-      width: 200,
+    return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isMe ? Colors.white.withValues(alpha: 0.2) : AppTheme.primaryColor.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              message.type == MessageType.voice ? Icons.mic : Icons.audiotrack,
-              color: isMe ? Colors.white : AppTheme.primaryColor,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: isMe ? Colors.white.withValues(alpha: 0.3) : Colors.grey[400],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  // Audio waveform placeholder
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatDuration(duration),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isMe ? Colors.white70 : Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+      child: VoiceMessagePlayer(
+        url: message.audioUrl ?? message.content,
+        fallbackDuration: message.mediaInfo?.duration ?? 0,
+        isMe: isMe,
       ),
     );
   }
