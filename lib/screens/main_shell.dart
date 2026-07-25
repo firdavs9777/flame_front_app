@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'home/home_screen.dart';
 import 'chat/matches_screen.dart';
@@ -60,108 +61,157 @@ class _MainShellState extends ConsumerState<MainShell> {
         index: currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
+      bottomNavigationBar: _FlameNavBar(
+        currentIndex: currentIndex,
+        onTap: (index) =>
+            ref.read(bottomNavIndexProvider.notifier).state = index,
+        chatBadgeCount: totalNotifications,
+      ),
+    );
+  }
+}
+
+class _FlameNavBar extends StatelessWidget {
+  const _FlameNavBar({
+    required this.currentIndex,
+    required this.onTap,
+    required this.chatBadgeCount,
+  });
+
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  final int chatBadgeCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final surface = Theme.of(context).colorScheme.surface;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavItem(
+                selected: currentIndex == 0,
+                icon: Icons.local_fire_department_outlined,
+                activeIcon: Icons.local_fire_department,
+                label: context.l10n.navDiscover,
+                onTap: () => onTap(0),
+              ),
+              _NavItem(
+                selected: currentIndex == 1,
+                icon: Icons.chat_bubble_outline,
+                activeIcon: Icons.chat_bubble,
+                label: context.l10n.navChat,
+                badgeCount: chatBadgeCount,
+                onTap: () => onTap(1),
+              ),
+              _NavItem(
+                selected: currentIndex == 2,
+                icon: Icons.person_outline,
+                activeIcon: Icons.person,
+                label: context.l10n.navProfile,
+                onTap: () => onTap(2),
+              ),
+              _NavItem(
+                selected: currentIndex == 3,
+                icon: Icons.settings_outlined,
+                activeIcon: Icons.settings,
+                label: context.l10n.navSettings,
+                onTap: () => onTap(3),
+              ),
+            ],
+          ),
         ),
-        child: BottomNavigationBar(
-          currentIndex: currentIndex,
-          onTap: (index) {
-            ref.read(bottomNavIndexProvider.notifier).state = index;
-          },
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppTheme.primaryColor,
-          unselectedItemColor: Colors.grey[400],
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.local_fire_department_outlined),
-              activeIcon: const Icon(Icons.local_fire_department),
-              label: context.l10n.navDiscover,
-            ),
-            BottomNavigationBarItem(
-              icon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Icon(Icons.chat_bubble_outline),
-                  if (totalNotifications > 0)
-                    Positioned(
-                      right: -8,
-                      top: -4,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          totalNotifications > 9 ? '9+' : totalNotifications.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.selected,
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.onTap,
+    this.badgeCount = 0,
+  });
+
+  final bool selected;
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final VoidCallback onTap;
+  final int badgeCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final unselectedColor =
+        Theme.of(context).brightness == Brightness.dark ? AppColors.gray500 : AppColors.gray500;
+    final color = selected ? AppColors.primary : unselectedColor;
+
+    Widget iconWidget = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      transitionBuilder: (child, animation) =>
+          ScaleTransition(scale: animation, child: child),
+      child: Icon(
+        selected ? activeIcon : icon,
+        key: ValueKey(selected),
+        color: color,
+        size: 24,
+      ),
+    );
+
+    if (badgeCount > 0) {
+      iconWidget = AppDotBadge(count: badgeCount, child: iconWidget);
+    }
+
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.primary.withValues(alpha: 0.12)
+                : Colors.transparent,
+            borderRadius: AppRadius.borderRound,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              iconWidget,
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: AppTypography.labelSmall.copyWith(
+                  color: color,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
               ),
-              activeIcon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Icon(Icons.chat_bubble),
-                  if (totalNotifications > 0)
-                    Positioned(
-                      right: -8,
-                      top: -4,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          totalNotifications > 9 ? '9+' : totalNotifications.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              label: context.l10n.navChat,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.person_outline),
-              activeIcon: const Icon(Icons.person),
-              label: context.l10n.navProfile,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.settings_outlined),
-              activeIcon: const Icon(Icons.settings),
-              label: context.l10n.navSettings,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

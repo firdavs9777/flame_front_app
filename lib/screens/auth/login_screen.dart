@@ -8,6 +8,7 @@ import 'package:flame/services/social_auth_service.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/i18n/error_messages.dart';
 import 'package:flame/services/api_client.dart';
+import 'package:flame/widgets/kit/kit.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -361,37 +362,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildLoginButton(AuthState authState) {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: authState.isLoading ? null : _handleLogin,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          disabledBackgroundColor: AppTheme.primaryColor.withOpacity(0.6),
-        ),
-        child: authState.isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2.5,
-                ),
-              )
-            : Text(
-                context.l10n.loginSubmit,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-      ),
+    // Showcase: the design-system AppButton replaces the hand-rolled button.
+    return AppButton(
+      text: context.l10n.loginSubmit,
+      onPressed: _handleLogin,
+      size: AppButtonSize.large,
+      isFullWidth: true,
+      isLoading: authState.isLoading,
     );
   }
 

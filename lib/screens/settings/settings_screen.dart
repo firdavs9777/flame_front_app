@@ -7,6 +7,7 @@ import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/settings/language_screen.dart';
 import 'package:flame/core/i18n/locale_provider.dart';
 import 'package:flame/core/i18n/supported_locales.dart';
+import 'package:flame/widgets/kit/kit.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -114,16 +115,58 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 20),
 
-          // Appearance section
-          _buildSectionHeader('Appearance'),
-          _buildSwitchTile(
-            icon: Icons.dark_mode_outlined,
-            title: 'Dark Mode',
-            subtitle: 'Enable dark theme',
-            value: settings.isDarkMode,
-            onChanged: (_) {
-              ref.read(settingsProvider.notifier).toggleDarkMode();
-            },
+          // Appearance section — showcase: kit AppCard + localized theme selector
+          _buildSectionHeader(context.l10n.settingsAppearance),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: AppCard(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.dark_mode_outlined, size: 20),
+                        const SizedBox(width: 12),
+                        Text(
+                          context.l10n.settingsTheme,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  RadioListTile<ThemeMode>(
+                    value: ThemeMode.system,
+                    groupValue: settings.themeMode,
+                    onChanged: _onThemeModeChanged(ref),
+                    title: Text(context.l10n.themeSystem),
+                    secondary: const Icon(Icons.brightness_auto_outlined),
+                    activeColor: AppTheme.primaryColor,
+                    dense: true,
+                  ),
+                  RadioListTile<ThemeMode>(
+                    value: ThemeMode.light,
+                    groupValue: settings.themeMode,
+                    onChanged: _onThemeModeChanged(ref),
+                    title: Text(context.l10n.themeLight),
+                    secondary: const Icon(Icons.light_mode_outlined),
+                    activeColor: AppTheme.primaryColor,
+                    dense: true,
+                  ),
+                  RadioListTile<ThemeMode>(
+                    value: ThemeMode.dark,
+                    groupValue: settings.themeMode,
+                    onChanged: _onThemeModeChanged(ref),
+                    title: Text(context.l10n.themeDark),
+                    secondary: const Icon(Icons.dark_mode_outlined),
+                    activeColor: AppTheme.primaryColor,
+                    dense: true,
+                  ),
+                ],
+              ),
+            ),
           ),
 
           const SizedBox(height: 20),
@@ -209,6 +252,14 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  ValueChanged<ThemeMode?> _onThemeModeChanged(WidgetRef ref) {
+    return (mode) {
+      if (mode != null) {
+        ref.read(settingsProvider.notifier).setThemeMode(mode);
+      }
+    };
   }
 
   Widget _buildSectionHeader(String title) {

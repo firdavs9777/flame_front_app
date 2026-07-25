@@ -9,7 +9,11 @@ void main() {
       const ProviderScope(child: FlameApp()),
     );
 
-    // Verify the app loads with the Flame title
+    // The splash screen shows the Flame brand on first frame.
     expect(find.text('Flame'), findsOneWidget);
+
+    // Drain the splash's delayed navigation timer and the welcome screen's
+    // entry animations so no Timer is left pending when the tree is disposed.
+    await tester.pumpAndSettle(const Duration(seconds: 4));
   });
 }

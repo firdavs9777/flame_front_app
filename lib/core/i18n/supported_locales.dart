@@ -9,6 +9,11 @@ const List<Locale> kSupportedLocales = [
   Locale('fr'),
   Locale('de'),
   Locale('ru'),
+  Locale('ja'),
+  Locale('ko'),
+  Locale('zh'),
+  Locale('tr'),
+  Locale('id'),
 ];
 
 /// Human-readable name of [locale] in the language itself. A Spanish speaker
@@ -27,6 +32,16 @@ String displayNameOf(Locale locale) {
       return 'Deutsch';
     case 'ru':
       return 'Русский';
+    case 'ja':
+      return '日本語';
+    case 'ko':
+      return '한국어';
+    case 'zh':
+      return '中文';
+    case 'tr':
+      return 'Türkçe';
+    case 'id':
+      return 'Bahasa Indonesia';
     default:
       return locale.toLanguageTag();
   }

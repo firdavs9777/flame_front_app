@@ -1,14 +1,31 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((ref) {
   return SettingsNotifier();
 });
 
 class SettingsNotifier extends StateNotifier<AppSettings> {
-  SettingsNotifier() : super(const AppSettings());
+  SettingsNotifier() : super(const AppSettings()) {
+    _loadThemeMode();
+  }
 
-  void toggleDarkMode() {
-    state = state.copyWith(isDarkMode: !state.isDarkMode);
+  static const _kThemeModeKey = 'theme_mode';
+
+  Future<void> _loadThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final mode = _themeModeFromString(prefs.getString(_kThemeModeKey));
+    if (mode != state.themeMode) {
+      state = state.copyWith(themeMode: mode);
+    }
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    if (mode == state.themeMode) return;
+    state = state.copyWith(themeMode: mode);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kThemeModeKey, mode.name);
   }
 
   void toggleNotifications() {
@@ -28,15 +45,27 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 }
 
+ThemeMode _themeModeFromString(String? value) {
+  switch (value) {
+    case 'light':
+      return ThemeMode.light;
+    case 'dark':
+      return ThemeMode.dark;
+    case 'system':
+    default:
+      return ThemeMode.system;
+  }
+}
+
 class AppSettings {
-  final bool isDarkMode;
+  final ThemeMode themeMode;
   final bool notificationsEnabled;
   final bool showOnlineStatus;
   final bool showDistance;
   final bool discoveryEnabled;
 
   const AppSettings({
-    this.isDarkMode = false,
+    this.themeMode = ThemeMode.system,
     this.notificationsEnabled = true,
     this.showOnlineStatus = true,
     this.showDistance = true,
@@ -44,14 +73,14 @@ class AppSettings {
   });
 
   AppSettings copyWith({
-    bool? isDarkMode,
+    ThemeMode? themeMode,
     bool? notificationsEnabled,
     bool? showOnlineStatus,
     bool? showDistance,
     bool? discoveryEnabled,
   }) {
     return AppSettings(
-      isDarkMode: isDarkMode ?? this.isDarkMode,
+      themeMode: themeMode ?? this.themeMode,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       showOnlineStatus: showOnlineStatus ?? this.showOnlineStatus,
       showDistance: showDistance ?? this.showDistance,

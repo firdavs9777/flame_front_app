@@ -76,6 +76,17 @@
   "settingsDeleteAccount": "Delete account",
   "settingsDeleteAccountBody": "This permanently deletes your account and all your data.",
 
+  "settingsAppearance": "Appearance",
+  "@settingsAppearance": {"description": "Section header for appearance/theme settings"},
+  "settingsTheme": "Theme",
+  "@settingsTheme": {"description": "Row label for the theme picker"},
+  "themeSystem": "System",
+  "@themeSystem": {"description": "Theme option that follows the system setting"},
+  "themeLight": "Light",
+  "@themeLight": {"description": "Light theme option"},
+  "themeDark": "Dark",
+  "@themeDark": {"description": "Dark theme option"},
+
   "languagePickerTitle": "Language",
   "languageUseDevice": "Use device language",
   "@languageUseDevice": {"description": "Row that clears the override and uses the system language"},

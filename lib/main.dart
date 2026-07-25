@@ -67,7 +67,7 @@ class FlameApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      themeMode: settings.themeMode,
       locale: locale,
       supportedLocales: kSupportedLocales,
       localizationsDelegates: const [

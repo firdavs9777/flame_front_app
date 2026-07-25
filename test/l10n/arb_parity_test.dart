@@ -23,6 +23,11 @@ void main() {
       'app_fr.arb',
       'app_de.arb',
       'app_ru.arb',
+      'app_ja.arb',
+      'app_ko.arb',
+      'app_zh.arb',
+      'app_tr.arb',
+      'app_id.arb',
     ];
 
     for (final name in others) {
