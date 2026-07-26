@@ -1,3 +1,17 @@
+/// Parses the `reply_to` field which the backend may send as:
+/// - `null`
+/// - a scalar message id `String`
+/// - a full reply object `Map`
+///
+/// Never throws regardless of shape.
+ReplyTo? _parseReplyTo(dynamic value) {
+  if (value == null) return null;
+  if (value is Map<String, dynamic>) return ReplyTo.fromJson(value);
+  if (value is Map) return ReplyTo.fromJson(Map<String, dynamic>.from(value));
+  if (value is String) return ReplyTo.fromId(value);
+  return null;
+}
+
 class Message {
   final String id;
   final String senderId;
@@ -38,21 +52,21 @@ class Message {
       id: json['id'] ?? '',
       senderId: json['sender_id'] ?? '',
       receiverId: json['receiver_id'],
-      content: json['content'] ?? '',
-      timestamp: json['timestamp'] != null
-          ? DateTime.parse(json['timestamp'])
+      content: json['text'] ?? json['content'] ?? '',
+      timestamp: (json['created_at'] ?? json['timestamp']) != null
+          ? DateTime.parse(json['created_at'] ?? json['timestamp'])
           : DateTime.now(),
-      status: MessageStatus.fromString(json['status']),
-      type: MessageType.fromString(json['type']),
+      status: json['read'] == true
+          ? MessageStatus.read
+          : MessageStatus.fromString(json['status']),
+      type: MessageType.fromString(json['message_type'] ?? json['type']),
       isEdited: json['is_edited'] ?? false,
       isDeleted: json['is_deleted'] ?? false,
       reactions: (json['reactions'] as List?)
               ?.map((r) => MessageReaction.fromJson(r))
               .toList() ??
           [],
-      replyTo: json['reply_to'] != null
-          ? ReplyTo.fromJson(json['reply_to'])
-          : null,
+      replyTo: _parseReplyTo(json['reply_to']),
       imageUrl: json['image_url'],
       videoUrl: json['video_url'],
       audioUrl: json['audio_url'],
@@ -201,6 +215,20 @@ class ReplyTo {
       senderName: json['sender_name'] ?? '',
       content: json['content'] ?? '',
       type: MessageType.fromString(json['type']),
+    );
+  }
+
+  /// Builds a minimal [ReplyTo] carrying only the referenced message id.
+  ///
+  /// Used when the backend sends `reply_to` as a scalar id string rather
+  /// than a full object.
+  factory ReplyTo.fromId(String messageId) {
+    return ReplyTo(
+      messageId: messageId,
+      senderId: '',
+      senderName: '',
+      content: '',
+      type: MessageType.text,
     );
   }
 
