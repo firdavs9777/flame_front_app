@@ -344,9 +344,10 @@ class SettingsScreen extends ConsumerWidget {
 
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
     final passwordController = TextEditingController();
+    final messenger = ScaffoldMessenger.of(context);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(context.l10n.settingsDeleteAccount),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -368,19 +369,32 @@ class SettingsScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text(context.l10n.settingsCancel),
           ),
           TextButton(
             onPressed: () async {
-              if (passwordController.text.isEmpty) return;
-              Navigator.pop(context);
-              // TODO: Call delete account API
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Account deletion requested')),
-              );
+              final password = passwordController.text;
+              if (password.isEmpty) return;
+              Navigator.pop(dialogContext);
+              final ok = await ref
+                  .read(currentUserProvider.notifier)
+                  .deleteAccount(password: password);
+              if (ok) {
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Account deleted')),
+                );
+                await ref.read(authProvider.notifier).logout();
+              } else {
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Could not delete account. Check your password.'),
+                  ),
+                );
+              }
             },
-            child: Text(context.l10n.settingsDelete, style: TextStyle(color: AppTheme.errorColor)),
+            child: Text(context.l10n.settingsDelete,
+                style: TextStyle(color: AppTheme.errorColor)),
           ),
         ],
       ),
