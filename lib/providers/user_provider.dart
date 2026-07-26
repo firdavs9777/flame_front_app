@@ -99,6 +99,7 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
     if (result.success && result.data != null) {
       state = AsyncValue.data(currentUser.copyWith(
         photos: [...currentUser.photos, result.data!.url],
+        photoIds: [...currentUser.photoIds, result.data!.id],
       ));
       return true;
     }
@@ -116,6 +117,46 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
       return true;
     }
     return false;
+  }
+
+  /// Deletes the photo at [index] by its backend id and updates local state.
+  Future<bool> deletePhotoAt(int index) async {
+    final currentUser = state.valueOrNull;
+    if (currentUser == null) return false;
+    if (index < 0 || index >= currentUser.photoIds.length) return false;
+    final photoId = currentUser.photoIds[index];
+    if (photoId.isEmpty) return false;
+
+    final result = await _userService.deletePhoto(photoId);
+    if (!result.success) return false;
+
+    final photos = [...currentUser.photos]..removeAt(index);
+    final ids = [...currentUser.photoIds]..removeAt(index);
+    state = AsyncValue.data(currentUser.copyWith(photos: photos, photoIds: ids));
+    return true;
+  }
+
+  /// Makes the photo at [index] the main photo by reordering it to the front.
+  Future<bool> setMainPhotoAt(int index) async {
+    final currentUser = state.valueOrNull;
+    if (currentUser == null) return false;
+    if (index <= 0 || index >= currentUser.photoIds.length) return false;
+    final id = currentUser.photoIds[index];
+    if (id.isEmpty) return false;
+
+    final ids = [...currentUser.photoIds];
+    ids.removeAt(index);
+    ids.insert(0, id);
+
+    final result = await _userService.reorderPhotos(ids);
+    if (!result.success || result.data == null) return false;
+
+    final photos = result.data!;
+    state = AsyncValue.data(currentUser.copyWith(
+      photos: photos.map((p) => p.url).toList(),
+      photoIds: photos.map((p) => p.id).toList(),
+    ));
+    return true;
   }
 
   Future<bool> updateLocation(double latitude, double longitude) async {
