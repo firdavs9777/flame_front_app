@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
-import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'home/home_screen.dart';
 import 'profile/my_profile_screen.dart';
@@ -128,7 +127,6 @@ class _NavItem extends StatelessWidget {
     required this.activeIcon,
     required this.label,
     required this.onTap,
-    this.badgeCount = 0,
   });
 
   final bool selected;
@@ -136,7 +134,6 @@ class _NavItem extends StatelessWidget {
   final IconData activeIcon;
   final String label;
   final VoidCallback onTap;
-  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +141,7 @@ class _NavItem extends StatelessWidget {
         Theme.of(context).brightness == Brightness.dark ? AppColors.gray500 : AppColors.gray500;
     final color = selected ? AppColors.primary : unselectedColor;
 
-    Widget iconWidget = AnimatedSwitcher(
+    final iconWidget = AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) =>
           ScaleTransition(scale: animation, child: child),
@@ -155,10 +152,6 @@ class _NavItem extends StatelessWidget {
         size: 24,
       ),
     );
-
-    if (badgeCount > 0) {
-      iconWidget = AppDotBadge(count: badgeCount, child: iconWidget);
-    }
 
     return Expanded(
       child: GestureDetector(
