@@ -297,6 +297,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   void _showPhotoOptions(int index) {
+    final messenger = ScaffoldMessenger.of(context);
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -313,7 +314,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       .read(currentUserProvider.notifier)
                       .setMainPhotoAt(index);
                   if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     SnackBar(
                       content: Text(ok
                           ? 'Main photo updated'
@@ -331,7 +332,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     .read(currentUserProvider.notifier)
                     .deletePhotoAt(index);
                 if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   SnackBar(
                     content: Text(ok ? 'Photo deleted' : 'Could not delete photo'),
                   ),
