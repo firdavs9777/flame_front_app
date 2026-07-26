@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/env.dart';
 
 class ApiClient {
@@ -16,6 +17,10 @@ class ApiClient {
   String? _accessToken;
   String? _refreshToken;
   String? _userId;
+
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
 
   // Injected http client (for test injection). In production uses default http.Client.
   final http.Client _httpClient;
@@ -46,10 +51,29 @@ class ApiClient {
 
   // Initialize tokens from storage
   Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    _accessToken = prefs.getString(_accessTokenKey);
-    _refreshToken = prefs.getString(_refreshTokenKey);
-    _userId = prefs.getString(_userIdKey);
+    _accessToken = await _secureStorage.read(key: _accessTokenKey);
+    _refreshToken = await _secureStorage.read(key: _refreshTokenKey);
+    _userId = await _secureStorage.read(key: _userIdKey);
+
+    // One-time migration from legacy plaintext SharedPreferences.
+    if (_accessToken == null) {
+      final prefs = await SharedPreferences.getInstance();
+      final legacyAccess = prefs.getString(_accessTokenKey);
+      final legacyRefresh = prefs.getString(_refreshTokenKey);
+      if (legacyAccess != null && legacyRefresh != null) {
+        _accessToken = legacyAccess;
+        _refreshToken = legacyRefresh;
+        _userId = prefs.getString(_userIdKey);
+        await _secureStorage.write(key: _accessTokenKey, value: legacyAccess);
+        await _secureStorage.write(key: _refreshTokenKey, value: legacyRefresh);
+        if (_userId != null) {
+          await _secureStorage.write(key: _userIdKey, value: _userId!);
+        }
+        await prefs.remove(_accessTokenKey);
+        await prefs.remove(_refreshTokenKey);
+        await prefs.remove(_userIdKey);
+      }
+    }
   }
 
   // Save tokens to storage
@@ -62,10 +86,11 @@ class ApiClient {
     _refreshToken = refreshToken;
     if (userId != null) _userId = userId;
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_accessTokenKey, accessToken);
-    await prefs.setString(_refreshTokenKey, refreshToken);
-    if (userId != null) await prefs.setString(_userIdKey, userId);
+    await _secureStorage.write(key: _accessTokenKey, value: accessToken);
+    await _secureStorage.write(key: _refreshTokenKey, value: refreshToken);
+    if (userId != null) {
+      await _secureStorage.write(key: _userIdKey, value: userId);
+    }
   }
 
   // Clear tokens
@@ -73,6 +98,9 @@ class ApiClient {
     _accessToken = null;
     _refreshToken = null;
     _userId = null;
+    await _secureStorage.delete(key: _accessTokenKey);
+    await _secureStorage.delete(key: _refreshTokenKey);
+    await _secureStorage.delete(key: _userIdKey);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_accessTokenKey);
     await prefs.remove(_refreshTokenKey);
