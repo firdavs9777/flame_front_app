@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/smart_image.dart';
+import 'package:flame/widgets/report_block_menu.dart';
 
 class ProfileDetailScreen extends StatefulWidget {
   final User user;
@@ -38,6 +39,12 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               ),
               onPressed: () => Navigator.pop(context),
             ),
+            actions: [
+              ReportBlockMenu(
+                userId: widget.user.id,
+                userName: widget.user.name,
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
