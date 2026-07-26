@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flame/config/env.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
@@ -7,6 +10,12 @@ import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/screens/chat/widgets/widgets.dart';
 import '../../realtime/widgets/connection_banner.dart';
+
+/// How often to poll for new messages while a thread is open. This is a REST
+/// stand-in for realtime delivery — only runs when
+/// `EnvConfig.current.realtimeEnabled` is false (which is always, for now,
+/// since the backend has no chat socket).
+const Duration _pollInterval = Duration(seconds: 4);
 
 class ChatScreen extends ConsumerStatefulWidget {
   final Conversation conversation;
@@ -27,16 +36,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   List<Message> _messages = [];
 
   Message? _replyingTo;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _loadInitialMessages();
     _scrollController.addListener(_onScroll);
+    _startPolling();
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -119,11 +131,68 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final chatService = ref.read(chatServiceProvider);
     final result = await chatService.getMessages(widget.conversation.id);
 
-    if (mounted && result.success && result.data != null) {
-      setState(() {
-        // Backend returns newest-first; reverse to oldest-first for display.
-        _messages = result.data!.messages.reversed.toList();
-        _hasMoreMessages = result.data!.hasMore;
+    if (!mounted) return;
+    if (!result.success || result.data == null) return;
+
+    // Merge-append rather than replace, so history loaded further up (via
+    // _loadMoreMessages) isn't collapsed by this newest-page fetch.
+    setState(() {
+      final existingIds = _messages.map((m) => m.id).toSet();
+      final newMessages = result.data!.messages.reversed
+          .where((m) => !existingIds.contains(m.id))
+          .toList();
+      _messages = [..._messages, ...newMessages];
+      _hasMoreMessages = result.data!.hasMore;
+    });
+  }
+
+  // ==================== Polling ====================
+
+  /// Starts the REST-polling fallback used while realtime delivery is
+  /// unavailable. Cancelled in [dispose].
+  void _startPolling() {
+    _pollTimer = Timer.periodic(_pollInterval, (_) {
+      if (!EnvConfig.current.realtimeEnabled) {
+        _pollForNewMessages();
+      }
+    });
+  }
+
+  bool _isScrolledToBottom() {
+    if (!_scrollController.hasClients) return true;
+    final position = _scrollController.position;
+    // Small threshold so being nearly at the bottom still counts as "at the
+    // bottom" for auto-scroll purposes.
+    return position.pixels >= position.maxScrollExtent - 40;
+  }
+
+  Future<void> _pollForNewMessages() async {
+    final chatService = ref.read(chatServiceProvider);
+    final result = await chatService.getMessages(widget.conversation.id);
+
+    if (!mounted) return;
+    if (!result.success || result.data == null) return;
+
+    final existingIds = _messages.map((m) => m.id).toSet();
+    // Backend returns the newest page newest-first; reverse to
+    // oldest-first so new messages append to the bottom in order.
+    final newMessages = result.data!.messages.reversed
+        .where((m) => !existingIds.contains(m.id))
+        .toList();
+
+    if (newMessages.isEmpty) return;
+
+    final shouldPinToBottom = _isScrolledToBottom();
+
+    setState(() {
+      _messages = [..._messages, ...newMessages];
+    });
+
+    _markMessagesAsRead();
+
+    if (shouldPinToBottom) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToBottom(animated: true);
       });
     }
   }
