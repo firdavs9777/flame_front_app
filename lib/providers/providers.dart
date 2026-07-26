@@ -6,3 +6,4 @@ export 'filter_provider.dart';
 export 'auth_provider.dart';
 export 'discovery_provider.dart';
 export 'swipe_provider.dart';
+export 'story_provider.dart';

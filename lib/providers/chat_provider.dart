@@ -5,6 +5,7 @@ import 'package:flame/models/models.dart';
 import 'package:flame/services/chat_service.dart';
 import 'package:flame/services/websocket_service.dart';
 import 'package:flame/core/i18n/error_strings_for.dart';
+import 'package:flame/config/env.dart';
 
 final chatServiceProvider = Provider<ChatService>((ref) => ChatService());
 final webSocketServiceProvider = Provider<WebSocketService>((ref) => WebSocketService());
@@ -30,6 +31,12 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
   bool get hasMore => _hasMore;
 
   void _initWebSocket() {
+    // Skip realtime entirely when the backend has no chat socket — avoids an
+    // endless reconnect loop. Re-enabled via EnvConfig.realtimeEnabled.
+    if (!EnvConfig.current.realtimeEnabled) {
+      debugPrint('🔌 _initWebSocket: realtime disabled — skipping WebSocket');
+      return;
+    }
     debugPrint('🔌 _initWebSocket: Setting up WebSocket listeners');
 
     // Connect to WebSocket

@@ -4,6 +4,7 @@ import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/chat/chat_screen.dart';
+import 'package:flame/screens/stories/widgets/story_tray.dart';
 import 'package:flame/widgets/smart_image.dart';
 
 class MatchesScreen extends ConsumerStatefulWidget {
@@ -46,6 +47,9 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
         },
         child: CustomScrollView(
           slivers: [
+            // Stories tray (own + matches' ephemeral stories)
+            const SliverToBoxAdapter(child: StoryTray()),
+
             // New matches section
             matchesState.when(
               loading: () => const SliverToBoxAdapter(
