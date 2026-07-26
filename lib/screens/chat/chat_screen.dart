@@ -71,7 +71,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       setState(() {
         _isLoadingMessages = false;
         if (result.success && result.data != null) {
-          _messages = result.data!.messages;
+          // Backend returns newest-first; reverse to oldest-first for display
+          // (oldest at top, newest at bottom).
+          _messages = result.data!.messages.reversed.toList();
           _hasMoreMessages = result.data!.hasMore;
         }
       });
@@ -89,17 +91,38 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final chatService = ref.read(chatServiceProvider);
     final result = await chatService.getMessages(
       widget.conversation.id,
-      before: _messages.first.id,
+      offset: _messages.length,
     );
 
     if (mounted) {
+      // Preserve the visual scroll position when older messages are
+      // prepended above the currently visible content.
+      final hasScrollClient = _scrollController.hasClients;
+      final oldExtent = hasScrollClient ? _scrollController.position.maxScrollExtent : 0.0;
+      final oldOffset = hasScrollClient ? _scrollController.offset : 0.0;
+
       setState(() {
         _isLoadingMessages = false;
         if (result.success && result.data != null) {
-          _messages = [...result.data!.messages, ..._messages];
+          final existingIds = _messages.map((m) => m.id).toSet();
+          // Backend returns this page newest-first; reverse to oldest-first
+          // so older messages read top-to-bottom before being prepended.
+          final olderMessages = result.data!.messages.reversed
+              .where((m) => !existingIds.contains(m.id))
+              .toList();
+          _messages = [...olderMessages, ..._messages];
           _hasMoreMessages = result.data!.hasMore;
         }
       });
+
+      if (hasScrollClient) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            final newExtent = _scrollController.position.maxScrollExtent;
+            _scrollController.jumpTo(oldOffset + (newExtent - oldExtent));
+          }
+        });
+      }
     }
   }
 
@@ -109,7 +132,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     if (mounted && result.success && result.data != null) {
       setState(() {
-        _messages = result.data!.messages;
+        // Backend returns newest-first; reverse to oldest-first for display.
+        _messages = result.data!.messages.reversed.toList();
         _hasMoreMessages = result.data!.hasMore;
       });
     }
@@ -154,7 +178,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final content = _messageController.text.trim();
     if (content.isEmpty || _isSending) return;
 
-    setState(() => _isSending = true);
+    // Capture the content and reply target before clearing the input, so
+    // they can be restored if the send fails.
+    final sentReplyingTo = _replyingTo;
+    final replyToId = sentReplyingTo?.id;
+
+    setState(() {
+      _isSending = true;
+      _replyingTo = null;
+    });
     _messageController.clear();
 
     _typingTimer?.cancel();
@@ -162,9 +194,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _isTyping = false;
       ref.read(conversationsProvider.notifier).sendStopTyping(widget.conversation.id);
     }
-
-    final replyToId = _replyingTo?.id;
-    setState(() => _replyingTo = null);
 
     final error = await ref.read(conversationsProvider.notifier).sendMessage(
       widget.conversation.id,
@@ -179,6 +208,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         await _refreshMessages();
         _scrollToBottom(animated: true);
       } else {
+        // Restore the user's input and reply target so nothing is lost.
+        setState(() {
+          _messageController.text = content;
+          _messageController.selection = TextSelection.collapsed(offset: content.length);
+          _replyingTo = sentReplyingTo;
+        });
         _showError(error);
       }
     }
