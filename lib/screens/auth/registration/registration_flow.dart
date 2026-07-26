@@ -14,7 +14,6 @@ import 'steps/step_profile_info.dart';
 import 'steps/step_looking_for.dart';
 import 'steps/step_bio_interests.dart';
 import 'steps/step_photos.dart';
-import 'steps/step_verify_email.dart';
 
 class RegistrationData {
   String email = '';
@@ -41,7 +40,7 @@ class RegistrationFlow extends ConsumerStatefulWidget {
 class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
-  final int _totalSteps = 6; // Added verify email step
+  final int _totalSteps = 5; // 5-step flow; no email verification
   final RegistrationData _data = RegistrationData();
   bool _isUploading = false;
   bool _registrationComplete = false;
@@ -52,7 +51,6 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     'Looking For',
     'Your Interests',
     'Add Photos',
-    'Verify Email',
   ];
 
   final List<String> _stepSubtitles = [
@@ -61,7 +59,6 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     'Who would you like to meet?',
     'What makes you, you?',
     'Show off your best self',
-    'Enter the code we sent you',
   ];
 
   @override
@@ -257,22 +254,12 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
           isLoading: authState.isLoading || _isUploading,
           onComplete: _handlePhotosComplete,
         ),
-        StepVerifyEmail(
-          email: _data.email,
-          onVerified: _handleEmailVerified,
-          onResend: _handleResendCode,
-        ),
       ],
     );
   }
 
   void _handleBack() {
     if (_currentStep > 0) {
-      // Don't allow going back from verify email step
-      if (_currentStep == 5) {
-        _showCancelDialog();
-        return;
-      }
       _pageController.previousPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeOutCubic,
@@ -280,32 +267,6 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     } else {
       Navigator.of(context).pop();
     }
-  }
-
-  void _showCancelDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cancel Registration?'),
-        content: const Text(
-          'You need to verify your email to complete registration. Are you sure you want to cancel?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Continue Verification'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _goToNextStep() {
@@ -374,8 +335,9 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
       setState(() => _isUploading = false);
 
       if (success) {
-        // Go to email verification step
-        _goToNextStep();
+        // Registration is complete — tokens are already issued. The ref.listen
+        // above pops to root once auth state flips to authenticated.
+        setState(() => _registrationComplete = true);
       }
     } catch (e) {
       setState(() => _isUploading = false);
@@ -496,25 +458,6 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
             child: const Text('Open Settings'),
           ),
         ],
-      ),
-    );
-  }
-
-  void _handleEmailVerified() {
-    setState(() => _registrationComplete = true);
-    Navigator.of(context).popUntil((route) => route.isFirst);
-  }
-
-  Future<void> _handleResendCode() async {
-    // Resend verification code logic is handled in the verify email step
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Verification code resent!'),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
       ),
     );
   }
