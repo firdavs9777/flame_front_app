@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flame/config/env.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/screens/auth/forgot_password_screen.dart';
@@ -110,9 +111,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 32),
 
                   // Social Login
-                  _buildSocialLogin()
-                      .animate()
-                      .fadeIn(delay: 400.ms, duration: 600.ms),
+                  if (EnvConfig.current.authSocialEnabled)
+                    _buildSocialLogin()
+                        .animate()
+                        .fadeIn(delay: 400.ms, duration: 600.ms),
 
                   const SizedBox(height: 32),
                 ],
@@ -340,23 +342,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ],
         ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const ForgotPasswordScreen(),
+        if (EnvConfig.current.forgotPasswordEnabled)
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ForgotPasswordScreen(),
+                ),
+              );
+            },
+            child: Text(
+              context.l10n.loginForgotPassword,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.primaryColor,
               ),
-            );
-          },
-          child: Text(
-            context.l10n.loginForgotPassword,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.primaryColor,
             ),
-          ),
-        ),
+          )
+        else
+          const SizedBox.shrink(),
       ],
     );
   }
