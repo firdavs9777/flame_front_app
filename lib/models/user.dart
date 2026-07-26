@@ -5,6 +5,9 @@ class User {
   final int age;
   final String bio;
   final List<String> photos;
+  /// Backend photo ids, index-aligned with [photos]. Empty string for a photo
+  /// that arrived as a bare URL (no id). Used for delete/reorder by id.
+  final List<String> photoIds;
   final String location;
   final double distance;
   final List<String> interests;
@@ -38,6 +41,7 @@ class User {
     required this.age,
     required this.bio,
     required this.photos,
+    this.photoIds = const [],
     required this.location,
     this.distance = 0,
     required this.interests,
@@ -61,17 +65,26 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
-    // Handle photos - can be list of strings or list of objects
-    List<String> parsePhotos(dynamic photos) {
-      if (photos == null) return [];
-      if (photos is List) {
-        return photos.map((p) {
-          if (p is String) return p;
-          if (p is Map) return p['url']?.toString() ?? '';
-          return '';
-        }).where((p) => p.isNotEmpty).toList();
+    // Parse photos into aligned URL + id lists. Entries can be bare URL strings
+    // or objects {url, id}; entries without a usable URL are dropped from both.
+    final photoUrls = <String>[];
+    final photoIdList = <String>[];
+    final rawPhotos = json['photos'];
+    if (rawPhotos is List) {
+      for (final p in rawPhotos) {
+        String url = '';
+        String id = '';
+        if (p is String) {
+          url = p;
+        } else if (p is Map) {
+          url = p['url']?.toString() ?? '';
+          id = p['id']?.toString() ?? '';
+        }
+        if (url.isNotEmpty) {
+          photoUrls.add(url);
+          photoIdList.add(id);
+        }
       }
-      return [];
     }
 
     // Handle location - can be string or object
@@ -98,7 +111,8 @@ class User {
       name: json['name'] ?? '',
       age: json['age'] ?? 18,
       bio: json['bio'] ?? '',
-      photos: parsePhotos(json['photos']),
+      photos: photoUrls,
+      photoIds: photoIdList,
       location: parseLocation(json['location']),
       distance: (json['distance'] ?? 0).toDouble(),
       interests: List<String>.from(json['interests'] ?? []),
@@ -170,6 +184,7 @@ class User {
     int? age,
     String? bio,
     List<String>? photos,
+    List<String>? photoIds,
     String? location,
     double? distance,
     List<String>? interests,
@@ -198,6 +213,7 @@ class User {
       age: age ?? this.age,
       bio: bio ?? this.bio,
       photos: photos ?? this.photos,
+      photoIds: photoIds ?? this.photoIds,
       location: location ?? this.location,
       distance: distance ?? this.distance,
       interests: interests ?? this.interests,
