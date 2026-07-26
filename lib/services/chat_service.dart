@@ -5,7 +5,9 @@ import 'package:flame/services/api_client.dart';
 import 'package:flame/services/user_service.dart';
 
 class ChatService {
-  final ApiClient _apiClient = ApiClient();
+  final ApiClient _apiClient;
+
+  ChatService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
   // Get all conversations
   Future<ServiceResult<ConversationsResult>> getConversations({
@@ -44,14 +46,12 @@ class ChatService {
   Future<ServiceResult<MessagesResult>> getMessages(
     String conversationId, {
     int limit = 50,
-    String? before,
+    int offset = 0,
   }) async {
     final queryParams = <String, String>{
       'limit': limit.toString(),
+      'offset': offset.toString(),
     };
-    if (before != null) {
-      queryParams['before'] = before;
-    }
 
     final response = await _apiClient.get(
       '/conversations/$conversationId/messages',
@@ -61,10 +61,11 @@ class ChatService {
     if (response.success && response.data != null) {
       final messagesData = response.data['messages'] as List? ?? [];
       final messages = messagesData.map((m) => Message.fromJson(m)).toList();
+      final pagination = response.data['pagination'] as Map<String, dynamic>? ?? {};
 
       return ServiceResult.success(MessagesResult(
         messages: messages,
-        hasMore: response.data['has_more'] ?? false,
+        hasMore: pagination['has_more'] ?? false,
       ));
     }
 
@@ -79,11 +80,10 @@ class ChatService {
     String? replyToId,
   }) async {
     final body = <String, dynamic>{
-      'content': content,
-      'type': type.toApiString(),
+      'text': content,
     };
     if (replyToId != null) {
-      body['reply_to_id'] = replyToId;
+      body['reply_to'] = replyToId;
     }
 
     final response = await _apiClient.post(
@@ -269,40 +269,36 @@ class ChatService {
   }
 
   // Add reaction to a message
-  Future<ServiceResult<List<MessageReaction>>> addReaction(
+  Future<ServiceResult<Message>> addReaction(
     String conversationId,
     String messageId,
     String emoji,
   ) async {
     final response = await _apiClient.post(
-      '/conversations/$conversationId/messages/$messageId/reactions',
+      '/messages/$messageId/reactions',
       body: {
         'emoji': emoji,
       },
     );
 
     if (response.success && response.data != null) {
-      final reactionsData = response.data['reactions'] as List? ?? [];
-      final reactions = reactionsData
-          .map((r) => MessageReaction.fromJson(r))
-          .toList();
-      return ServiceResult.success(reactions);
+      return ServiceResult.success(Message.fromJson(response.data));
     }
 
     return ServiceResult.failure(response.error ?? 'Failed to add reaction');
   }
 
   // Remove reaction from a message
-  Future<ServiceResult<void>> removeReaction(
+  Future<ServiceResult<Message>> removeReaction(
     String conversationId,
     String messageId,
   ) async {
     final response = await _apiClient.delete(
-      '/conversations/$conversationId/messages/$messageId/reactions',
+      '/messages/$messageId/reactions',
     );
 
-    if (response.success) {
-      return ServiceResult.success(null);
+    if (response.success && response.data != null) {
+      return ServiceResult.success(Message.fromJson(response.data));
     }
 
     return ServiceResult.failure(response.error ?? 'Failed to remove reaction');
@@ -387,11 +383,8 @@ class ChatService {
     String conversationId,
     List<String> messageIds,
   ) async {
-    final response = await _apiClient.post(
+    final response = await _apiClient.put(
       '/conversations/$conversationId/read',
-      body: {
-        'message_ids': messageIds,
-      },
     );
 
     if (response.success) {
@@ -399,6 +392,22 @@ class ChatService {
     }
 
     return ServiceResult.failure(response.error ?? 'Failed to mark messages as read');
+  }
+
+  // Create (or fetch existing) a conversation with a user
+  Future<ServiceResult<Conversation>> createConversation(String userId) async {
+    final response = await _apiClient.post(
+      '/conversations',
+      body: {
+        'user_id': userId,
+      },
+    );
+
+    if (response.success && response.data != null) {
+      return ServiceResult.success(Conversation.fromJson(response.data));
+    }
+
+    return ServiceResult.failure(response.error ?? 'Failed to create conversation');
   }
 
   // ===== Sticker APIs =====

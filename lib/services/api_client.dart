@@ -170,6 +170,29 @@ class ApiClient {
     }
   }
 
+  // PUT request
+  Future<ApiResponse> put(String endpoint, {Map<String, dynamic>? body}) async {
+    try {
+      final uri = Uri.parse('$baseUrl$endpoint');
+      final response = await _authenticated((c) => c
+          .put(
+            uri,
+            headers: _headers,
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(const Duration(seconds: 30)));
+      return _handleResponse(response);
+    } on _AuthLost {
+      return await _onAuthLost();
+    } on SocketException {
+      return ApiResponse.error('No internet connection');
+    } on HttpException {
+      return ApiResponse.error('Server error');
+    } catch (e) {
+      return ApiResponse.error(e.toString());
+    }
+  }
+
   // PATCH request
   Future<ApiResponse> patch(String endpoint, {Map<String, dynamic>? body}) async {
     try {
