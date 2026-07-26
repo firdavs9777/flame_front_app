@@ -307,17 +307,35 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ListTile(
                 leading: const Icon(Icons.star),
                 title: const Text('Set as main photo'),
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(context);
-                  // TODO: Implement set as main
+                  final ok = await ref
+                      .read(currentUserProvider.notifier)
+                      .setMainPhotoAt(index);
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(ok
+                          ? 'Main photo updated'
+                          : 'Could not update main photo'),
+                    ),
+                  );
                 },
               ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
               title: const Text('Delete photo', style: TextStyle(color: Colors.red)),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                // TODO: Implement delete photo
+                final ok = await ref
+                    .read(currentUserProvider.notifier)
+                    .deletePhotoAt(index);
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(ok ? 'Photo deleted' : 'Could not delete photo'),
+                  ),
+                );
               },
             ),
           ],
