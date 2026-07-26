@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/config/env.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
+import 'package:flame/services/api_client.dart';
+import 'package:flame/services/flame_socket_service.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/widgets/smart_image.dart';
@@ -37,6 +39,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Message? _replyingTo;
   Timer? _pollTimer;
+  FlameSocketService? _flameSocket;
 
   @override
   void initState() {
@@ -44,11 +47,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _loadInitialMessages();
     _scrollController.addListener(_onScroll);
     _startPolling();
+    _connectFlameSocket();
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _flameSocket?.dispose();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -158,6 +163,50 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
+  // ==================== Realtime (Flame socket) ====================
+
+  /// Connects the `/flame` Socket.IO namespace for this thread when chat is
+  /// enabled (local dev only, per `EnvConfig.current.chatEnabled` — prod
+  /// stays off until the backend deploys the socket). This is additive on
+  /// top of the existing REST poll below, not a replacement: the poll's
+  /// merge-append de-dupe means a message delivered by both paths never
+  /// shows twice, so leaving polling running is a harmless fallback.
+  void _connectFlameSocket() {
+    if (!EnvConfig.current.chatEnabled) return;
+
+    final token = ApiClient().accessToken;
+    if (token == null) return;
+
+    final socket = FlameSocketService(token: token)
+      ..onMessageNew = _onSocketMessageNew;
+    _flameSocket = socket;
+    socket.connect();
+  }
+
+  /// Handles a `message:new` push for this open thread. Reuses the same
+  /// merge-append + de-dupe pattern as [_pollForNewMessages]: only append if
+  /// the id isn't already present, keep newest at the bottom, and respect
+  /// the scroll-pin so an open thread that's been scrolled up doesn't jump.
+  void _onSocketMessageNew(Message message, String? conversationId) {
+    if (conversationId != widget.conversation.id) return;
+    if (!mounted) return;
+    if (_messages.any((m) => m.id == message.id)) return;
+
+    final shouldPinToBottom = _isScrolledToBottom();
+
+    setState(() {
+      _messages = [..._messages, message];
+    });
+
+    _markMessagesAsRead();
+
+    if (shouldPinToBottom) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToBottom(animated: true);
+      });
+    }
+  }
+
   bool _isScrolledToBottom() {
     if (!_scrollController.hasClients) return true;
     final position = _scrollController.position;
@@ -206,6 +255,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     if (unreadIds.isNotEmpty) {
       ref.read(conversationsProvider.notifier).markAsRead(widget.conversation.id);
+      _flameSocket?.emitMarkRead(widget.conversation.otherUser.id, widget.conversation.id);
     }
   }
 
