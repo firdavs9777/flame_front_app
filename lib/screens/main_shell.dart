@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flame/config/env.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'chat/matches_screen.dart';
 import 'home/home_screen.dart';
 import 'profile/my_profile_screen.dart';
 import 'settings/settings_screen.dart';
@@ -22,6 +24,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   // Create screens once to avoid GlobalKey conflicts
   late final List<Widget> _screens = [
     const HomeScreen(),
+    if (EnvConfig.current.chatEnabled) const MatchesScreen(),
     const MyProfileScreen(),
     const SettingsScreen(),
   ];
@@ -40,6 +43,10 @@ class _MainShellState extends ConsumerState<MainShell> {
   Future<void> _initializeData() async {
     // Load user profile.
     await ref.read(currentUserProvider.notifier).loadUser();
+
+    if (EnvConfig.current.chatEnabled) {
+      await ref.read(conversationsProvider.notifier).loadConversations(refresh: true);
+    }
   }
 
   @override
@@ -69,6 +76,53 @@ class _FlameNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
+  // Builds nav items in the exact order/indices of _MainShellState._screens:
+  // Discover, [Chat if enabled], Profile, Settings.
+  List<Widget> _buildNavItems(BuildContext context) {
+    var index = 0;
+    final items = <Widget>[];
+
+    final discoverIndex = index++;
+    items.add(_NavItem(
+      selected: currentIndex == discoverIndex,
+      icon: Icons.local_fire_department_outlined,
+      activeIcon: Icons.local_fire_department,
+      label: context.l10n.navDiscover,
+      onTap: () => onTap(discoverIndex),
+    ));
+
+    if (EnvConfig.current.chatEnabled) {
+      final chatIndex = index++;
+      items.add(_NavItem(
+        selected: currentIndex == chatIndex,
+        icon: Icons.chat_bubble_outline,
+        activeIcon: Icons.chat_bubble,
+        label: context.l10n.navChat,
+        onTap: () => onTap(chatIndex),
+      ));
+    }
+
+    final profileIndex = index++;
+    items.add(_NavItem(
+      selected: currentIndex == profileIndex,
+      icon: Icons.person_outline,
+      activeIcon: Icons.person,
+      label: context.l10n.navProfile,
+      onTap: () => onTap(profileIndex),
+    ));
+
+    final settingsIndex = index++;
+    items.add(_NavItem(
+      selected: currentIndex == settingsIndex,
+      icon: Icons.settings_outlined,
+      activeIcon: Icons.settings,
+      label: context.l10n.navSettings,
+      onTap: () => onTap(settingsIndex),
+    ));
+
+    return items;
+  }
+
   @override
   Widget build(BuildContext context) {
     final surface = Theme.of(context).colorScheme.surface;
@@ -90,29 +144,7 @@ class _FlameNavBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                selected: currentIndex == 0,
-                icon: Icons.local_fire_department_outlined,
-                activeIcon: Icons.local_fire_department,
-                label: context.l10n.navDiscover,
-                onTap: () => onTap(0),
-              ),
-              _NavItem(
-                selected: currentIndex == 1,
-                icon: Icons.person_outline,
-                activeIcon: Icons.person,
-                label: context.l10n.navProfile,
-                onTap: () => onTap(1),
-              ),
-              _NavItem(
-                selected: currentIndex == 2,
-                icon: Icons.settings_outlined,
-                activeIcon: Icons.settings,
-                label: context.l10n.navSettings,
-                onTap: () => onTap(2),
-              ),
-            ],
+            children: _buildNavItems(context),
           ),
         ),
       ),

@@ -18,10 +18,15 @@ class EnvConfig {
   /// backend yet — off until it ships.
   final bool forgotPasswordEnabled;
 
+  /// Whether the Chat tab is shown. Off in prod until the Flame backend chat
+  /// endpoints ship; on locally for development.
+  final bool chatEnabled;
+
   const EnvConfig._(this.env, this.apiBase, this.wsBase,
       {this.realtimeEnabled = true,
       this.authSocialEnabled = false,
-      this.forgotPasswordEnabled = false});
+      this.forgotPasswordEnabled = false,
+      this.chatEnabled = false});
 
   // For iOS Simulator use `localhost`; for a physical device use the Mac's LAN IP.
   // Switch by passing `--dart-define=LOCAL_HOST=192.168.100.114` at run time,
@@ -34,6 +39,7 @@ class EnvConfig {
     'ws://$_localHost:8000',
     authSocialEnabled: false,
     forgotPasswordEnabled: false,
+    chatEnabled: true,
   );
 
   static const _prod = EnvConfig._(
