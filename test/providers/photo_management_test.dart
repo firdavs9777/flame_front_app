@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/user.dart';
 import 'package:flame/services/user_service.dart';
 import 'package:flame/providers/user_provider.dart';
