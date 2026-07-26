@@ -1,11 +1,7 @@
-import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
-import 'package:flame/services/chat_service.dart' show Sticker;
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/widgets/smart_image.dart';
@@ -24,15 +20,12 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final ImagePicker _imagePicker = ImagePicker();
 
   bool _isSending = false;
   bool _isLoadingMessages = false;
   bool _hasMoreMessages = true;
   List<Message> _messages = [];
 
-  Timer? _typingTimer;
-  bool _isTyping = false;
   Message? _replyingTo;
 
   @override
@@ -46,10 +39,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
-    _typingTimer?.cancel();
-    if (_isTyping) {
-      ref.read(conversationsProvider.notifier).sendStopTyping(widget.conversation.id);
-    }
     super.dispose();
   }
 
@@ -153,27 +142,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   // ==================== Messaging ====================
 
-  void _onTextChanged(String text) {
-    if (text.isNotEmpty) {
-      if (!_isTyping) {
-        _isTyping = true;
-        ref.read(conversationsProvider.notifier).sendTyping(widget.conversation.id);
-      }
-
-      _typingTimer?.cancel();
-      _typingTimer = Timer(const Duration(seconds: 3), () {
-        _isTyping = false;
-        ref.read(conversationsProvider.notifier).sendStopTyping(widget.conversation.id);
-      });
-    } else {
-      _typingTimer?.cancel();
-      if (_isTyping) {
-        _isTyping = false;
-        ref.read(conversationsProvider.notifier).sendStopTyping(widget.conversation.id);
-      }
-    }
-  }
-
   Future<void> _sendMessage() async {
     final content = _messageController.text.trim();
     if (content.isEmpty || _isSending) return;
@@ -188,12 +156,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _replyingTo = null;
     });
     _messageController.clear();
-
-    _typingTimer?.cancel();
-    if (_isTyping) {
-      _isTyping = false;
-      ref.read(conversationsProvider.notifier).sendStopTyping(widget.conversation.id);
-    }
 
     final error = await ref.read(conversationsProvider.notifier).sendMessage(
       widget.conversation.id,
@@ -219,196 +181,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  // ==================== Attachments ====================
-
-  void _showAttachmentModal() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => AttachmentModal(
-        onImageTap: () {
-          Navigator.pop(context);
-          _pickImage(ImageSource.gallery);
-        },
-        onCameraTap: () {
-          Navigator.pop(context);
-          _pickImage(ImageSource.camera);
-        },
-        onVideoTap: () {
-          Navigator.pop(context);
-          _pickVideo();
-        },
-        onVoiceTap: () {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Hold the mic button to record a voice message'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        },
-        onGifTap: () {
-          Navigator.pop(context);
-          _showComingSoon('GIF');
-        },
-        onStickerTap: () {
-          Navigator.pop(context);
-          _showComingSoon('Stickers');
-        },
-      ),
-    );
-  }
-
-  Future<void> _pickImage(ImageSource source) async {
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: source,
-        maxWidth: 1920,
-        maxHeight: 1920,
-        imageQuality: 85,
-      );
-
-      if (image == null) return;
-
-      setState(() => _isSending = true);
-
-      final replyToId = _replyingTo?.id;
-      setState(() => _replyingTo = null);
-
-      final error = await ref.read(conversationsProvider.notifier).sendImageMessage(
-        widget.conversation.id,
-        File(image.path),
-        replyToId: replyToId,
-      );
-
-      if (mounted) {
-        setState(() => _isSending = false);
-
-        if (error == null) {
-          await _refreshMessages();
-          _scrollToBottom(animated: true);
-        } else {
-          _showError(error);
-        }
-      }
-    } catch (e) {
-      _showError('Failed to pick image');
-    }
-  }
-
-  Future<void> _pickVideo() async {
-    try {
-      final XFile? video = await _imagePicker.pickVideo(
-        source: ImageSource.gallery,
-        maxDuration: const Duration(minutes: 5),
-      );
-
-      if (video == null) return;
-
-      setState(() => _isSending = true);
-
-      final replyToId = _replyingTo?.id;
-      setState(() => _replyingTo = null);
-
-      final error = await ref.read(conversationsProvider.notifier).sendVideoMessage(
-        widget.conversation.id,
-        File(video.path),
-        replyToId: replyToId,
-      );
-
-      if (mounted) {
-        setState(() => _isSending = false);
-
-        if (error == null) {
-          await _refreshMessages();
-          _scrollToBottom(animated: true);
-        } else {
-          _showError(error);
-        }
-      }
-    } catch (e) {
-      setState(() => _isSending = false);
-      _showError('Failed to pick video');
-    }
-  }
-
-  Future<void> _sendVoiceMessage(File voiceFile, int durationSeconds) async {
-    setState(() => _isSending = true);
-
-    final replyToId = _replyingTo?.id;
-    setState(() => _replyingTo = null);
-
-    final error = await ref.read(conversationsProvider.notifier).sendVoiceMessage(
-      widget.conversation.id,
-      voiceFile,
-      duration: durationSeconds,
-      replyToId: replyToId,
-    );
-
-    if (mounted) {
-      setState(() => _isSending = false);
-
-      if (error == null) {
-        await _refreshMessages();
-        _scrollToBottom(animated: true);
-      } else {
-        _showError(error);
-      }
-    }
-  }
-
-  void _showStickerPicker() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StickerPicker(
-        onStickerSelected: _sendSticker,
-      ),
-    );
-  }
-
-  Future<void> _sendSticker(Sticker sticker) async {
-    setState(() => _isSending = true);
-
-    final replyToId = _replyingTo?.id;
-    setState(() => _replyingTo = null);
-
-    final error = await ref.read(conversationsProvider.notifier).sendStickerMessage(
-      widget.conversation.id,
-      sticker.id,
-      replyToId: replyToId,
-    );
-
-    if (mounted) {
-      setState(() => _isSending = false);
-
-      if (error == null) {
-        await _refreshMessages();
-        _scrollToBottom(animated: true);
-      } else {
-        _showError(error);
-      }
-    }
-  }
-
-  void _showComingSoon(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature coming soon!'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
   // ==================== Message Actions ====================
 
   void _onMessageLongPress(Message message) {
     showModalBottomSheet(
       context: context,
       builder: (context) => _MessageActionsSheet(
-        message: message,
-        isMe: message.isSentBy(_getCurrentUserId()),
         onReply: () {
           Navigator.pop(context);
           setState(() => _replyingTo = message);
@@ -416,14 +194,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         onReact: (emoji) {
           Navigator.pop(context);
           _addReaction(message.id, emoji);
-        },
-        onEdit: message.type == MessageType.text ? () {
-          Navigator.pop(context);
-          _showEditDialog(message);
-        } : null,
-        onDelete: () {
-          Navigator.pop(context);
-          _showDeleteConfirmation(message);
         },
       ),
     );
@@ -437,79 +207,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  void _showEditDialog(Message message) {
-    final editController = TextEditingController(text: message.content);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Message'),
-        content: TextField(
-          controller: editController,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Edit your message...',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final newContent = editController.text.trim();
-              if (newContent.isNotEmpty && newContent != message.content) {
-                await ref.read(conversationsProvider.notifier).editMessage(
-                  widget.conversation.id,
-                  message.id,
-                  newContent,
-                );
-                await _refreshMessages();
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteConfirmation(Message message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Message'),
-        content: const Text('Are you sure you want to delete this message?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await ref.read(conversationsProvider.notifier).deleteMessage(
-                widget.conversation.id,
-                message.id,
-                forEveryone: true,
-              );
-              await _refreshMessages();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ==================== Utilities ====================
-
-  String _getCurrentUserId() {
-    return ref.read(currentUserProvider).valueOrNull?.id ?? '';
-  }
 
   void _scrollToBottom({bool animated = false}) {
     if (_scrollController.hasClients) {
@@ -579,10 +277,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             replyingTo: _replyingTo,
             onSend: _sendMessage,
             onCancelReply: () => setState(() => _replyingTo = null),
-            onAttachmentTap: _showAttachmentModal,
-            onStickerTap: _showStickerPicker,
-            onTextChanged: _onTextChanged,
-            onVoiceRecorded: _sendVoiceMessage,
           ),
         ],
       ),
@@ -721,20 +415,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 // ==================== Message Actions Sheet ====================
 
 class _MessageActionsSheet extends StatelessWidget {
-  final Message message;
-  final bool isMe;
   final VoidCallback onReply;
   final void Function(String emoji) onReact;
-  final VoidCallback? onEdit;
-  final VoidCallback onDelete;
 
   const _MessageActionsSheet({
-    required this.message,
-    required this.isMe,
     required this.onReply,
     required this.onReact,
-    this.onEdit,
-    required this.onDelete,
   });
 
   @override
@@ -769,18 +455,6 @@ class _MessageActionsSheet extends StatelessWidget {
             title: const Text('Reply'),
             onTap: onReply,
           ),
-          if (isMe && onEdit != null)
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Edit'),
-              onTap: onEdit,
-            ),
-          if (isMe)
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete', style: TextStyle(color: Colors.red)),
-              onTap: onDelete,
-            ),
           const SizedBox(height: 8),
         ],
       ),
