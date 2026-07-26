@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,7 +8,7 @@ import 'package:http/testing.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  http.Client _noNet() =>
+  http.Client noNet() =>
       MockClient((req) async => http.Response('{}', 200));
 
   setUp(() {
@@ -18,10 +17,10 @@ void main() {
   });
 
   test('saveTokens persists to secure storage and reloads via init', () async {
-    final a = ApiClient.testInstance(httpClient: _noNet());
+    final a = ApiClient.testInstance(httpClient: noNet());
     await a.saveTokens(accessToken: 'AT', refreshToken: 'RT', userId: 'u1');
 
-    final b = ApiClient.testInstance(httpClient: _noNet());
+    final b = ApiClient.testInstance(httpClient: noNet());
     await b.init();
     expect(b.accessToken, 'AT');
     expect(b.hasTokens, isTrue);
@@ -33,7 +32,7 @@ void main() {
       'refresh_token': 'LEGACY_RT',
       'user_id': 'legacyUser',
     });
-    final a = ApiClient.testInstance(httpClient: _noNet());
+    final a = ApiClient.testInstance(httpClient: noNet());
     await a.init();
     expect(a.accessToken, 'LEGACY_AT');
 
@@ -47,7 +46,7 @@ void main() {
   });
 
   test('clearTokens removes tokens from secure storage', () async {
-    final a = ApiClient.testInstance(httpClient: _noNet());
+    final a = ApiClient.testInstance(httpClient: noNet());
     await a.saveTokens(accessToken: 'AT', refreshToken: 'RT');
     await a.clearTokens();
     expect(a.hasTokens, isFalse);

@@ -22,8 +22,6 @@ Widget _host(Widget home) => ProviderScope(
 
 void main() {
   testWidgets('social login and forgot-password are hidden in MVP', (tester) async {
-    addTearDown(tester.binding.window.clearPhysicalSizeTestValue);
-
     await tester.pumpWidget(_host(const LoginScreen()));
     await tester.pumpAndSettle();
 
