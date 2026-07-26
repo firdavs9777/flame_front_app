@@ -5,7 +5,6 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'home/home_screen.dart';
-import 'chat/matches_screen.dart';
 import 'profile/my_profile_screen.dart';
 import 'settings/settings_screen.dart';
 
@@ -24,7 +23,6 @@ class _MainShellState extends ConsumerState<MainShell> {
   // Create screens once to avoid GlobalKey conflicts
   late final List<Widget> _screens = [
     const HomeScreen(),
-    const MatchesScreen(),
     const MyProfileScreen(),
     const SettingsScreen(),
   ];
@@ -41,20 +39,13 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   Future<void> _initializeData() async {
-    // Load user profile first
+    // Load user profile.
     await ref.read(currentUserProvider.notifier).loadUser();
-
-    // Then load other data in parallel
-    ref.read(matchesProvider.notifier).loadMatches(refresh: true);
-    ref.read(conversationsProvider.notifier).loadConversations(refresh: true);
   }
 
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
-    final unreadMessages = ref.watch(unreadMessagesCountProvider);
-    final newMatches = ref.watch(newMatchesCountProvider);
-    final totalNotifications = unreadMessages + newMatches;
 
     return Scaffold(
       body: IndexedStack(
@@ -65,7 +56,6 @@ class _MainShellState extends ConsumerState<MainShell> {
         currentIndex: currentIndex,
         onTap: (index) =>
             ref.read(bottomNavIndexProvider.notifier).state = index,
-        chatBadgeCount: totalNotifications,
       ),
     );
   }
@@ -75,12 +65,10 @@ class _FlameNavBar extends StatelessWidget {
   const _FlameNavBar({
     required this.currentIndex,
     required this.onTap,
-    required this.chatBadgeCount,
   });
 
   final int currentIndex;
   final ValueChanged<int> onTap;
-  final int chatBadgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -113,25 +101,17 @@ class _FlameNavBar extends StatelessWidget {
               ),
               _NavItem(
                 selected: currentIndex == 1,
-                icon: Icons.chat_bubble_outline,
-                activeIcon: Icons.chat_bubble,
-                label: context.l10n.navChat,
-                badgeCount: chatBadgeCount,
+                icon: Icons.person_outline,
+                activeIcon: Icons.person,
+                label: context.l10n.navProfile,
                 onTap: () => onTap(1),
               ),
               _NavItem(
                 selected: currentIndex == 2,
-                icon: Icons.person_outline,
-                activeIcon: Icons.person,
-                label: context.l10n.navProfile,
-                onTap: () => onTap(2),
-              ),
-              _NavItem(
-                selected: currentIndex == 3,
                 icon: Icons.settings_outlined,
                 activeIcon: Icons.settings,
                 label: context.l10n.navSettings,
-                onTap: () => onTap(3),
+                onTap: () => onTap(2),
               ),
             ],
           ),
