@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -465,16 +466,16 @@ class ApiClient {
     Map<String, dynamic>? data;
 
     // Debug logging
-    print('API Response [${response.request?.method} ${response.request?.url}]: $statusCode');
+    if (kDebugMode) {
+      print('API Response: ${response.request?.method} $statusCode');
+    }
 
     try {
       if (response.body.isNotEmpty) {
         data = jsonDecode(response.body);
-        print('API Response Body: ${response.body.length > 500 ? response.body.substring(0, 500) : response.body}');
       }
     } catch (e) {
-      // Response is not JSON
-      print('API Response (non-JSON): ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}');
+      // Response is not JSON; body intentionally not logged (may contain PII).
     }
 
     if (statusCode >= 200 && statusCode < 300) {
@@ -533,7 +534,9 @@ class ApiClient {
         errorMessage = _getStatusCodeMessage(statusCode);
       }
 
-      print('API Error: $statusCode - $errorMessage');
+      if (kDebugMode) {
+        print('API Error: $statusCode ${errorCode ?? ''}');
+      }
 
       return ApiResponse(
         success: false,
