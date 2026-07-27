@@ -46,3 +46,6 @@ app.*.map.json
 
 # Generated localizations
 lib/l10n/gen/
+
+# Internal SDD subagent reports (not part of the codebase)
+docs/superpowers/plans/*-report.md
