@@ -65,8 +65,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   // server-evaluated is_profile_complete; falls back to a local heuristic for
   // older API versions / during the deploy window where the field is missing.
   AuthStatus _statusFor(User user) {
-    final complete = user.isProfileComplete ??
-        (user.photos.isNotEmpty && user.interests.isNotEmpty);
+    // The backend is the source of truth for completeness. Only send the user
+    // to the completion flow when it EXPLICITLY reports the profile incomplete.
+    // When it doesn't say (null) — as the current Flame backend doesn't yet
+    // return is_profile_complete — default to complete rather than guessing from
+    // photos/interests, which stranded photo-less accounts on the register flow.
+    final complete = user.isProfileComplete ?? true;
     return complete ? AuthStatus.authenticated : AuthStatus.profileIncomplete;
   }
 
