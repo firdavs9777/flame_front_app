@@ -9,6 +9,7 @@ import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/models/user.dart';
 import 'package:flame/services/location_service.dart';
 import 'package:flame/services/user_service.dart';
+import 'photo_uploader.dart';
 import 'steps/step_email_password.dart';
 import 'steps/step_profile_info.dart';
 import 'steps/step_looking_for.dart';
@@ -360,7 +361,6 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     if (_data.photoFiles.isEmpty) return [];
 
     final userService = UserService();
-    final photoUrls = <String>[];
 
     String tempPath;
     try {
@@ -370,29 +370,38 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
       tempPath = Directory.systemTemp.path;
     }
 
-    for (int i = 0; i < _data.photoFiles.length; i++) {
-      final file = _data.photoFiles[i];
-      final isPrimary = i == 0; // First photo is primary
-
-      try {
-        // Compress + convert to JPEG before upload
-        final compressedFile = await _compressImage(file, tempPath, i);
-
-        final result = await userService.uploadPhotoForRegistration(
-          compressedFile,
-          isPrimary: isPrimary,
-        );
-
-        if (result.success && result.data != null) {
-          photoUrls.add(result.data!.url);
-          debugPrint('Uploaded photo ${i + 1}: ${result.data!.url}');
-        } else {
-          debugPrint('Failed to upload photo ${i + 1}: ${result.error}');
-        }
-      } catch (e) {
-        debugPrint('Error uploading photo ${i + 1}: $e');
-      }
+    // Index each file so compression temp paths and debug logs stay stable
+    // even though uploads run concurrently.
+    final indexOf = <File, int>{};
+    for (var i = 0; i < _data.photoFiles.length; i++) {
+      indexOf[_data.photoFiles[i]] = i;
     }
+
+    final photoUrls = await const PhotoUploader().upload(
+      _data.photoFiles,
+      uploadOne: (file, {required bool isPrimary}) async {
+        final i = indexOf[file] ?? 0;
+        try {
+          // Compress + convert to JPEG before upload.
+          final compressedFile = await _compressImage(file, tempPath, i);
+
+          final result = await userService.uploadPhotoForRegistration(
+            compressedFile,
+            isPrimary: isPrimary,
+          );
+
+          if (result.success && result.data != null) {
+            debugPrint('Uploaded photo ${i + 1}: ${result.data!.url}');
+            return UploadOutcome(success: true, url: result.data!.url);
+          }
+          debugPrint('Failed to upload photo ${i + 1}: ${result.error}');
+          return const UploadOutcome(success: false);
+        } catch (e) {
+          debugPrint('Error uploading photo ${i + 1}: $e');
+          return const UploadOutcome(success: false);
+        }
+      },
+    );
 
     return photoUrls;
   }
