@@ -11,6 +11,7 @@ import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/config/env.dart';
 import 'package:flame/screens/auth/registration/legal_document_sheet.dart';
 import 'package:flame/screens/settings/blocked_users_screen.dart';
+import 'package:flame/screens/settings/notification_settings_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -102,13 +103,17 @@ class SettingsScreen extends ConsumerWidget {
 
           // Notifications section
           _buildSectionHeader(context.l10n.settingsNotifications),
-          _buildSwitchTile(
+          _buildListTile(
             icon: Icons.notifications_outlined,
-            title: 'Push Notifications',
-            subtitle: 'Get notified about matches and messages',
-            value: settings.notificationsEnabled,
-            onChanged: (_) {
-              ref.read(settingsProvider.notifier).toggleNotifications();
+            title: 'Notifications',
+            subtitle: 'Manage what you get notified about',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const NotificationSettingsScreen(),
+                ),
+              );
             },
           ),
 

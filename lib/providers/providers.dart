@@ -9,3 +9,4 @@ export 'swipe_provider.dart';
 export 'story_provider.dart';
 export 'blocked_users_provider.dart';
 export 'report_provider.dart';
+export 'notification_settings_provider.dart';
