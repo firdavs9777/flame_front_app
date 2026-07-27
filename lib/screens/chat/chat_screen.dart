@@ -63,9 +63,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// is dropped.
   Timer? _typingSafetyTimer;
 
+  // ==================== Presence state (flame socket) ====================
+
+  /// Live online state pushed by the flame socket (`presence` /
+  /// `presence:bulk`), keyed by user id. Seeded from
+  /// `conversation.otherUser.isOnline` (the REST snapshot) so the dot has a
+  /// reasonable value before any socket event arrives; updated in place as
+  /// `presence`/`presence:bulk` events come in. Absent chat-enabled/socket
+  /// data just means the seeded value (possibly `false`) is shown — never a
+  /// synthesized "offline" state.
+  final Map<String, bool> _presence = {};
+
   @override
   void initState() {
     super.initState();
+    _presence[widget.conversation.otherUser.id] = widget.conversation.otherUser.isOnline;
     _loadInitialMessages();
     _scrollController.addListener(_onScroll);
     _startPolling();
@@ -212,7 +224,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ..onMessageEdited = _onSocketMessageEdited
       ..onMessageDeleted = _onSocketMessageDeleted
       ..onTyping = _onSocketTyping
-      ..onStopTyping = _onSocketStopTyping;
+      ..onStopTyping = _onSocketStopTyping
+      ..onPresence = _onSocketPresence
+      ..onPresenceBulk = _onSocketPresenceBulk;
     _flameSocket = socket;
     socket.connect();
   }
@@ -296,6 +310,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _typingSafetyTimer?.cancel();
     if (!_isOtherUserTypingFlame) return;
     setState(() => _isOtherUserTypingFlame = false);
+  }
+
+  /// Handles a `presence` push: updates the one user's online state.
+  void _onSocketPresence(String userId, bool online) {
+    if (!mounted) return;
+    if (_presence[userId] == online) return;
+    setState(() => _presence[userId] = online);
+  }
+
+  /// Handles a `presence:bulk` push: the server's snapshot of which of this
+  /// socket's partners are online right now. Only reconciles user ids
+  /// already tracked (i.e. the open thread's partner) plus that partner
+  /// explicitly, rather than inventing state for arbitrary user ids we've
+  /// never heard of.
+  void _onSocketPresenceBulk(List<String> onlineUserIds) {
+    if (!mounted) return;
+    final onlineSet = onlineUserIds.toSet();
+    final partnerId = widget.conversation.otherUser.id;
+
+    setState(() {
+      for (final id in _presence.keys.toList()) {
+        _presence[id] = onlineSet.contains(id);
+      }
+      _presence[partnerId] = onlineSet.contains(partnerId);
+    });
   }
 
   /// Called on every [ChatInput] text change. Emits `typing` once on the
@@ -646,6 +685,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
+  /// Whether the conversation's partner is online right now: prefers the
+  /// live flame-socket `presence` state, falling back to the REST-seeded
+  /// `is_online` snapshot if no presence event has been seen yet.
+  bool _isPartnerOnline(Conversation conversation) {
+    return _presence[conversation.otherUser.id] ?? conversation.otherUser.isOnline;
+  }
+
   PreferredSizeWidget _buildAppBar(Conversation conversation, bool isTyping) {
     return AppBar(
       titleSpacing: 0,
@@ -664,7 +710,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   radius: 20,
                   backgroundImage: conversation.otherUser.primaryPhoto.toImageProvider(),
                 ),
-                if (conversation.otherUser.isOnline)
+                if (_isPartnerOnline(conversation))
                   Positioned(
                     bottom: 0,
                     right: 0,

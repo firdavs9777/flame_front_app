@@ -48,6 +48,15 @@ class FlameSocketService {
   /// Args: (byUserId, conversationId).
   void Function(String byUserId, String conversationId)? onRead;
 
+  /// Fired when a user's online status changes (`presence`).
+  /// Args: (userId, online).
+  void Function(String userId, bool online)? onPresence;
+
+  /// Fired once after connecting with the set of user ids that are
+  /// currently online (`presence:bulk`) — the server's snapshot of which of
+  /// this socket's partners are online at connect time.
+  void Function(List<String> onlineUserIds)? onPresenceBulk;
+
   FlameSocketService({required this.token});
 
   bool get isConnected => _socket?.connected ?? false;
@@ -80,7 +89,9 @@ class FlameSocketService {
         ..on('message:deleted', _handleMessageDeleted)
         ..on('typing', _handleTyping)
         ..on('stopTyping', _handleStopTyping)
-        ..on('read', _handleRead);
+        ..on('read', _handleRead)
+        ..on('presence', _handlePresence)
+        ..on('presence:bulk', _handlePresenceBulk);
 
       socket.connect();
     } catch (e, st) {
@@ -166,6 +177,34 @@ class FlameSocketService {
       }
     } catch (e) {
       _log('failed to handle read: $e');
+    }
+  }
+
+  void _handlePresence(dynamic data) {
+    try {
+      if (data is Map) {
+        final userId = data['user_id']?.toString();
+        final online = data['online'];
+        if (userId != null && online is bool) {
+          onPresence?.call(userId, online);
+        }
+      }
+    } catch (e) {
+      _log('failed to handle presence: $e');
+    }
+  }
+
+  void _handlePresenceBulk(dynamic data) {
+    try {
+      if (data is Map) {
+        final online = data['online'];
+        if (online is List) {
+          final onlineUserIds = online.map((id) => id.toString()).toList();
+          onPresenceBulk?.call(onlineUserIds);
+        }
+      }
+    } catch (e) {
+      _log('failed to handle presence:bulk: $e');
     }
   }
 
