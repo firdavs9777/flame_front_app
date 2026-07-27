@@ -22,6 +22,7 @@ class Message {
   final MessageType type;
   final bool isEdited;
   final bool isDeleted;
+  final DateTime? editedAt;
   final List<MessageReaction> reactions;
   final ReplyTo? replyTo;
   final String? imageUrl;
@@ -39,6 +40,7 @@ class Message {
     this.type = MessageType.text,
     this.isEdited = false,
     this.isDeleted = false,
+    this.editedAt,
     this.reactions = const [],
     this.replyTo,
     this.imageUrl,
@@ -62,6 +64,9 @@ class Message {
       type: MessageType.fromString(json['message_type'] ?? json['type']),
       isEdited: json['is_edited'] ?? false,
       isDeleted: json['is_deleted'] ?? false,
+      editedAt: json['edited_at'] != null
+          ? DateTime.tryParse(json['edited_at'])
+          : null,
       reactions: (json['reactions'] as List?)
               ?.map((r) => MessageReaction.fromJson(r))
               .toList() ??
@@ -87,6 +92,7 @@ class Message {
       'type': type.toApiString(),
       'is_edited': isEdited,
       'is_deleted': isDeleted,
+      'edited_at': editedAt?.toIso8601String(),
       'reactions': reactions.map((r) => r.toJson()).toList(),
       'reply_to': replyTo?.toJson(),
       'image_url': imageUrl,
@@ -106,6 +112,7 @@ class Message {
     MessageType? type,
     bool? isEdited,
     bool? isDeleted,
+    DateTime? editedAt,
     List<MessageReaction>? reactions,
     ReplyTo? replyTo,
     String? imageUrl,
@@ -123,6 +130,7 @@ class Message {
       type: type ?? this.type,
       isEdited: isEdited ?? this.isEdited,
       isDeleted: isDeleted ?? this.isDeleted,
+      editedAt: editedAt ?? this.editedAt,
       reactions: reactions ?? this.reactions,
       replyTo: replyTo ?? this.replyTo,
       imageUrl: imageUrl ?? this.imageUrl,

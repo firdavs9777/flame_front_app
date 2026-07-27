@@ -228,16 +228,15 @@ class ChatService {
     return ServiceResult.failure(response.error ?? 'Failed to send sticker');
   }
 
-  // Edit a message
+  // Edit a message's text. Backend contract: PATCH /messages/:id {text} -> Message.
   Future<ServiceResult<Message>> editMessage(
-    String conversationId,
     String messageId,
-    String newContent,
+    String text,
   ) async {
     final response = await _apiClient.patch(
-      '/conversations/$conversationId/messages/$messageId',
+      '/messages/$messageId',
       body: {
-        'content': newContent,
+        'text': text,
       },
     );
 
@@ -248,21 +247,20 @@ class ChatService {
     return ServiceResult.failure(response.error ?? 'Failed to edit message');
   }
 
-  // Delete a message
-  Future<ServiceResult<void>> deleteMessage(
-    String conversationId,
+  // Delete a message. Backend contract: DELETE /messages/:id?scope=me|everyone -> Message.
+  Future<ServiceResult<Message>> deleteMessage(
     String messageId, {
-    bool forEveryone = false,
+    String scope = 'me',
   }) async {
     final response = await _apiClient.delete(
-      '/conversations/$conversationId/messages/$messageId',
+      '/messages/$messageId',
       queryParams: {
-        'for_everyone': forEveryone.toString(),
+        'scope': scope,
       },
     );
 
-    if (response.success) {
-      return ServiceResult.success(null);
+    if (response.success && response.data != null) {
+      return ServiceResult.success(Message.fromJson(response.data));
     }
 
     return ServiceResult.failure(response.error ?? 'Failed to delete message');

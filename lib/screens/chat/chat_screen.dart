@@ -178,7 +178,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (token == null) return;
 
     final socket = FlameSocketService(token: token)
-      ..onMessageNew = _onSocketMessageNew;
+      ..onMessageNew = _onSocketMessageNew
+      ..onMessageEdited = _onSocketMessageEdited
+      ..onMessageDeleted = _onSocketMessageDeleted;
     _flameSocket = socket;
     socket.connect();
   }
@@ -205,6 +207,34 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         if (mounted) _scrollToBottom(animated: true);
       });
     }
+  }
+
+  /// Handles a `message:edited` push for this open thread: replaces the
+  /// message in-place by id. Mirrors the guard pattern used elsewhere in
+  /// this screen — bail if the event isn't for the open thread or the
+  /// widget has since been disposed.
+  void _onSocketMessageEdited(Message message, String? conversationId) {
+    if (conversationId != widget.conversation.id) return;
+    _replaceMessage(message);
+  }
+
+  /// Handles a `message:deleted` push for this open thread. The payload is
+  /// the tombstoned [Message] (`is_deleted: true`), so this is also a
+  /// replace-by-id — [MessageBubble] renders the deleted state itself.
+  void _onSocketMessageDeleted(Message message, String? conversationId) {
+    if (conversationId != widget.conversation.id) return;
+    _replaceMessage(message);
+  }
+
+  /// Replaces a message in [_messages] by id, if present. Used by both the
+  /// local edit/delete actions and the incoming socket handlers above.
+  void _replaceMessage(Message updated) {
+    if (!mounted) return;
+    if (!_messages.any((m) => m.id == updated.id)) return;
+
+    setState(() {
+      _messages = _messages.map((m) => m.id == updated.id ? updated : m).toList();
+    });
   }
 
   bool _isScrolledToBottom() {
@@ -303,6 +333,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   // ==================== Message Actions ====================
 
   void _onMessageLongPress(Message message) {
+    final currentUserId = ref.read(currentUserProvider).valueOrNull?.id ?? '';
+    // Edit/delete are only offered on the current user's own, not-yet-deleted
+    // messages.
+    final isOwnMessage = message.isSentBy(currentUserId) && !message.isDeleted;
+
     showModalBottomSheet(
       context: context,
       builder: (context) => _MessageActionsSheet(
@@ -314,6 +349,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Navigator.pop(context);
           _addReaction(message.id, emoji);
         },
+        onEdit: isOwnMessage
+            ? () {
+                Navigator.pop(context);
+                _editMessage(message);
+              }
+            : null,
+        onDelete: isOwnMessage
+            ? () {
+                Navigator.pop(context);
+                _showDeleteOptions(message);
+              }
+            : null,
       ),
     );
   }
@@ -324,6 +371,99 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       messageId,
       emoji,
     );
+  }
+
+  /// Prompts for new text via a dialog, then calls the real
+  /// `PATCH /messages/:id` edit contract and replaces the message locally on
+  /// success.
+  Future<void> _editMessage(Message message) async {
+    final controller = TextEditingController(text: message.content);
+
+    final newText = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit message'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          minLines: 1,
+          maxLines: 4,
+          textCapitalization: TextCapitalization.sentences,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+
+    if (!mounted) return;
+    if (newText == null || newText.isEmpty || newText == message.content) return;
+
+    final chatService = ref.read(chatServiceProvider);
+    final result = await chatService.editMessage(message.id, newText);
+
+    if (!mounted) return;
+
+    if (result.success && result.data != null) {
+      _replaceMessage(result.data!);
+    } else {
+      _showError(result.error ?? 'Failed to edit message');
+    }
+  }
+
+  /// Shows the "Delete for me" / "Delete for everyone" sheet and dispatches
+  /// the chosen scope to [_deleteMessage].
+  void _showDeleteOptions(Message message) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.delete_outline),
+              title: const Text('Delete for me'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _deleteMessage(message, scope: 'me');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_forever, color: Colors.red),
+              title: const Text('Delete for everyone', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _deleteMessage(message, scope: 'everyone');
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Calls the real `DELETE /messages/:id?scope=` contract and replaces the
+  /// message locally with the returned tombstone on success.
+  Future<void> _deleteMessage(Message message, {required String scope}) async {
+    final chatService = ref.read(chatServiceProvider);
+    final result = await chatService.deleteMessage(message.id, scope: scope);
+
+    if (!mounted) return;
+
+    if (result.success && result.data != null) {
+      _replaceMessage(result.data!);
+    } else {
+      _showError(result.error ?? 'Failed to delete message');
+    }
   }
 
   // ==================== Utilities ====================
@@ -536,10 +676,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 class _MessageActionsSheet extends StatelessWidget {
   final VoidCallback onReply;
   final void Function(String emoji) onReact;
+  // Non-null only for the current user's own, not-yet-deleted messages —
+  // their presence gates whether the Edit/Delete rows are shown at all.
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const _MessageActionsSheet({
     required this.onReply,
     required this.onReact,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -574,6 +720,18 @@ class _MessageActionsSheet extends StatelessWidget {
             title: const Text('Reply'),
             onTap: onReply,
           ),
+          if (onEdit != null)
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Edit'),
+              onTap: onEdit,
+            ),
+          if (onDelete != null)
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: Colors.red),
+              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onTap: onDelete,
+            ),
           const SizedBox(height: 8),
         ],
       ),

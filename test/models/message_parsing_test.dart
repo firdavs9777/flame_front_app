@@ -47,4 +47,33 @@ void main() {
     final m = Message.fromJson(j);
     expect(m.status == MessageStatus.read, isFalse);
   });
+
+  test('parses is_edited and edited_at from an edited message', () {
+    final j = _backendMsg()
+      ..['is_edited'] = true
+      ..['edited_at'] = '2026-07-27T08:00:00.000Z';
+    final m = Message.fromJson(j);
+    expect(m.isEdited, true);
+    expect(m.editedAt, isNotNull);
+    expect(m.editedAt!.year, 2026);
+    expect(m.editedAt!.month, 7);
+    expect(m.editedAt!.day, 27);
+  });
+
+  test('is_edited defaults to false and edited_at to null when absent', () {
+    final m = Message.fromJson(_backendMsg());
+    expect(m.isEdited, false);
+    expect(m.editedAt, isNull);
+  });
+
+  test('parses is_deleted from a tombstoned message', () {
+    final j = _backendMsg()..['is_deleted'] = true;
+    final m = Message.fromJson(j);
+    expect(m.isDeleted, true);
+  });
+
+  test('is_deleted defaults to false when absent', () {
+    final m = Message.fromJson(_backendMsg());
+    expect(m.isDeleted, false);
+  });
 }

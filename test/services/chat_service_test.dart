@@ -230,6 +230,87 @@ void main() {
     expect(req.url.path.endsWith('/messages/msg-1/reactions'), true);
   });
 
+  test('editMessage PATCHes /messages/:id with {text} and parses Message', () async {
+    final messageJson = {
+      'id': 'msg-1',
+      'sender_id': 'user-1',
+      'text': 'edited hello',
+      'is_edited': true,
+      'edited_at': '2026-07-27T00:00:00Z',
+      'created_at': '2026-07-26T00:00:00Z',
+    };
+    final mock = _MockClient(http.Response(
+      jsonEncode({'success': true, 'data': messageJson}),
+      200,
+    ));
+    final apiClient = _buildApiClient(mock);
+    await apiClient.init();
+    final service = ChatService(apiClient: apiClient);
+
+    final result = await service.editMessage('msg-1', 'edited hello');
+
+    expect(result.success, true);
+    expect(result.data!.id, 'msg-1');
+    expect(result.data!.content, 'edited hello');
+    expect(result.data!.isEdited, true);
+
+    final req = mock.calls.single as http.Request;
+    expect(req.method, 'PATCH');
+    expect(req.url.path.endsWith('/messages/msg-1'), true);
+    final body = jsonDecode(req.body) as Map<String, dynamic>;
+    expect(body, {'text': 'edited hello'});
+  });
+
+  test('deleteMessage DELETEs /messages/:id with ?scope=me by default and parses Message', () async {
+    final messageJson = {
+      'id': 'msg-1',
+      'sender_id': 'user-1',
+      'text': 'hello',
+      'is_deleted': true,
+      'created_at': '2026-07-26T00:00:00Z',
+    };
+    final mock = _MockClient(http.Response(
+      jsonEncode({'success': true, 'data': messageJson}),
+      200,
+    ));
+    final apiClient = _buildApiClient(mock);
+    await apiClient.init();
+    final service = ChatService(apiClient: apiClient);
+
+    final result = await service.deleteMessage('msg-1');
+
+    expect(result.success, true);
+    expect(result.data!.id, 'msg-1');
+    expect(result.data!.isDeleted, true);
+
+    final req = mock.calls.single as http.Request;
+    expect(req.method, 'DELETE');
+    expect(req.url.path.endsWith('/messages/msg-1'), true);
+    expect(req.url.queryParameters['scope'], 'me');
+  });
+
+  test('deleteMessage passes scope=everyone through as a query param', () async {
+    final messageJson = {
+      'id': 'msg-1',
+      'sender_id': 'user-1',
+      'text': 'hello',
+      'is_deleted': true,
+      'created_at': '2026-07-26T00:00:00Z',
+    };
+    final mock = _MockClient(http.Response(
+      jsonEncode({'success': true, 'data': messageJson}),
+      200,
+    ));
+    final apiClient = _buildApiClient(mock);
+    await apiClient.init();
+    final service = ChatService(apiClient: apiClient);
+
+    await service.deleteMessage('msg-1', scope: 'everyone');
+
+    final req = mock.calls.single as http.Request;
+    expect(req.url.queryParameters['scope'], 'everyone');
+  });
+
   test('createConversation posts user_id and returns Conversation', () async {
     final conversationJson = {
       'id': 'conv-1',

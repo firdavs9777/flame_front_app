@@ -27,6 +27,16 @@ class FlameSocketService {
   /// its own — callers use it to filter to the currently open thread.
   void Function(Message message, String? conversationId)? onMessageNew;
 
+  /// Fired when a message is edited (`message:edited`). Payload is the full
+  /// updated [Message] (with `is_edited`/`edited_at` set); [conversationId]
+  /// is passed alongside it the same way as [onMessageNew].
+  void Function(Message message, String? conversationId)? onMessageEdited;
+
+  /// Fired when a message is deleted (`message:deleted`). Payload is the
+  /// tombstoned [Message] (with `is_deleted` set); [conversationId] is
+  /// passed alongside it the same way as [onMessageNew].
+  void Function(Message message, String? conversationId)? onMessageDeleted;
+
   /// Fired when the other participant starts typing (`typing`).
   /// Args: (fromUserId, conversationId).
   void Function(String fromUserId, String conversationId)? onTyping;
@@ -66,6 +76,8 @@ class FlameSocketService {
         ..onConnectError((err) => _log('connect_error: $err'))
         ..onError((err) => _log('error: $err'))
         ..on('message:new', _handleMessageNew)
+        ..on('message:edited', _handleMessageEdited)
+        ..on('message:deleted', _handleMessageDeleted)
         ..on('typing', _handleTyping)
         ..on('stopTyping', _handleStopTyping)
         ..on('read', _handleRead);
@@ -86,6 +98,32 @@ class FlameSocketService {
       }
     } catch (e) {
       _log('failed to handle message:new: $e');
+    }
+  }
+
+  void _handleMessageEdited(dynamic data) {
+    try {
+      if (data is Map) {
+        final json = Map<String, dynamic>.from(data);
+        final message = Message.fromJson(json);
+        final conversationId = json['conversation_id']?.toString();
+        onMessageEdited?.call(message, conversationId);
+      }
+    } catch (e) {
+      _log('failed to handle message:edited: $e');
+    }
+  }
+
+  void _handleMessageDeleted(dynamic data) {
+    try {
+      if (data is Map) {
+        final json = Map<String, dynamic>.from(data);
+        final message = Message.fromJson(json);
+        final conversationId = json['conversation_id']?.toString();
+        onMessageDeleted?.call(message, conversationId);
+      }
+    } catch (e) {
+      _log('failed to handle message:deleted: $e');
     }
   }
 

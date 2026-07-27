@@ -306,7 +306,7 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
   }
 
   Future<bool> editMessage(String conversationId, String messageId, String newContent) async {
-    final result = await _chatService.editMessage(conversationId, messageId, newContent);
+    final result = await _chatService.editMessage(messageId, newContent);
 
     if (result.success && result.data != null) {
       _updateMessageInConversation(conversationId, result.data!);
@@ -316,10 +316,17 @@ class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>
   }
 
   Future<bool> deleteMessage(String conversationId, String messageId, {bool forEveryone = false}) async {
-    final result = await _chatService.deleteMessage(conversationId, messageId, forEveryone: forEveryone);
+    final result = await _chatService.deleteMessage(
+      messageId,
+      scope: forEveryone ? 'everyone' : 'me',
+    );
 
     if (result.success) {
-      _deleteMessageFromConversation(conversationId, messageId);
+      if (result.data != null) {
+        _updateMessageInConversation(conversationId, result.data!);
+      } else {
+        _deleteMessageFromConversation(conversationId, messageId);
+      }
       return true;
     }
     return false;
