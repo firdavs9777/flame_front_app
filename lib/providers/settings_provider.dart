@@ -28,10 +28,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await prefs.setString(_kThemeModeKey, mode.name);
   }
 
-  void toggleNotifications() {
-    state = state.copyWith(notificationsEnabled: !state.notificationsEnabled);
-  }
-
   void toggleShowOnlineStatus() {
     state = state.copyWith(showOnlineStatus: !state.showOnlineStatus);
   }
@@ -59,14 +55,12 @@ ThemeMode _themeModeFromString(String? value) {
 
 class AppSettings {
   final ThemeMode themeMode;
-  final bool notificationsEnabled;
   final bool showOnlineStatus;
   final bool showDistance;
   final bool discoveryEnabled;
 
   const AppSettings({
     this.themeMode = ThemeMode.system,
-    this.notificationsEnabled = true,
     this.showOnlineStatus = true,
     this.showDistance = true,
     this.discoveryEnabled = true,
@@ -74,14 +68,12 @@ class AppSettings {
 
   AppSettings copyWith({
     ThemeMode? themeMode,
-    bool? notificationsEnabled,
     bool? showOnlineStatus,
     bool? showDistance,
     bool? discoveryEnabled,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
-      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       showOnlineStatus: showOnlineStatus ?? this.showOnlineStatus,
       showDistance: showDistance ?? this.showDistance,
       discoveryEnabled: discoveryEnabled ?? this.discoveryEnabled,

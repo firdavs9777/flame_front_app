@@ -41,7 +41,7 @@ void main() {
 
     await notifier.setThemeMode(ThemeMode.dark);
 
-    expect(notifier.state.notificationsEnabled, before.notificationsEnabled);
+    expect(notifier.state.showOnlineStatus, before.showOnlineStatus);
     expect(notifier.state.discoveryEnabled, before.discoveryEnabled);
     expect(notifier.state.showDistance, before.showDistance);
   });
