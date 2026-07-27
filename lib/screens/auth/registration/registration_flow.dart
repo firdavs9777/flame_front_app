@@ -10,6 +10,7 @@ import 'package:flame/models/user.dart';
 import 'package:flame/services/location_service.dart';
 import 'package:flame/services/user_service.dart';
 import 'photo_uploader.dart';
+import 'registration_draft.dart';
 import 'steps/step_email_password.dart';
 import 'steps/step_profile_info.dart';
 import 'steps/step_looking_for.dart';
@@ -43,6 +44,7 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
   int _currentStep = 0;
   final int _totalSteps = 5; // 5-step flow; no email verification
   final RegistrationData _data = RegistrationData();
+  final RegistrationDraft _draft = const RegistrationDraft();
   bool _isUploading = false;
   bool _registrationComplete = false;
 
@@ -63,9 +65,79 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Offer to resume a previously-saved draft, if any.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeOfferResume());
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _maybeOfferResume() async {
+    final saved = await _draft.load();
+    if (saved == null || !mounted) return;
+    // Nothing meaningful to resume (fresh/empty draft) — skip the prompt.
+    if (saved.step <= 0 && saved.data.email.isEmpty) {
+      await _draft.clear();
+      return;
+    }
+
+    final resume = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Resume your signup?'),
+        content: const Text(
+          'We saved your progress. Pick up where you left off, or start over.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Start Over'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Resume'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    if (resume == true) {
+      _restoreFrom(saved.data, saved.step);
+    } else {
+      await _draft.clear();
+    }
+  }
+
+  void _restoreFrom(RegistrationData data, int step) {
+    _data
+      ..email = data.email
+      ..name = data.name
+      ..age = data.age
+      ..gender = data.gender
+      ..lookingFor = data.lookingFor
+      ..bio = data.bio
+      ..interests = data.interests
+      ..photoFiles = data.photoFiles
+      ..latitude = data.latitude
+      ..longitude = data.longitude;
+
+    final target = step.clamp(0, _totalSteps - 1);
+    setState(() => _currentStep = target);
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(target);
+    }
+  }
+
+  void _saveDraft() {
+    // Fire-and-forget; a persistence hiccup must never block the UI.
+    _draft.save(_data, _currentStep);
   }
 
   @override
@@ -232,7 +304,10 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     return PageView(
       controller: _pageController,
       physics: const NeverScrollableScrollPhysics(),
-      onPageChanged: (index) => setState(() => _currentStep = index),
+      onPageChanged: (index) {
+        setState(() => _currentStep = index);
+        _saveDraft();
+      },
       children: [
         StepEmailPassword(
           data: _data,
@@ -266,6 +341,8 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
         curve: Curves.easeOutCubic,
       );
     } else {
+      // Explicit back-out to login/welcome — discard the saved draft.
+      _draft.clear();
       Navigator.of(context).pop();
     }
   }
@@ -337,7 +414,9 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
 
       if (success) {
         // Registration is complete — tokens are already issued. The ref.listen
-        // above pops to root once auth state flips to authenticated.
+        // above pops to root once auth state flips to authenticated. Drop the
+        // saved draft so a future signup starts clean.
+        await _draft.clear();
         setState(() => _registrationComplete = true);
       }
     } catch (e) {
