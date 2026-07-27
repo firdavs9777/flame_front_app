@@ -65,5 +65,21 @@
   "chatTranslate": "Traduire",
   "chatHideTranslation": "Masquer la traduction",
   "chatTranslating": "Traduction en cours…",
-  "chatTranslationUnavailable": "Traduction indisponible"
+  "chatTranslationUnavailable": "Traduction indisponible",
+
+  "storyYourStory": "Votre story",
+  "storyAdd": "Ajouter une story",
+  "storyCaptionHint": "Ajouter une légende…",
+  "storyPost": "Publier",
+  "storyDeleteTitle": "Supprimer la story ?",
+  "storyDeleteBody": "Cette story sera supprimée.",
+  "storyUploadFailed": "Impossible de publier votre story. Veuillez réessayer.",
+  "storyPickCamera": "Appareil photo",
+  "storyPickGallery": "Galerie",
+
+  "registerAgreePrefix": "J'accepte les ",
+  "registerTermsOfService": "Conditions d'utilisation",
+  "registerAgreeConjunction": " et la ",
+  "registerPrivacyPolicy": "Politique de confidentialité",
+  "legalClose": "Fermer"
 }

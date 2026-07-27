@@ -65,5 +65,21 @@
   "chatTranslate": "Terjemahkan",
   "chatHideTranslation": "Sembunyikan terjemahan",
   "chatTranslating": "Menerjemahkan…",
-  "chatTranslationUnavailable": "Terjemahan tidak tersedia"
+  "chatTranslationUnavailable": "Terjemahan tidak tersedia",
+
+  "storyYourStory": "Ceritamu",
+  "storyAdd": "Tambah cerita",
+  "storyCaptionHint": "Tambahkan keterangan…",
+  "storyPost": "Posting",
+  "storyDeleteTitle": "Hapus cerita?",
+  "storyDeleteBody": "Cerita ini akan dihapus.",
+  "storyUploadFailed": "Tidak dapat memposting ceritamu. Silakan coba lagi.",
+  "storyPickCamera": "Kamera",
+  "storyPickGallery": "Galeri",
+
+  "registerAgreePrefix": "Saya menyetujui ",
+  "registerTermsOfService": "Ketentuan Layanan",
+  "registerAgreeConjunction": " dan ",
+  "registerPrivacyPolicy": "Kebijakan Privasi",
+  "legalClose": "Tutup"
 }

@@ -65,5 +65,21 @@
   "chatTranslate": "Çevir",
   "chatHideTranslation": "Çeviriyi gizle",
   "chatTranslating": "Çevriliyor…",
-  "chatTranslationUnavailable": "Çeviri kullanılamıyor"
+  "chatTranslationUnavailable": "Çeviri kullanılamıyor",
+
+  "storyYourStory": "Hikayen",
+  "storyAdd": "Hikaye ekle",
+  "storyCaptionHint": "Bir açıklama ekle…",
+  "storyPost": "Paylaş",
+  "storyDeleteTitle": "Hikaye silinsin mi?",
+  "storyDeleteBody": "Bu hikaye kaldırılacak.",
+  "storyUploadFailed": "Hikayen paylaşılamadı. Lütfen tekrar dene.",
+  "storyPickCamera": "Kamera",
+  "storyPickGallery": "Galeri",
+
+  "registerAgreePrefix": "Şunları kabul ediyorum: ",
+  "registerTermsOfService": "Hizmet Şartları",
+  "registerAgreeConjunction": " ve ",
+  "registerPrivacyPolicy": "Gizlilik Politikası",
+  "legalClose": "Kapat"
 }

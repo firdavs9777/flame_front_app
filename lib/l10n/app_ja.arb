@@ -65,5 +65,21 @@
   "chatTranslate": "翻訳",
   "chatHideTranslation": "翻訳を非表示",
   "chatTranslating": "翻訳中…",
-  "chatTranslationUnavailable": "翻訳できません"
+  "chatTranslationUnavailable": "翻訳できません",
+
+  "storyYourStory": "あなたのストーリー",
+  "storyAdd": "ストーリーを追加",
+  "storyCaptionHint": "キャプションを追加…",
+  "storyPost": "投稿",
+  "storyDeleteTitle": "ストーリーを削除しますか？",
+  "storyDeleteBody": "このストーリーは削除されます。",
+  "storyUploadFailed": "ストーリーを投稿できませんでした。もう一度お試しください。",
+  "storyPickCamera": "カメラ",
+  "storyPickGallery": "ギャラリー",
+
+  "registerAgreePrefix": "以下に同意します: ",
+  "registerTermsOfService": "利用規約",
+  "registerAgreeConjunction": "と",
+  "registerPrivacyPolicy": "プライバシーポリシー",
+  "legalClose": "閉じる"
 }

@@ -65,5 +65,21 @@
   "chatTranslate": "번역",
   "chatHideTranslation": "번역 숨기기",
   "chatTranslating": "번역 중…",
-  "chatTranslationUnavailable": "번역할 수 없습니다"
+  "chatTranslationUnavailable": "번역할 수 없습니다",
+
+  "storyYourStory": "내 스토리",
+  "storyAdd": "스토리 추가",
+  "storyCaptionHint": "캡션 추가…",
+  "storyPost": "게시",
+  "storyDeleteTitle": "스토리를 삭제할까요?",
+  "storyDeleteBody": "이 스토리가 삭제됩니다.",
+  "storyUploadFailed": "스토리를 게시하지 못했습니다. 다시 시도해 주세요.",
+  "storyPickCamera": "카메라",
+  "storyPickGallery": "갤러리",
+
+  "registerAgreePrefix": "다음에 동의합니다: ",
+  "registerTermsOfService": "이용약관",
+  "registerAgreeConjunction": " 및 ",
+  "registerPrivacyPolicy": "개인정보 처리방침",
+  "legalClose": "닫기"
 }

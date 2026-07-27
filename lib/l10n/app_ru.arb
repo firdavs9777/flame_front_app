@@ -65,5 +65,21 @@
   "chatTranslate": "Перевести",
   "chatHideTranslation": "Скрыть перевод",
   "chatTranslating": "Перевод…",
-  "chatTranslationUnavailable": "Перевод недоступен"
+  "chatTranslationUnavailable": "Перевод недоступен",
+
+  "storyYourStory": "Ваша история",
+  "storyAdd": "Добавить историю",
+  "storyCaptionHint": "Добавьте подпись…",
+  "storyPost": "Опубликовать",
+  "storyDeleteTitle": "Удалить историю?",
+  "storyDeleteBody": "Эта история будет удалена.",
+  "storyUploadFailed": "Не удалось опубликовать историю. Попробуйте ещё раз.",
+  "storyPickCamera": "Камера",
+  "storyPickGallery": "Галерея",
+
+  "registerAgreePrefix": "Я принимаю ",
+  "registerTermsOfService": "Условия использования",
+  "registerAgreeConjunction": " и ",
+  "registerPrivacyPolicy": "Политику конфиденциальности",
+  "legalClose": "Закрыть"
 }

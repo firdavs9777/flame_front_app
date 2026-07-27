@@ -65,5 +65,21 @@
   "chatTranslate": "Übersetzen",
   "chatHideTranslation": "Übersetzung ausblenden",
   "chatTranslating": "Wird übersetzt…",
-  "chatTranslationUnavailable": "Übersetzung nicht verfügbar"
+  "chatTranslationUnavailable": "Übersetzung nicht verfügbar",
+
+  "storyYourStory": "Deine Story",
+  "storyAdd": "Story hinzufügen",
+  "storyCaptionHint": "Bildunterschrift hinzufügen…",
+  "storyPost": "Posten",
+  "storyDeleteTitle": "Story löschen?",
+  "storyDeleteBody": "Diese Story wird entfernt.",
+  "storyUploadFailed": "Deine Story konnte nicht gepostet werden. Bitte versuche es erneut.",
+  "storyPickCamera": "Kamera",
+  "storyPickGallery": "Galerie",
+
+  "registerAgreePrefix": "Ich akzeptiere die ",
+  "registerTermsOfService": "Nutzungsbedingungen",
+  "registerAgreeConjunction": " und die ",
+  "registerPrivacyPolicy": "Datenschutzrichtlinie",
+  "legalClose": "Schließen"
 }

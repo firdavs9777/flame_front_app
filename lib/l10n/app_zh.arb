@@ -65,5 +65,21 @@
   "chatTranslate": "翻译",
   "chatHideTranslation": "隐藏翻译",
   "chatTranslating": "翻译中…",
-  "chatTranslationUnavailable": "无法翻译"
+  "chatTranslationUnavailable": "无法翻译",
+
+  "storyYourStory": "你的故事",
+  "storyAdd": "添加故事",
+  "storyCaptionHint": "添加文字说明…",
+  "storyPost": "发布",
+  "storyDeleteTitle": "删除故事？",
+  "storyDeleteBody": "此故事将被删除。",
+  "storyUploadFailed": "无法发布你的故事，请重试。",
+  "storyPickCamera": "相机",
+  "storyPickGallery": "相册",
+
+  "registerAgreePrefix": "我同意",
+  "registerTermsOfService": "服务条款",
+  "registerAgreeConjunction": "和",
+  "registerPrivacyPolicy": "隐私政策",
+  "legalClose": "关闭"
 }
