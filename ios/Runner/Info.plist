@@ -86,6 +86,13 @@
 		</dict>
 	</array>
 
+	<!-- Allow plain HTTP only to local-network IPs (192.168.x.x, 10.x.x.x, localhost) for dev. Production traffic over HTTPS still works. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+
 	<key>GIDClientID</key>
 	<string>55426082662-s2fr9c5c8ttur8mmk0njf48o78knlqee.apps.googleusercontent.com</string>
 
