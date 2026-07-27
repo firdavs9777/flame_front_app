@@ -68,6 +68,18 @@ Two independent sub-projects, each its own spec-slice → plan → SDD build:
      - **Decision:** create the user with a `profileComplete:false` marker; the completion flow
        (existing frontend) fills the rest via the existing profile-update endpoint.
 
+### Register-contract fix (discovered — registration is currently broken)
+The frontend `register()` sends `looking_for` (snake) + `latitude`/`longitude`/`photos`, but the
+backend `registerSchema` requires `lookingFor` (camel) and doesn't accept location/photos.
+`validate.body` uses zod `safeParse` (strips unknown keys, requires declared ones), so registration
+**422s** ("lookingFor: Required"); even if it passed, `authService.register` never persists
+`location`/`photos`, so new users have no location and are invisible to discovery. SP1 fixes the
+backend to be the source of truth: extend `registerSchema` to accept optional
+`latitude`/`longitude` (numbers) and `photos` (array of `{url, isPrimary?}` or url strings), persist
+them into `location.coordinates` + `locationGeo.coordinates=[lng,lat]` + `photos`. Keep `lookingFor`
+camelCase (the `/auth` convention). SP2 aligns the frontend to send `lookingFor` + the accepted
+location/photo shape. Backward-compatible: latitude/longitude/photos optional so nothing else breaks.
+
 ### Infra-graceful gating (matches push/email pattern)
 - A provider is "configured" iff its env is set: Google→`FLAME_GOOGLE_CLIENT_ID`,
   Apple→`FLAME_APPLE_CLIENT_ID`, Facebook→`FLAME_FACEBOOK_APP_ID`+`FLAME_FACEBOOK_APP_SECRET`.
