@@ -8,6 +8,8 @@ import 'package:flame/screens/settings/language_screen.dart';
 import 'package:flame/core/i18n/locale_provider.dart';
 import 'package:flame/core/i18n/supported_locales.dart';
 import 'package:flame/widgets/kit/kit.dart';
+import 'package:flame/config/env.dart';
+import 'package:flame/screens/auth/registration/legal_document_sheet.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -42,13 +44,16 @@ class SettingsScreen extends ConsumerWidget {
               _showChangeEmailDialog(context);
             },
           ),
-          _buildListTile(
-            icon: Icons.lock_outline,
-            title: 'Change Password',
-            onTap: () {
-              _showChangePasswordDialog(context, ref);
-            },
-          ),
+          // Password self-service (change/forgot) has no backend endpoint yet;
+          // gated off with the same flag as forgot-password until it ships.
+          if (EnvConfig.current.forgotPasswordEnabled)
+            _buildListTile(
+              icon: Icons.lock_outline,
+              title: 'Change Password',
+              onTap: () {
+                _showChangePasswordDialog(context, ref);
+              },
+            ),
           const SizedBox(height: 20),
           _buildSectionHeader('Discovery'),
           _buildSwitchTile(
@@ -176,32 +181,21 @@ class SettingsScreen extends ConsumerWidget {
           _buildListTile(
             icon: Icons.description_outlined,
             title: 'Terms of Service',
-            onTap: () {},
+            onTap: () => showLegalDocumentSheet(context, LegalDoc.terms),
           ),
           _buildListTile(
             icon: Icons.privacy_tip_outlined,
             title: 'Privacy Policy',
-            onTap: () {},
+            onTap: () => showLegalDocumentSheet(context, LegalDoc.privacy),
           ),
           _buildListTile(
             icon: Icons.gavel_outlined,
             title: 'Licenses',
-            onTap: () {},
-          ),
-
-          const SizedBox(height: 20),
-
-          // Support section
-          _buildSectionHeader('Support'),
-          _buildListTile(
-            icon: Icons.help_outline,
-            title: 'Help & Support',
-            onTap: () {},
-          ),
-          _buildListTile(
-            icon: Icons.feedback_outlined,
-            title: 'Send Feedback',
-            onTap: () {},
+            onTap: () => showLicensePage(
+              context: context,
+              applicationName: 'Flame',
+              applicationVersion: 'v1.0.0',
+            ),
           ),
 
           const SizedBox(height: 20),
