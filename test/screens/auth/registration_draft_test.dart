@@ -42,6 +42,28 @@ void main() {
     expect(loaded.data.longitude, -56.78);
   });
 
+  test('the password is NEVER persisted (no plaintext leak)', () async {
+    final data = RegistrationData()
+      ..email = 'ada@example.com'
+      ..password = 'SuperSecret123!'
+      ..name = 'Ada';
+
+    // The serialized map must not carry the password under any key.
+    final json = draft.toJson(data, 1);
+    expect(json.containsKey('password'), isFalse);
+    expect(json.values.contains('SuperSecret123!'), isFalse);
+
+    // And neither must the raw string written to shared_preferences.
+    await draft.save(data, 1);
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('registration_draft') ?? '';
+    expect(raw.contains('SuperSecret123!'), isFalse);
+
+    // A resumed draft therefore has no password (re-prompted at submit).
+    final loaded = await draft.load();
+    expect(loaded!.data.password, '');
+  });
+
   test('clear() empties the draft', () async {
     await draft.save(RegistrationData()..email = 'x@y.com', 1);
     expect(await draft.load(), isNotNull);
