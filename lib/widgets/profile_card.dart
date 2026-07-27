@@ -62,20 +62,28 @@ class _ProfileCardState extends State<ProfileCard> {
                     _nextPhoto();
                   }
                 },
-                child: SmartImage(
-                  imageSource: widget.user.photos[_currentPhotoIndex],
-                  fit: BoxFit.cover,
-                  placeholder: Container(
-                    color: Colors.grey[300],
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-                  errorWidget: Container(
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.person, size: 100, color: Colors.grey),
-                  ),
-                ),
+                child: widget.user.photos.isEmpty
+                    ? Container(
+                        color: Colors.grey[300],
+                        child: const Center(
+                          child: Icon(Icons.person, size: 100, color: Colors.grey),
+                        ),
+                      )
+                    : SmartImage(
+                        imageSource: widget.user.photos[
+                            _currentPhotoIndex.clamp(0, widget.user.photos.length - 1)],
+                        fit: BoxFit.cover,
+                        placeholder: Container(
+                          color: Colors.grey[300],
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                        errorWidget: Container(
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.person, size: 100, color: Colors.grey),
+                        ),
+                      ),
               ),
 
               // Photo indicators
