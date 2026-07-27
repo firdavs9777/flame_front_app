@@ -7,3 +7,5 @@ export 'auth_provider.dart';
 export 'discovery_provider.dart';
 export 'swipe_provider.dart';
 export 'story_provider.dart';
+export 'blocked_users_provider.dart';
+export 'report_provider.dart';

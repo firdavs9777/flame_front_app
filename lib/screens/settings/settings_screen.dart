@@ -10,6 +10,7 @@ import 'package:flame/core/i18n/supported_locales.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/config/env.dart';
 import 'package:flame/screens/auth/registration/legal_document_sheet.dart';
+import 'package:flame/screens/settings/blocked_users_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -54,6 +55,18 @@ class SettingsScreen extends ConsumerWidget {
                 _showChangePasswordDialog(context, ref);
               },
             ),
+          const SizedBox(height: 20),
+          _buildSectionHeader('Privacy & Safety'),
+          _buildListTile(
+            icon: Icons.block,
+            title: 'Blocked Users',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BlockedUsersScreen()),
+              );
+            },
+          ),
           const SizedBox(height: 20),
           _buildSectionHeader('Discovery'),
           _buildSwitchTile(
