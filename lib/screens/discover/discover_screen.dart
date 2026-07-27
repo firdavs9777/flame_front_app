@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/config/env.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -125,41 +126,47 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Looking for
-          _buildSectionTitle('Show Me'),
-          const SizedBox(height: 12),
-          _GenderSelector(
-            selectedGender: filters.genderPreference,
-            onChanged: (gender) {
-              ref.read(filterProvider.notifier).setGenderPreference(gender);
-            },
-          ),
-          const SizedBox(height: 24),
+          // Gender / online-only / interests filters are gated off until the
+          // backend honors them (today savePreferencesToApi only applies age +
+          // distance, so showing these would be a no-op). Flip
+          // EnvConfig.advancedFiltersEnabled once the backend filters on them.
+          if (EnvConfig.current.advancedFiltersEnabled) ...[
+            // Looking for
+            _buildSectionTitle('Show Me'),
+            const SizedBox(height: 12),
+            _GenderSelector(
+              selectedGender: filters.genderPreference,
+              onChanged: (gender) {
+                ref.read(filterProvider.notifier).setGenderPreference(gender);
+              },
+            ),
+            const SizedBox(height: 24),
 
-          // Online only
-          _buildSectionTitle('Filters'),
-          const SizedBox(height: 8),
-          SwitchListTile(
-            title: const Text('Only show online users'),
-            subtitle: const Text('See people who are currently active'),
-            value: filters.onlineOnly,
-            activeColor: AppTheme.primaryColor,
-            contentPadding: EdgeInsets.zero,
-            onChanged: (_) {
-              ref.read(filterProvider.notifier).toggleOnlineOnly();
-            },
-          ),
-          const SizedBox(height: 24),
+            // Online only
+            _buildSectionTitle('Filters'),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              title: const Text('Only show online users'),
+              subtitle: const Text('See people who are currently active'),
+              value: filters.onlineOnly,
+              activeColor: AppTheme.primaryColor,
+              contentPadding: EdgeInsets.zero,
+              onChanged: (_) {
+                ref.read(filterProvider.notifier).toggleOnlineOnly();
+              },
+            ),
+            const SizedBox(height: 24),
 
-          // Interests filter
-          _buildSectionTitle('Interests'),
-          const SizedBox(height: 12),
-          _InterestsSelector(
-            selectedInterests: filters.interests,
-            onChanged: (interests) {
-              ref.read(filterProvider.notifier).setInterests(interests);
-            },
-          ),
+            // Interests filter
+            _buildSectionTitle('Interests'),
+            const SizedBox(height: 12),
+            _InterestsSelector(
+              selectedInterests: filters.interests,
+              onChanged: (interests) {
+                ref.read(filterProvider.notifier).setInterests(interests);
+              },
+            ),
+          ],
           const SizedBox(height: 40),
 
           // Apply button

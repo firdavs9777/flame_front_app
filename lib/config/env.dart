@@ -22,11 +22,17 @@ class EnvConfig {
   /// endpoints ship; on locally for development.
   final bool chatEnabled;
 
+  /// Whether the advanced Discover filters (gender / interests / online-only)
+  /// are shown. Off until the backend actually honors them — today only age +
+  /// distance are applied, so showing the others would be a no-op that lies.
+  final bool advancedFiltersEnabled;
+
   const EnvConfig._(this.env, this.apiBase, this.wsBase,
       {this.realtimeEnabled = true,
       this.authSocialEnabled = false,
       this.forgotPasswordEnabled = false,
-      this.chatEnabled = false});
+      this.chatEnabled = false,
+      this.advancedFiltersEnabled = false});
 
   // For iOS Simulator use `localhost`; for a physical device use the Mac's LAN IP.
   // Switch by passing `--dart-define=LOCAL_HOST=192.168.100.114` at run time,
@@ -52,6 +58,7 @@ class EnvConfig {
     realtimeEnabled: false, // no chat socket on the Flame backend yet
     authSocialEnabled: false,
     forgotPasswordEnabled: false,
+    advancedFiltersEnabled: false,
   );
 
   static EnvConfig get current {
