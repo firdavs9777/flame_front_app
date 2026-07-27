@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/config/env.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'chat/matches_screen.dart';
 import 'home/home_screen.dart';
@@ -52,6 +53,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
+    final chatUnreadCount = ref.watch(chatUnreadCountProvider);
 
     return Scaffold(
       body: IndexedStack(
@@ -62,6 +64,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         currentIndex: currentIndex,
         onTap: (index) =>
             ref.read(bottomNavIndexProvider.notifier).state = index,
+        chatBadgeCount: chatUnreadCount,
       ),
     );
   }
@@ -71,10 +74,12 @@ class _FlameNavBar extends StatelessWidget {
   const _FlameNavBar({
     required this.currentIndex,
     required this.onTap,
+    this.chatBadgeCount = 0,
   });
 
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final int chatBadgeCount;
 
   // Builds nav items in the exact order/indices of _MainShellState._screens:
   // Discover, [Chat if enabled], Profile, Settings.
@@ -99,6 +104,7 @@ class _FlameNavBar extends StatelessWidget {
         activeIcon: Icons.chat_bubble,
         label: context.l10n.navChat,
         onTap: () => onTap(chatIndex),
+        badgeCount: chatBadgeCount,
       ));
     }
 
@@ -159,6 +165,7 @@ class _NavItem extends StatelessWidget {
     required this.activeIcon,
     required this.label,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   final bool selected;
@@ -166,6 +173,7 @@ class _NavItem extends StatelessWidget {
   final IconData activeIcon;
   final String label;
   final VoidCallback onTap;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +181,7 @@ class _NavItem extends StatelessWidget {
         Theme.of(context).brightness == Brightness.dark ? AppColors.gray500 : AppColors.gray500;
     final color = selected ? AppColors.primary : unselectedColor;
 
-    final iconWidget = AnimatedSwitcher(
+    Widget iconWidget = AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       transitionBuilder: (child, animation) =>
           ScaleTransition(scale: animation, child: child),
@@ -184,6 +192,10 @@ class _NavItem extends StatelessWidget {
         size: 24,
       ),
     );
+
+    if (badgeCount > 0) {
+      iconWidget = AppDotBadge(count: badgeCount, child: iconWidget);
+    }
 
     return Expanded(
       child: GestureDetector(

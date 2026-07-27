@@ -579,7 +579,10 @@ final conversationMessagesProvider = FutureProvider.family<List<Message>, String
 
 final selectedConversationProvider = StateProvider<Conversation?>((ref) => null);
 
-final unreadMessagesCountProvider = Provider<int>((ref) {
+// Total unread message count across all conversations, driving the Chat
+// nav-tab badge and any other unread indicators. Only sums when the
+// conversations list has loaded; loading/error states contribute 0.
+final chatUnreadCountProvider = Provider<int>((ref) {
   final conversationsState = ref.watch(conversationsProvider);
   return conversationsState.maybeWhen(
     data: (conversations) => conversations.fold(0, (sum, c) => sum + c.unreadCount),
