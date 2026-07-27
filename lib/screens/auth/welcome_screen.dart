@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/auth/login_screen.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/widgets/auth/social_sign_in_buttons.dart';
 import 'registration/registration_flow.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -55,6 +56,12 @@ class WelcomeScreen extends StatelessWidget {
                     .fadeIn(delay: 600.ms, duration: 600.ms)
                     .slideY(begin: 0.5, end: 0, delay: 600.ms, duration: 600.ms),
 
+                // Social sign-in (auto-hidden while authSocialEnabled is false).
+                const SocialSignInButtons(
+                  dividerColor: Colors.white54,
+                  dividerLabelColor: Colors.white,
+                ),
+
                 const SizedBox(height: 24),
 
                 // Terms text
@@ -82,7 +89,7 @@ class WelcomeScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -120,7 +127,7 @@ class WelcomeScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w600,
-            color: Colors.white.withOpacity(0.95),
+            color: Colors.white.withValues(alpha: 0.95),
           ),
         ),
         const SizedBox(height: 12),
@@ -129,7 +136,7 @@ class WelcomeScreen extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 16,
-            color: Colors.white.withOpacity(0.85),
+            color: Colors.white.withValues(alpha: 0.85),
             height: 1.5,
           ),
         ),
@@ -197,7 +204,7 @@ class WelcomeScreen extends StatelessWidget {
       textAlign: TextAlign.center,
       style: TextStyle(
         fontSize: 12,
-        color: Colors.white.withOpacity(0.7),
+        color: Colors.white.withValues(alpha: 0.7),
         height: 1.5,
       ),
     );

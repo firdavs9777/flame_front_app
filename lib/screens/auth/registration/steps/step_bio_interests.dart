@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
+import 'package:flame/widgets/kit/kit.dart';
 
 class StepBioInterests extends StatefulWidget {
   final RegistrationData data;
@@ -159,38 +160,13 @@ class _StepBioInterestsState extends State<StepBioInterests> {
   }
 
   Widget _buildBioField() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: TextField(
-        controller: _bioController,
-        maxLines: 4,
-        maxLength: 300,
-        style: const TextStyle(fontSize: 16),
-        decoration: InputDecoration(
-          hintText: 'e.g., Coffee enthusiast who loves hiking on weekends. Always up for trying new restaurants!',
-          hintStyle: TextStyle(
-            color: Colors.grey[400],
-            height: 1.5,
-          ),
-          filled: true,
-          fillColor: Colors.grey[50],
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-          ),
-          counterStyle: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[400],
-          ),
-        ),
-      ),
+    return AppInput(
+      controller: _bioController,
+      hint:
+          'e.g., Coffee enthusiast who loves hiking on weekends. Always up for trying new restaurants!',
+      maxLines: 4,
+      minLines: 4,
+      maxLength: 300,
     );
   }
 
@@ -265,44 +241,18 @@ class _StepBioInterestsState extends State<StepBioInterests> {
     final enabled = canContinue(_selectedInterests.length);
     return Column(
       children: [
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: enabled ? () => _handleContinue(skipBio: false) : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor:
-                  AppTheme.primaryColor.withValues(alpha: 0.4),
-              disabledForegroundColor: Colors.white70,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: const Text(
-              'Continue',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+        AppButton(
+          text: 'Continue',
+          size: AppButtonSize.large,
+          isFullWidth: true,
+          onPressed: enabled ? () => _handleContinue(skipBio: false) : null,
         ),
         const SizedBox(height: 8),
-        TextButton(
+        AppButton(
+          text: 'Skip for now',
+          variant: AppButtonVariant.ghost,
+          isFullWidth: true,
           onPressed: enabled ? () => _handleContinue(skipBio: true) : null,
-          style: TextButton.styleFrom(
-            foregroundColor: AppTheme.textSecondary,
-          ),
-          child: const Text(
-            'Skip for now',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
         ),
       ],
     );

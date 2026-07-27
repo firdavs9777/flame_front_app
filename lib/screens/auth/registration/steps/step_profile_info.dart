@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/models/user.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
+import 'package:flame/widgets/kit/kit.dart';
 
 class StepProfileInfo extends StatefulWidget {
   final RegistrationData data;
@@ -49,7 +50,7 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -61,8 +62,6 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Name Field
-              _buildLabel('First Name'),
-              const SizedBox(height: 8),
               _buildNameField()
                   .animate()
                   .fadeIn(delay: 100.ms, duration: 400.ms)
@@ -114,29 +113,12 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
   }
 
   Widget _buildNameField() {
-    return TextFormField(
+    return AppInput(
       controller: _nameController,
-      textCapitalization: TextCapitalization.words,
-      style: const TextStyle(fontSize: 16),
-      decoration: InputDecoration(
-        hintText: 'Your first name',
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        prefixIcon: Icon(Icons.person_outline_rounded, color: Colors.grey[400]),
-        filled: true,
-        fillColor: Colors.grey[50],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.errorColor, width: 1),
-        ),
-      ),
+      label: 'First Name',
+      hint: 'Your first name',
+      prefixIcon: Icons.person_outline_rounded,
+      textInputAction: TextInputAction.next,
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Please enter your name';
@@ -177,7 +159,7 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
                     activeTrackColor: AppTheme.primaryColor,
                     inactiveTrackColor: Colors.grey[300],
                     thumbColor: AppTheme.primaryColor,
-                    overlayColor: AppTheme.primaryColor.withOpacity(0.2),
+                    overlayColor: AppTheme.primaryColor.withValues(alpha: 0.2),
                     trackHeight: 4,
                   ),
                   child: Slider(
@@ -256,27 +238,11 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
   }
 
   Widget _buildContinueButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _handleContinue,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: const Text(
-          'Continue',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+    return AppButton(
+      text: 'Continue',
+      size: AppButtonSize.large,
+      isFullWidth: true,
+      onPressed: _handleContinue,
     );
   }
 

@@ -5,11 +5,11 @@ import 'package:flame/config/env.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/screens/auth/forgot_password_screen.dart';
-import 'package:flame/services/social_auth_service.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/i18n/error_messages.dart';
 import 'package:flame/services/api_client.dart';
 import 'package:flame/widgets/kit/kit.dart';
+import 'package:flame/widgets/auth/social_sign_in_buttons.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -22,7 +22,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
   bool _rememberMe = false;
 
   @override
@@ -110,11 +109,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                   const SizedBox(height: 32),
 
-                  // Social Login
-                  if (EnvConfig.current.authSocialEnabled)
-                    _buildSocialLogin()
-                        .animate()
-                        .fadeIn(delay: 400.ms, duration: 600.ms),
+                  // Social Login (self-gates on authSocialEnabled).
+                  const SocialSignInButtons()
+                      .animate()
+                      .fadeIn(delay: 400.ms, duration: 600.ms),
 
                   const SizedBox(height: 32),
                 ],
@@ -132,7 +130,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       icon: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Icon(
@@ -162,7 +160,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           context.l10n.loginSubtitle,
           style: TextStyle(
             fontSize: 16,
-            color: Colors.white.withOpacity(0.85),
+            color: Colors.white.withValues(alpha: 0.85),
           ),
         ),
       ],
@@ -177,7 +175,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -189,14 +187,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Email Field
-            _buildInputLabel(context.l10n.loginEmailLabel),
-            const SizedBox(height: 8),
             _buildEmailField(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Password Field
-            _buildInputLabel(context.l10n.loginPasswordLabel),
-            const SizedBox(height: 8),
             _buildPasswordField(),
             const SizedBox(height: 16),
 
@@ -212,46 +206,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildInputLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppTheme.textPrimary,
-      ),
-    );
-  }
-
   Widget _buildEmailField() {
     final emailRequired = context.l10n.loginEmailRequired;
     final emailInvalid = context.l10n.loginEmailInvalid;
-    return TextFormField(
+    return AppInput(
       controller: _emailController,
+      label: context.l10n.loginEmailLabel,
+      hint: context.l10n.loginEmailHint,
       keyboardType: TextInputType.emailAddress,
-      style: const TextStyle(fontSize: 16),
-      decoration: InputDecoration(
-        hintText: context.l10n.loginEmailHint,
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        prefixIcon: Icon(
-          Icons.email_outlined,
-          color: Colors.grey[400],
-        ),
-        filled: true,
-        fillColor: Colors.grey[50],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.errorColor, width: 1),
-        ),
-      ),
+      textInputAction: TextInputAction.next,
+      prefixIcon: Icons.email_outlined,
       validator: (value) {
         if (value == null || value.isEmpty) {
           return emailRequired;
@@ -267,41 +231,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _buildPasswordField() {
     final passwordRequired = context.l10n.loginPasswordRequired;
     final passwordTooShort = context.l10n.loginPasswordTooShort;
-    return TextFormField(
+    return AppInput(
       controller: _passwordController,
-      obscureText: _obscurePassword,
-      style: const TextStyle(fontSize: 16),
-      decoration: InputDecoration(
-        hintText: context.l10n.loginPasswordHint,
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        prefixIcon: Icon(
-          Icons.lock_outline_rounded,
-          color: Colors.grey[400],
-        ),
-        suffixIcon: IconButton(
-          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-          icon: Icon(
-            _obscurePassword
-                ? Icons.visibility_off_outlined
-                : Icons.visibility_outlined,
-            color: Colors.grey[400],
-          ),
-        ),
-        filled: true,
-        fillColor: Colors.grey[50],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.errorColor, width: 1),
-        ),
-      ),
+      label: context.l10n.loginPasswordLabel,
+      hint: context.l10n.loginPasswordHint,
+      obscureText: true,
+      textInputAction: TextInputAction.done,
+      prefixIcon: Icons.lock_outline_rounded,
+      onSubmitted: (_) => _handleLogin(),
       validator: (value) {
         if (value == null || value.isEmpty) {
           return passwordRequired;
@@ -377,82 +314,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildSocialLogin() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(child: Divider(color: Colors.white.withOpacity(0.5))),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                context.l10n.loginOrContinueWith,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.85),
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            Expanded(child: Divider(color: Colors.white.withOpacity(0.5))),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildSocialButton(
-              icon: Icons.g_mobiledata_rounded,
-              label: context.l10n.loginGoogle,
-              onTap: _handleGoogleSignIn,
-            ),
-            const SizedBox(width: 16),
-            _buildSocialButton(
-              icon: Icons.apple_rounded,
-              label: context.l10n.loginApple,
-              onTap: _handleAppleSignIn,
-            ),
-            const SizedBox(width: 16),
-            _buildSocialButton(
-              icon: Icons.facebook_rounded,
-              label: context.l10n.loginFacebook,
-              onTap: _handleFacebookSignIn,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSocialButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: IconButton(
-        onPressed: onTap,
-        icon: Icon(
-          icon,
-          size: 28,
-          color: AppTheme.textPrimary,
-        ),
-      ),
-    );
-  }
-
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
       ref.read(authProvider.notifier).login(
@@ -460,66 +321,5 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _passwordController.text,
           );
     }
-  }
-
-  Future<void> _handleGoogleSignIn() async {
-    final socialResult = await SocialAuthService.signInWithGoogle();
-    if (!mounted) return;
-    if (!socialResult.success) {
-      if (socialResult.error != 'Sign-in cancelled') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(socialResult.error ?? context.l10n.loginGoogleFailed)),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.loginCancelled)),
-        );
-      }
-      return;
-    }
-    await ref.read(authProvider.notifier).socialLogin(
-          googleIdToken: socialResult.idToken,
-        );
-  }
-
-  Future<void> _handleAppleSignIn() async {
-    final socialResult = await SocialAuthService.signInWithApple();
-    if (!mounted) return;
-    if (!socialResult.success) {
-      if (socialResult.error != 'Sign-in cancelled') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(socialResult.error ?? context.l10n.loginAppleFailed)),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.loginCancelled)),
-        );
-      }
-      return;
-    }
-    await ref.read(authProvider.notifier).socialLogin(
-          appleIdToken: socialResult.appleIdToken,
-          appleAuthorizationCode: socialResult.appleAuthorizationCode,
-        );
-  }
-
-  Future<void> _handleFacebookSignIn() async {
-    final socialResult = await SocialAuthService.signInWithFacebook();
-    if (!mounted) return;
-    if (!socialResult.success) {
-      if (socialResult.error != 'Sign-in cancelled') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(socialResult.error ?? context.l10n.loginFacebookFailed)),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.loginCancelled)),
-        );
-      }
-      return;
-    }
-    await ref.read(authProvider.notifier).socialLogin(
-          facebookAccessToken: socialResult.facebookAccessToken,
-        );
   }
 }

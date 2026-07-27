@@ -7,6 +7,7 @@ import 'package:flame/providers/auth_availability_provider.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
 import 'package:flame/screens/auth/registration/legal_document_sheet.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/widgets/kit/kit.dart';
 
 class StepEmailPassword extends ConsumerStatefulWidget {
   final RegistrationData data;
@@ -27,8 +28,6 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
   bool _agreedToTerms = false;
   bool _checking = false;
   String? _emailAvailabilityError;
@@ -61,27 +60,16 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Container(
+      child: AppCard(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
+        borderRadius: AppRadius.borderXXL,
+        boxShadow: AppShadows.lg,
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Email Field
-              _buildLabel('Email Address'),
-              const SizedBox(height: 8),
               _buildEmailField()
                   .animate()
                   .fadeIn(delay: 100.ms, duration: 400.ms)
@@ -89,21 +77,17 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
 
               if (_emailAvailabilityError != null) _buildEmailAvailabilityError(),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Password Field
-              _buildLabel('Password'),
-              const SizedBox(height: 8),
               _buildPasswordField()
                   .animate()
                   .fadeIn(delay: 200.ms, duration: 400.ms)
                   .slideX(begin: 0.1, end: 0, delay: 200.ms, duration: 400.ms),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Confirm Password Field
-              _buildLabel('Confirm Password'),
-              const SizedBox(height: 8),
               _buildConfirmPasswordField()
                   .animate()
                   .fadeIn(delay: 300.ms, duration: 400.ms)
@@ -137,46 +121,19 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
     );
   }
 
-  Widget _buildLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppTheme.textPrimary,
-      ),
-    );
-  }
-
   Widget _buildEmailField() {
-    return TextFormField(
+    return AppInput(
       controller: _emailController,
+      label: 'Email Address',
+      hint: 'you@example.com',
       keyboardType: TextInputType.emailAddress,
-      style: const TextStyle(fontSize: 16),
+      textInputAction: TextInputAction.next,
+      prefixIcon: Icons.email_outlined,
       onChanged: (_) {
         if (_emailAvailabilityError != null) {
           setState(() => _emailAvailabilityError = null);
         }
       },
-      decoration: InputDecoration(
-        hintText: 'you@example.com',
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        prefixIcon: Icon(Icons.email_outlined, color: Colors.grey[400]),
-        filled: true,
-        fillColor: Colors.grey[50],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.errorColor, width: 1),
-        ),
-      ),
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Please enter your email';
@@ -237,36 +194,14 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
   }
 
   Widget _buildPasswordField() {
-    return TextFormField(
+    return AppInput(
       controller: _passwordController,
-      obscureText: _obscurePassword,
-      style: const TextStyle(fontSize: 16),
-      decoration: InputDecoration(
-        hintText: 'Create a strong password',
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        prefixIcon: Icon(Icons.lock_outline_rounded, color: Colors.grey[400]),
-        suffixIcon: IconButton(
-          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-          icon: Icon(
-            _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-            color: Colors.grey[400],
-          ),
-        ),
-        filled: true,
-        fillColor: Colors.grey[50],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.errorColor, width: 1),
-        ),
-      ),
+      label: 'Password',
+      hint: 'Create a strong password',
+      obscureText: true,
+      textInputAction: TextInputAction.next,
+      prefixIcon: Icons.lock_outline_rounded,
+      onChanged: (_) => setState(() {}), // live-update requirement checklist
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Please enter a password';
@@ -280,36 +215,13 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
   }
 
   Widget _buildConfirmPasswordField() {
-    return TextFormField(
+    return AppInput(
       controller: _confirmPasswordController,
-      obscureText: _obscureConfirmPassword,
-      style: const TextStyle(fontSize: 16),
-      decoration: InputDecoration(
-        hintText: 'Confirm your password',
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        prefixIcon: Icon(Icons.lock_outline_rounded, color: Colors.grey[400]),
-        suffixIcon: IconButton(
-          onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
-          icon: Icon(
-            _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-            color: Colors.grey[400],
-          ),
-        ),
-        filled: true,
-        fillColor: Colors.grey[50],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppTheme.errorColor, width: 1),
-        ),
-      ),
+      label: 'Confirm Password',
+      hint: 'Confirm your password',
+      obscureText: true,
+      textInputAction: TextInputAction.done,
+      prefixIcon: Icons.lock_outline_rounded,
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Please confirm your password';
@@ -331,19 +243,15 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.gray100,
+        borderRadius: AppRadius.borderMD,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Password must contain:',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
-            ),
+            style: AppTypography.labelMedium.copyWith(color: AppColors.gray600),
           ),
           const SizedBox(height: 8),
           _buildRequirement('At least 8 characters', hasLength),
@@ -362,14 +270,13 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
           Icon(
             met ? Icons.check_circle : Icons.circle_outlined,
             size: 16,
-            color: met ? AppTheme.successColor : Colors.grey[400],
+            color: met ? AppTheme.successColor : AppColors.gray400,
           ),
           const SizedBox(width: 8),
           Text(
             text,
-            style: TextStyle(
-              fontSize: 12,
-              color: met ? AppTheme.successColor : Colors.grey[500],
+            style: AppTypography.bodySmall.copyWith(
+              color: met ? AppTheme.successColor : AppColors.gray500,
             ),
           ),
         ],
@@ -383,7 +290,8 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
       fontWeight: FontWeight.w600,
       decoration: TextDecoration.underline,
     );
-    final baseStyle = TextStyle(fontSize: 13, color: Colors.grey[700], height: 1.4);
+    final baseStyle =
+        AppTypography.bodySmall.copyWith(color: AppColors.gray700, height: 1.4);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -428,38 +336,12 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
 
   Widget _buildContinueButton() {
     final enabled = _agreedToTerms && !_checking;
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: enabled ? _handleContinue : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: AppTheme.primaryColor.withValues(alpha: 0.4),
-          disabledForegroundColor: Colors.white70,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: _checking
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : const Text(
-                'Continue',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-      ),
+    return AppButton(
+      text: 'Continue',
+      size: AppButtonSize.large,
+      isFullWidth: true,
+      isLoading: _checking,
+      onPressed: enabled ? _handleContinue : null,
     );
   }
 

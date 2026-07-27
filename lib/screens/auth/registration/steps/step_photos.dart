@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/services/face_detection_service.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
+import 'package:flame/widgets/kit/kit.dart';
 
 class StepPhotos extends StatefulWidget {
   final RegistrationData data;
@@ -371,44 +372,13 @@ class _StepPhotosState extends State<StepPhotos> {
   }
 
   Widget _buildCompleteButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: (widget.isLoading || _isProcessing) ? null : _handleComplete,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          disabledBackgroundColor: AppTheme.primaryColor.withValues(alpha: 0.6),
-        ),
-        child: widget.isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2.5,
-                ),
-              )
-            : const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Complete Profile',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Icon(Icons.check_circle_outline_rounded, size: 22),
-                ],
-              ),
-      ),
+    return AppButton(
+      text: 'Complete Profile',
+      size: AppButtonSize.large,
+      isFullWidth: true,
+      isLoading: widget.isLoading,
+      suffixIcon: Icons.check_circle_outline_rounded,
+      onPressed: (widget.isLoading || _isProcessing) ? null : _handleComplete,
     );
   }
 

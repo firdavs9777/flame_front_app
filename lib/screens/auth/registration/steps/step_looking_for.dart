@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/models/user.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
+import 'package:flame/widgets/kit/kit.dart';
 
 class StepLookingFor extends StatefulWidget {
   final RegistrationData data;
@@ -38,7 +39,7 @@ class _StepLookingForState extends State<StepLookingFor> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -122,7 +123,7 @@ class _StepLookingForState extends State<StepLookingFor> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isSelected ? option.color.withOpacity(0.1) : Colors.grey[50],
+              color: isSelected ? option.color.withValues(alpha: 0.1) : Colors.grey[50],
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isSelected ? option.color : Colors.transparent,
@@ -186,27 +187,11 @@ class _StepLookingForState extends State<StepLookingFor> {
   }
 
   Widget _buildContinueButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _handleContinue,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: const Text(
-          'Continue',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+    return AppButton(
+      text: 'Continue',
+      size: AppButtonSize.large,
+      isFullWidth: true,
+      onPressed: _handleContinue,
     );
   }
 
