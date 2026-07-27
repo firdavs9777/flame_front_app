@@ -2,7 +2,9 @@ import 'package:flame/models/user.dart';
 import 'package:flame/services/api_client.dart';
 
 class AuthService {
-  final ApiClient _apiClient = ApiClient();
+  final ApiClient _apiClient;
+
+  AuthService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
   // Initialize service
   Future<void> init() async {
@@ -33,10 +35,11 @@ class AuthService {
       final tokens = data['tokens'];
       final userData = data['user'];
 
-      // Save tokens
+      // Save tokens. The Flame backend returns camelCase (accessToken); accept
+      // snake_case too so either backend convention works.
       await _apiClient.saveTokens(
-        accessToken: tokens['access_token'],
-        refreshToken: tokens['refresh_token'],
+        accessToken: tokens['accessToken'] ?? tokens['access_token'],
+        refreshToken: tokens['refreshToken'] ?? tokens['refresh_token'],
         userId: userData['id'],
       );
 
@@ -73,7 +76,7 @@ class AuthService {
       'name': name,
       'age': age,
       'gender': gender.toApiString(),
-      'looking_for': lookingFor.toApiString(),
+      'lookingFor': lookingFor.toApiString(),
       'bio': bio,
       'interests': interests,
       'photos': photos,
@@ -86,10 +89,11 @@ class AuthService {
       final tokens = data['tokens'];
       final userData = data['user'];
 
-      // Save tokens
+      // Save tokens. The Flame backend returns camelCase (accessToken); accept
+      // snake_case too so either backend convention works.
       await _apiClient.saveTokens(
-        accessToken: tokens['access_token'],
-        refreshToken: tokens['refresh_token'],
+        accessToken: tokens['accessToken'] ?? tokens['access_token'],
+        refreshToken: tokens['refreshToken'] ?? tokens['refresh_token'],
         userId: userData['id'],
       );
 
@@ -240,8 +244,8 @@ class AuthService {
       final userData = data['user'];
 
       await _apiClient.saveTokens(
-        accessToken: tokens['access_token'],
-        refreshToken: tokens['refresh_token'],
+        accessToken: tokens['accessToken'] ?? tokens['access_token'],
+        refreshToken: tokens['refreshToken'] ?? tokens['refresh_token'],
         userId: userData['id'],
       );
 
@@ -278,8 +282,8 @@ class AuthService {
       final userData = data['user'];
 
       await _apiClient.saveTokens(
-        accessToken: tokens['access_token'],
-        refreshToken: tokens['refresh_token'],
+        accessToken: tokens['accessToken'] ?? tokens['access_token'],
+        refreshToken: tokens['refreshToken'] ?? tokens['refresh_token'],
         userId: userData['id'],
       );
 
@@ -314,8 +318,8 @@ class AuthService {
       final userData = data['user'];
 
       await _apiClient.saveTokens(
-        accessToken: tokens['access_token'],
-        refreshToken: tokens['refresh_token'],
+        accessToken: tokens['accessToken'] ?? tokens['access_token'],
+        refreshToken: tokens['refreshToken'] ?? tokens['refresh_token'],
         userId: userData['id'],
       );
 
