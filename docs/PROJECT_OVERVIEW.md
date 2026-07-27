@@ -56,7 +56,9 @@ Envelope: `{ "success": true, "data": ... }` or `{ "success": false, "error": {c
 
 | Endpoint | Status | Notes |
 |---|---|---|
-| `POST /auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout` | ✅ real | camelCase user shape (mismatch — gotcha #2) |
+| `POST /auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout` | ✅ real | camelCase user shape (mismatch — gotcha #2); register now persists `latitude/longitude/photos` |
+| `POST /auth/google`, `/auth/apple`, `/auth/facebook` | ✅ real (dormant) | on `feat/flame-social-auth`; verify + find-or-create + verified-email link; **501 until `FLAME_` provider keys set** |
+| `POST /auth/check-email` | ✅ real | `{data:{available}}` — fail-fast signup (on `feat/flame-social-auth`) |
 | `GET /users/me`, `GET /users/:id`, `PATCH /users/me`, `POST /users/me/photos`, `DELETE /users/me/photos/:id` | ✅ real | ⚠️ prod photo upload returns `INTERNAL` (Spaces misconfig) |
 | `GET/POST/DELETE /stories/*` (feed, my, create, :id/view, :id) | ✅ real | ephemeral 24h photo stories, TTL index, matches-only-ready (all-users for now) |
 | `GET /discover` | ✅ real | returns other users (snake_case) for the swipe deck |
@@ -88,10 +90,11 @@ Backend: stories + discover + swipes + matches/conversations/billing stubs.
    retry), or fix the deploy hook. Main BananaTalk DB is unaffected (separate connection).
 2. **Casing mismatch.** Frontend models parse **snake_case** (`looking_for`, `is_online`,
    `created_at`, `access_token`); the flame backend's auth/user endpoints emit **camelCase**
-   (`lookingFor`, `accessToken`). Login was patched to accept both token casings
-   (`auth_service.dart`); secondary user fields still fall back to defaults. **Proper fix:**
-   make the backend emit snake_case everywhere (or make `User.fromJson` dual-tolerant).
-   New endpoints (stories/discover/swipes) already return snake_case.
+   (`lookingFor`, `accessToken`). Login/register + all 3 social methods now accept both token
+   casings (`auth_service.dart`), and register sends `lookingFor` (camel) — this **fixed a
+   registration 422** (app was sending `looking_for`). Secondary user fields still fall back to
+   defaults. **Proper fix:** make the backend emit snake_case everywhere (or make `User.fromJson`
+   dual-tolerant). New endpoints (stories/discover/swipes) already return snake_case.
 3. **`api.flame.banatalk.com` is broken** — cert mismatch + wrong routing. Use
    `api.banatalk.com/flamebackend/v1`. Fix the subdomain someday.
 4. **Prod photo upload fails** — `POST /users/me/photos` → `INTERNAL` (flame DO Spaces
@@ -172,3 +175,40 @@ green; backend `node --test` green). The user's unrelated in-progress files were
 
 **Known parked follow-ups:** backend unread-counter / find-or-create race (harden with `$inc`/unique
 index); chat send-restore can clobber text typed during an in-flight send. Non-blocking.
+
+---
+
+## 12. Update log — 2026-07-27 (Social auth + registration/auth-UX)
+
+Two reviewed sub-projects (specs/plans in `docs/superpowers/`). Backend on new branch
+**`feat/flame-social-auth`** (off `feat/flame-chat`); frontend on `feat/phase-a-visual-foundation`.
+`flutter test` green (188); `node --test` green (25). Isolation preserved (backend = `flame/` only).
+
+**Social sign-in (Google / Apple / Facebook) — SP1 backend + SP2 frontend:**
+- Backend `/auth/google|apple|facebook` verify provider tokens (`google-auth-library` /
+  `apple-signin-auth` / Facebook Graph `debug_token`), then a pure `socialAuthService.findOrCreate`
+  does find-by-provider-id → **link-by-verified-email** → create. `/auth/check-email` for fail-fast
+  signup. Each provider is **dormant (clean 501) until its `FLAME_` keys are set**
+  (`FLAME_GOOGLE_CLIENT_ID` / `FLAME_APPLE_CLIENT_ID` / `FLAME_FACEBOOK_APP_ID`+`_SECRET`).
+- Security-hardened in review: social-only accounts (null `passwordHash`) return a clean 401 on
+  password login (no crash / no enumeration oracle); an **unverified** provider email is never linked
+  or stored (blocks registration-DoS + auto-link takeover); race-safe `11000` create; `check-email`
+  reflects real registrability (ignores soft-delete filter).
+- Frontend: token-casing bug fixed (camel-first), real Google/Apple/Facebook buttons (Apple per HIG)
+  on welcome/login, all behind **`EnvConfig.authSocialEnabled` (still off)**.
+
+**Registration fixed + optimized (SP2 frontend + the SP1 register-contract fix):**
+- **Fixed broken sign-up**: app sent `looking_for` (→ backend 422) and never persisted
+  location/photos (→ users invisible to Discover). Backend now accepts + persists
+  `latitude/longitude/photos`; app sends `lookingFor`.
+- **Fail-fast** email-availability at step 1 (fails *open* — a check-email outage never blocks signup);
+  **parallel + retrying** photo upload; **draft persist/resume** (password never persisted, pinned by
+  a regression test); **lighter steps** (optional bio, streamlined interests); welcome/login/register
+  moved onto the Phase-A design system.
+
+**To go live:** deploy `feat/flame-social-auth` (repairs sign-up with **no keys**); then optionally set
+the `FLAME_` provider keys + Apple/Facebook native config + flip `authSocialEnabled: true`. Full
+turnkey steps in `docs/ACTIVATION_RUNBOOK.md` and `~/Desktop/FLAME_TODO.md`.
+
+**Parked (non-blocking):** debug-only `File`-identity map in `registration_flow`; the social create
+path relies on the email unique index rather than unique indexes on the `*Id` fields.

@@ -127,13 +127,53 @@ user; a message from another account produces a push.
 
 ---
 
+## 3b. Social sign-in (Google / Apple / Facebook) — backend auto-activates on env
+
+> Backend lives on branch **`feat/flame-social-auth`** (off `feat/flame-chat`). Deploying it also
+> **repairs email registration** (previously 422'd + dropped location/photos) — that part needs NO keys.
+
+The endpoints (`/auth/google`, `/auth/apple`, `/auth/facebook`) + `/auth/check-email` and the whole
+app-side flow are built + tested. Each provider is dormant (returns a clean `501
+PROVIDER_NOT_CONFIGURED`) until its keys are set.
+
+**You provide + set on the server** (`config/config.env`, all `FLAME_`-prefixed so flame stays
+isolated from BananaTalk's own Google/FB config):
+```
+# Google — the OAuth **Web** client ID (must equal the serverClientId the app mints tokens for;
+# a Flame client ID is already hardcoded in the app's social_auth_service.dart — use that value)
+FLAME_GOOGLE_CLIENT_ID=<web client id>
+# Apple — the Services ID / bundle audience the ID token is issued for
+FLAME_APPLE_CLIENT_ID=<services id>
+# Facebook — app id + secret (used to build the app access token for debug_token verification)
+FLAME_FACEBOOK_APP_ID=<app id>
+FLAME_FACEBOOK_APP_SECRET=<app secret>
+```
+`pm2 restart language`. No code change — `socialVerify.isConfigured(...)` flips true per provider.
+
+**App native config** (needed before the buttons work on device):
+- **Apple:** enable *Sign in with Apple* capability + entitlement in Xcode. **Required by the App
+  Store** if you offer any social login on iOS (guideline 4.8).
+- **Facebook:** add the FB app id + URL scheme to `ios/Runner/Info.plist` + the Android manifest.
+- **Google:** reuse the existing client config (already wired in the app).
+
+**Then flip** `authSocialEnabled: true` in `lib/config/env.dart` `_prod` (see §4) — that reveals the
+Google/Apple/Facebook buttons on welcome/login. Behavior: new social users are created
+`profileComplete:false` and routed through the existing profile-completion flow; an existing email
+signing in via a provider **links** (verified email only) rather than duplicating.
+
+**Verify:** unconfigured provider → `POST /auth/google` returns `501`; once configured, a real sign-in
+returns `{data:{user, tokens, is_new_user}}`; `pm2 logs language | grep -i social`.
+
+---
+
 ## 4. Flip the go-live flags (app)
 
 In `lib/config/env.dart` `_prod`, once the backend is deployed:
 - `chatEnabled: true` — shows the Chat tab in prod.
 - `realtimeEnabled: true` — connects the `/flame` socket in prod (turns polling into a fallback).
+- `authSocialEnabled: true` — shows Google/Apple/Facebook buttons (only after §3b keys + native config).
 - (optional) `advancedFiltersEnabled: true` — only once `/discover` honors gender/interests/online filters.
-- (optional) `authSocialEnabled` / `forgotPasswordEnabled` — only once those backends exist.
+- (optional) `forgotPasswordEnabled` — only once that backend exists.
 
 ---
 
@@ -152,7 +192,10 @@ In `lib/config/env.dart` `_prod`, once the backend is deployed:
 
 | Feature | Activation |
 |---|---|
+| Email registration fix | deploy `feat/flame-social-auth` → `pm2 restart language` (**no keys needed**) |
 | Email (welcome + scheduler) | set `FLAME_MAILGUN_*` + `FLAME_FROM_*` → restart |
 | Push backend (chat → FCM) | set `FLAME_FIREBASE_PROJECT_ID` + `FLAME_FIREBASE_SERVICE_ACCOUNT` + drop JSON → restart |
+| Social sign-in (backend) | set `FLAME_GOOGLE_CLIENT_ID` / `FLAME_APPLE_CLIENT_ID` / `FLAME_FACEBOOK_APP_ID`+`_SECRET` → restart (§3b) |
+| Social sign-in (app) | Apple/Facebook native config + flip `authSocialEnabled` in `env.dart` |
 | Chat/realtime in prod | flip `chatEnabled`/`realtimeEnabled` in `env.dart` |
 | Push in the app | the one-time Flutter native step (§3) |
