@@ -66,7 +66,7 @@ class _StepBioInterestsState extends State<StepBioInterests> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -86,7 +86,7 @@ class _StepBioInterestsState extends State<StepBioInterests> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Write something fun about yourself',
+              'Optional — write something fun, or skip for now',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -114,8 +114,8 @@ class _StepBioInterestsState extends State<StepBioInterests> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _selectedInterests.length >= 3
-                        ? AppTheme.successColor.withOpacity(0.1)
+                    color: _selectedInterests.isNotEmpty
+                        ? AppTheme.successColor.withValues(alpha: 0.1)
                         : Colors.grey[100],
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -124,7 +124,7 @@ class _StepBioInterestsState extends State<StepBioInterests> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: _selectedInterests.length >= 3
+                      color: _selectedInterests.isNotEmpty
                           ? AppTheme.successColor
                           : Colors.grey[500],
                     ),
@@ -134,7 +134,7 @@ class _StepBioInterestsState extends State<StepBioInterests> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Select 3-5 interests to help find better matches',
+              'Pick at least one — you can add more later',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -207,7 +207,7 @@ class _StepBioInterestsState extends State<StepBioInterests> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected ? interest.color.withOpacity(0.15) : Colors.grey[50],
+              color: isSelected ? interest.color.withValues(alpha: 0.15) : Colors.grey[50],
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: isSelected ? interest.color : Colors.grey[200]!,
@@ -262,35 +262,57 @@ class _StepBioInterestsState extends State<StepBioInterests> {
   }
 
   Widget _buildContinueButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _handleContinue,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+    final enabled = canContinue(_selectedInterests.length);
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: enabled ? () => _handleContinue(skipBio: false) : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor:
+                  AppTheme.primaryColor.withValues(alpha: 0.4),
+              disabledForegroundColor: Colors.white70,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text(
+              'Continue',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
-        child: const Text(
-          'Continue',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: enabled ? () => _handleContinue(skipBio: true) : null,
+          style: TextButton.styleFrom(
+            foregroundColor: AppTheme.textSecondary,
+          ),
+          child: const Text(
+            'Skip for now',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 
-  void _handleContinue() {
-    if (_selectedInterests.length < 3) {
+  void _handleContinue({required bool skipBio}) {
+    if (!canContinue(_selectedInterests.length)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please select at least 3 interests'),
+          content: const Text('Pick at least one interest'),
           backgroundColor: AppTheme.errorColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -301,11 +323,17 @@ class _StepBioInterestsState extends State<StepBioInterests> {
       return;
     }
 
-    widget.data.bio = _bioController.text.trim();
+    // Bio is optional; "Skip for now" advances without it.
+    widget.data.bio = skipBio ? '' : _bioController.text.trim();
     widget.data.interests = List.from(_selectedInterests);
     widget.onNext();
   }
 }
+
+/// Whether the bio/interests step can advance. Backend `registerSchema`
+/// requires at least one interest; bio is optional. Extracted so the
+/// enable-logic is unit-testable independent of the widget.
+bool canContinue(int selectedInterestCount) => selectedInterestCount >= 1;
 
 class _InterestItem {
   final String name;
