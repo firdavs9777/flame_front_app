@@ -12,6 +12,7 @@ class ChatInput extends StatelessWidget {
   final Message? replyingTo;
   final VoidCallback onSend;
   final VoidCallback? onCancelReply;
+  final ValueChanged<String>? onChanged;
 
   const ChatInput({
     super.key,
@@ -20,6 +21,7 @@ class ChatInput extends StatelessWidget {
     this.replyingTo,
     required this.onSend,
     this.onCancelReply,
+    this.onChanged,
   });
 
   @override
@@ -122,6 +124,7 @@ class ChatInput extends StatelessWidget {
                   ),
                 ),
                 textCapitalization: TextCapitalization.sentences,
+                onChanged: onChanged,
                 onSubmitted: (_) => onSend(),
               ),
             ),

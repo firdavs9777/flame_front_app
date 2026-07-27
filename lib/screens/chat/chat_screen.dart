@@ -41,6 +41,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Timer? _pollTimer;
   FlameSocketService? _flameSocket;
 
+  // ==================== Typing indicator state (flame socket) ====================
+
+  /// Whether *we* are currently signaling "typing" to the other participant.
+  /// Only used to gate emits so we send `typing` once on the false→true
+  /// transition rather than on every keystroke.
+  bool _isTyping = false;
+
+  /// Whether the other participant is currently typing, per the flame socket
+  /// (`typing`/`stopTyping` events). Separate from the legacy
+  /// `typingUsersProvider` (driven by the old `WebSocketService`) so the two
+  /// paths can coexist without interfering with each other.
+  bool _isOtherUserTypingFlame = false;
+
+  /// Restarted on every outgoing keystroke; fires `stopTyping` after 3s of
+  /// idle.
+  Timer? _typingIdleTimer;
+
+  /// Safety net for the incoming indicator: restarted on every `typing`
+  /// event we receive, hides the indicator after 5s in case a `stopTyping`
+  /// is dropped.
+  Timer? _typingSafetyTimer;
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +75,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _typingIdleTimer?.cancel();
+    _typingSafetyTimer?.cancel();
+    if (_isTyping) {
+      _flameSocket?.emitStopTyping(
+        widget.conversation.otherUser.id,
+        widget.conversation.id,
+      );
+    }
     _flameSocket?.dispose();
     _messageController.dispose();
     _scrollController.dispose();
@@ -180,7 +210,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final socket = FlameSocketService(token: token)
       ..onMessageNew = _onSocketMessageNew
       ..onMessageEdited = _onSocketMessageEdited
-      ..onMessageDeleted = _onSocketMessageDeleted;
+      ..onMessageDeleted = _onSocketMessageDeleted
+      ..onTyping = _onSocketTyping
+      ..onStopTyping = _onSocketStopTyping;
     _flameSocket = socket;
     socket.connect();
   }
@@ -235,6 +267,74 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     setState(() {
       _messages = _messages.map((m) => m.id == updated.id ? updated : m).toList();
     });
+  }
+
+  /// Handles an incoming `typing` push for this open thread. Shows the
+  /// [TypingIndicator] and (re)starts a 5s safety timer so a missed
+  /// `stopTyping` doesn't leave the indicator stuck forever.
+  void _onSocketTyping(String from, String conversationId) {
+    if (from != widget.conversation.otherUser.id) return;
+    if (conversationId != widget.conversation.id) return;
+    if (!mounted) return;
+
+    _typingSafetyTimer?.cancel();
+    _typingSafetyTimer = Timer(const Duration(seconds: 5), () {
+      if (!mounted) return;
+      setState(() => _isOtherUserTypingFlame = false);
+    });
+
+    if (_isOtherUserTypingFlame) return;
+    setState(() => _isOtherUserTypingFlame = true);
+  }
+
+  /// Handles an incoming `stopTyping` push for this open thread.
+  void _onSocketStopTyping(String from, String conversationId) {
+    if (from != widget.conversation.otherUser.id) return;
+    if (conversationId != widget.conversation.id) return;
+    if (!mounted) return;
+
+    _typingSafetyTimer?.cancel();
+    if (!_isOtherUserTypingFlame) return;
+    setState(() => _isOtherUserTypingFlame = false);
+  }
+
+  /// Called on every [ChatInput] text change. Emits `typing` once on the
+  /// false→true transition, then (re)starts a 3s idle timer that emits
+  /// `stopTyping` when the user pauses. No-op unless chat is enabled and the
+  /// flame socket is connected.
+  void _onMessageTextChanged(String text) {
+    if (!EnvConfig.current.chatEnabled) return;
+
+    final socket = _flameSocket;
+    if (socket == null || !socket.isConnected) return;
+
+    if (text.isEmpty) {
+      _stopTypingNow();
+      return;
+    }
+
+    if (!_isTyping) {
+      _isTyping = true;
+      socket.emitTyping(widget.conversation.otherUser.id, widget.conversation.id);
+    }
+
+    _typingIdleTimer?.cancel();
+    _typingIdleTimer = Timer(const Duration(seconds: 3), _stopTypingNow);
+  }
+
+  /// Emits `stopTyping` (if we were mid-typing) and cancels the idle timer.
+  /// Called on idle timeout, on send, and in [dispose].
+  void _stopTypingNow() {
+    _typingIdleTimer?.cancel();
+    _typingIdleTimer = null;
+
+    if (!_isTyping) return;
+    _isTyping = false;
+
+    final socket = _flameSocket;
+    if (socket != null && socket.isConnected) {
+      socket.emitStopTyping(widget.conversation.otherUser.id, widget.conversation.id);
+    }
   }
 
   bool _isScrolledToBottom() {
@@ -294,6 +394,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _sendMessage() async {
     final content = _messageController.text.trim();
     if (content.isEmpty || _isSending) return;
+
+    _stopTypingNow();
 
     // Capture the content and reply target before clearing the input, so
     // they can be restored if the send fails.
@@ -505,7 +607,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ) ?? widget.conversation;
 
     final currentUserId = currentUserState.valueOrNull?.id ?? '';
-    final isOtherUserTyping = typingUsers[widget.conversation.id] != null;
+    final isOtherUserTyping =
+        typingUsers[widget.conversation.id] != null || _isOtherUserTypingFlame;
 
     // Check for new messages from WebSocket and add them to local list
     for (final msg in currentConversation.messages) {
@@ -536,6 +639,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             replyingTo: _replyingTo,
             onSend: _sendMessage,
             onCancelReply: () => setState(() => _replyingTo = null),
+            onChanged: _onMessageTextChanged,
           ),
         ],
       ),
