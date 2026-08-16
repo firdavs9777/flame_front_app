@@ -2,14 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
-	<key>NSCameraUsageDescription</key>
-    <string>This app needs camera access to take photos for your profile</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>This app needs photo library access to select photos</string>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>This app needs microphone access for video features</string>
 	<key>CFBundleDisplayName</key>
 	<string>Flame</string>
 	<key>CFBundleExecutable</key>
@@ -26,45 +22,6 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<key>NSCameraUsageDescription</key>
-	<string>Flame needs camera access to take profile photos</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Flame needs photo library access to select profile photos</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Flame needs permission to save photos to your library</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Flame needs your location to find matches near you</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Flame needs your location to find matches near you and notify you of nearby matches</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Flame needs microphone access to record voice messages</string>
-
-	<!-- Social Auth: Google Sign-In URL scheme + Facebook -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -75,34 +32,20 @@
 				<string>com.googleusercontent.apps.55426082662-s2fr9c5c8ttur8mmk0njf48o78knlqee</string>
 			</array>
 		</dict>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<!-- REPLACE: fb<YOUR_FACEBOOK_APP_ID> -->
-				<string>fbYOUR_FACEBOOK_APP_ID</string>
-			</array>
-		</dict>
+		<!-- Facebook's fb<APP_ID> scheme goes here once a Meta app exists.
+		     It must NOT be present as a placeholder: App Store validation
+		     rejects a non-substituted placeholder as a malformed URL scheme
+		     (RFC1738). See docs/social-auth-setup.md §3. -->
 	</array>
-
-	<!-- Allow plain HTTP only to local-network IPs (192.168.x.x, 10.x.x.x, localhost) for dev. Production traffic over HTTPS still works. -->
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-	</dict>
-
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<!-- FacebookAppID / FacebookClientToken / FacebookDisplayName are added with
+	     real values from the Meta Developer Console when Facebook login is
+	     enabled. They are deliberately absent rather than placeholders: the
+	     Facebook SDK reads FacebookAppID at initialisation and fails on a
+	     non-numeric value. See docs/social-auth-setup.md section 3. -->
 	<key>GIDClientID</key>
 	<string>55426082662-s2fr9c5c8ttur8mmk0njf48o78knlqee.apps.googleusercontent.com</string>
-
-	<!-- REPLACE: Facebook credentials from Meta Developer Console -->
-	<key>FacebookAppID</key>
-	<string>YOUR_FACEBOOK_APP_ID</string>
-	<key>FacebookClientToken</key>
-	<string>YOUR_FACEBOOK_CLIENT_TOKEN</string>
-	<key>FacebookDisplayName</key>
-	<string>Flame</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>fbapi</string>
@@ -120,6 +63,44 @@
 		<string>fbauth</string>
 		<string>fbauth2</string>
 		<string>fbshareextension</string>
+	</array>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Flame needs camera access to take profile photos</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Flame needs your location to find matches near you and notify you of nearby matches</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Flame needs your location to find matches near you</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Flame needs microphone access to record voice messages</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Flame needs permission to save photos to your library</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Flame needs photo library access to select profile photos</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 </dict>
 </plist>

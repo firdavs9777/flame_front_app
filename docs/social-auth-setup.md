@@ -226,13 +226,17 @@ keytool -exportcert -alias androiddebugkey -keystore ~/.android/debug.keystore \
 
 ### iOS edits — `ios/Runner/Info.plist`
 
-Replace the placeholders:
+These keys are **absent**, not placeholders — placeholder values fail App Store
+validation (`fb<PLACEHOLDER>` is not a valid RFC1738 URL scheme) and the
+Facebook SDK fails on a non-numeric `FacebookAppID`. Add them with real values:
 
 ```xml
 <key>FacebookAppID</key>
 <string>YOUR_ACTUAL_APP_ID</string>
 <key>FacebookClientToken</key>
 <string>YOUR_ACTUAL_CLIENT_TOKEN</string>
+<key>FacebookDisplayName</key>
+<string>Flame</string>
 ```
 
 Add a second entry to the existing `CFBundleURLTypes` array (do **not** replace
