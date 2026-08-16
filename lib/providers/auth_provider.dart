@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/user.dart';
 import 'package:flame/services/api_client.dart';
@@ -75,6 +76,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // Initialize and check for existing session
+  /// Whether a failed session-restore should discard the stored tokens.
+  ///
+  /// Only an authoritative answer from the server counts: 401 (token
+  /// rejected), 403 (session refused), 404 (the user is gone or soft-deleted —
+  /// what `userService.getMe` throws). Everything else — 5xx, 429, or
+  /// statusCode 0 for a request that never reached the server — describes the
+  /// *transport or server*, not the session, so the credentials are kept.
+  @visibleForTesting
+  static bool shouldClearSession(int statusCode) =>
+      statusCode == 401 || statusCode == 403 || statusCode == 404;
+
   Future<void> _init() async {
     await _authService.init();
 
@@ -90,9 +102,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
           user: user,
           isLoading: false,
         );
-      } else {
-        // Token invalid, logout
+      } else if (shouldClearSession(result.statusCode)) {
+        // The server authoritatively rejected this session — drop the tokens.
         await _authService.logout();
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          isLoading: false,
+        );
+      } else {
+        // Transient: a server error, rate limit, or the request never landed.
+        // Say nothing about the session — KEEP the stored tokens so the next
+        // launch (or a manual retry) can restore it. Discarding them here made
+        // one flaky request cost the user their whole session.
         state = state.copyWith(
           status: AuthStatus.unauthenticated,
           isLoading: false,
@@ -128,10 +149,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
 
-    final result = await _authService.login(
-      email: email,
-      password: password,
-    );
+    final result = await _authService.login(email: email, password: password);
 
     if (result.success && result.user != null) {
       final user = await _withPremiumFromBilling(result.user!);
@@ -216,9 +234,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
         authorizationCode: appleAuthorizationCode,
       );
     } else if (facebookAccessToken != null) {
-      result = await _authService.facebookSignIn(accessToken: facebookAccessToken);
+      result = await _authService.facebookSignIn(
+        accessToken: facebookAccessToken,
+      );
     } else {
-      state = state.copyWith(isLoading: false, error: 'No social token provided');
+      state = state.copyWith(
+        isLoading: false,
+        error: 'No social token provided',
+      );
       return false;
     }
 

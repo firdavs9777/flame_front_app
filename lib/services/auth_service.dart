@@ -20,10 +20,7 @@ class AuthService {
     required String password,
     String? deviceToken,
   }) async {
-    final body = {
-      'email': email,
-      'password': password,
-    };
+    final body = {'email': email, 'password': password};
     if (deviceToken != null) {
       body['device_token'] = deviceToken;
     }
@@ -70,19 +67,22 @@ class AuthService {
     required double latitude,
     required double longitude,
   }) async {
-    final response = await _apiClient.post('/auth/register', body: {
-      'email': email,
-      'password': password,
-      'name': name,
-      'age': age,
-      'gender': gender.toApiString(),
-      'lookingFor': lookingFor.toApiString(),
-      'bio': bio,
-      'interests': interests,
-      'photos': photos,
-      'latitude': latitude,
-      'longitude': longitude,
-    });
+    final response = await _apiClient.post(
+      '/auth/register',
+      body: {
+        'email': email,
+        'password': password,
+        'name': name,
+        'age': age,
+        'gender': gender.toApiString(),
+        'lookingFor': lookingFor.toApiString(),
+        'bio': bio,
+        'interests': interests,
+        'photos': photos,
+        'latitude': latitude,
+        'longitude': longitude,
+      },
+    );
 
     if (response.success && response.data != null) {
       final data = response.data;
@@ -115,10 +115,10 @@ class AuthService {
     required String email,
     required String code,
   }) async {
-    final response = await _apiClient.post('/auth/verify-email', body: {
-      'email': email,
-      'code': code,
-    });
+    final response = await _apiClient.post(
+      '/auth/verify-email',
+      body: {'email': email, 'code': code},
+    );
 
     return AuthResult(
       success: response.success,
@@ -159,6 +159,7 @@ class AuthService {
       success: false,
       error: response.error ?? 'Failed to get user',
       errorCode: response.errorCode,
+      statusCode: response.statusCode,
     );
   }
 
@@ -167,16 +168,15 @@ class AuthService {
   /// Best-effort — failures are returned but the app continues using the
   /// local preference. Backend may not have the field yet during deploy.
   Future<ApiResponse> updatePreferredLanguage(String code) async {
-    return _apiClient.patch('/users/me', body: {
-      'preferred_language': code,
-    });
+    return _apiClient.patch('/users/me', body: {'preferred_language': code});
   }
 
   // Forgot password
   Future<AuthResult> forgotPassword(String email) async {
-    final response = await _apiClient.post('/auth/forgot-password', body: {
-      'email': email,
-    });
+    final response = await _apiClient.post(
+      '/auth/forgot-password',
+      body: {'email': email},
+    );
 
     return AuthResult(
       success: response.success,
@@ -191,11 +191,14 @@ class AuthService {
     required String token,
     required String password,
   }) async {
-    final response = await _apiClient.post('/auth/reset-password', body: {
-      'token': token,
-      'password': password,
-      'password_confirmation': password,
-    });
+    final response = await _apiClient.post(
+      '/auth/reset-password',
+      body: {
+        'token': token,
+        'password': password,
+        'password_confirmation': password,
+      },
+    );
 
     return AuthResult(
       success: response.success,
@@ -210,11 +213,14 @@ class AuthService {
     required String currentPassword,
     required String newPassword,
   }) async {
-    final response = await _apiClient.post('/auth/change-password', body: {
-      'current_password': currentPassword,
-      'new_password': newPassword,
-      'new_password_confirmation': newPassword,
-    });
+    final response = await _apiClient.post(
+      '/auth/change-password',
+      body: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+        'new_password_confirmation': newPassword,
+      },
+    );
 
     return AuthResult(
       success: response.success,
@@ -229,9 +235,7 @@ class AuthService {
     required String idToken,
     String? deviceToken,
   }) async {
-    final body = <String, dynamic>{
-      'id_token': idToken,
-    };
+    final body = <String, dynamic>{'id_token': idToken};
     if (deviceToken != null) {
       body['device_token'] = deviceToken;
     }
@@ -303,9 +307,7 @@ class AuthService {
     required String accessToken,
     String? deviceToken,
   }) async {
-    final body = <String, dynamic>{
-      'access_token': accessToken,
-    };
+    final body = <String, dynamic>{'access_token': accessToken};
     if (deviceToken != null) {
       body['device_token'] = deviceToken;
     }
@@ -347,11 +349,17 @@ class AuthResult {
   final String? error;
   final String? errorCode;
 
+  /// HTTP status of the underlying response, or 0 when the request never
+  /// reached the server. Callers use this to tell "the server rejected this
+  /// session" apart from "the server could not be reached".
+  final int statusCode;
+
   AuthResult({
     required this.success,
     this.user,
     this.message,
     this.error,
     this.errorCode,
+    this.statusCode = 0,
   });
 }
