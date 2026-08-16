@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
+import 'package:flame/providers/realtime_provider.dart';
 import 'package:flame/services/chat_service.dart';
 import 'package:flame/core/i18n/error_strings_for.dart';
 import 'package:flame/config/env.dart';
@@ -25,115 +26,10 @@ class ConversationsNotifier
   int _offset = 0;
   static const int _limit = 20;
 
-  ConversationsNotifier(this._chatService) : super(const AsyncValue.loading()) {
-    _initWebSocket();
-  }
+  ConversationsNotifier(this._chatService)
+      : super(const AsyncValue.loading());
 
   bool get hasMore => _hasMore;
-
-  /// Realtime is owned by the screen that displays a conversation, not by this
-  /// provider. [ChatScreen] constructs a [FlameSocketService] against the
-  /// backend's `/flame` Socket.IO namespace and wires its own callbacks.
-  ///
-  /// This used to connect `WebSocketService` to `wss://<host>/ws`, an endpoint
-  /// that does not exist on the server — it only ever produced an endless
-  /// reconnect loop, and its event names (`new_message`, `user_online`, …) did
-  /// not match anything `flameSocket.js` emits.
-  void _initWebSocket() {}
-
-  void _onNewMessage(Map<String, dynamic> data) {
-    debugPrint('📨 _onNewMessage called with data: $data');
-
-    final conversationId = data['conversation_id'] as String?;
-    final messageData = data['message'] as Map<String, dynamic>?;
-
-    debugPrint('📨 conversationId: $conversationId, messageData: $messageData');
-
-    if (conversationId == null || messageData == null) {
-      debugPrint('📨 Missing conversationId or messageData, returning early');
-      return;
-    }
-
-    try {
-      final message = Message.fromJson(messageData);
-      debugPrint('📨 Parsed message: ${message.id} - ${message.content}');
-      addMessageToConversation(conversationId, message);
-      debugPrint('📨 Message added to conversation successfully');
-    } catch (e, stack) {
-      debugPrint('📨 Error parsing message: $e');
-      debugPrint('📨 Stack: $stack');
-    }
-  }
-
-  void _onMessageStatus(Map<String, dynamic> data) {
-    final conversationId = data['conversation_id'] as String?;
-    final messageIds = (data['message_ids'] as List?)?.cast<String>() ?? [];
-    final status = data['status'] as String?;
-
-    if (conversationId == null || status == null) return;
-
-    updateMessageStatus(
-      conversationId,
-      messageIds,
-      MessageStatus.fromString(status),
-    );
-  }
-
-  void _onUserOnline(Map<String, dynamic> data) {
-    final userId = data['user_id'] as String?;
-    if (userId == null) return;
-    updateUserOnlineStatus(userId, true);
-  }
-
-  void _onUserOffline(Map<String, dynamic> data) {
-    final userId = data['user_id'] as String?;
-    if (userId == null) return;
-    updateUserOnlineStatus(userId, false);
-  }
-
-  void _onMessageEdited(Map<String, dynamic> data) {
-    final conversationId = data['conversation_id'] as String?;
-    final messageData = data['message'] as Map<String, dynamic>?;
-
-    if (conversationId == null || messageData == null) return;
-
-    final updatedMessage = Message.fromJson(messageData);
-    _updateMessageInConversation(conversationId, updatedMessage);
-  }
-
-  void _onMessageDeleted(Map<String, dynamic> data) {
-    final conversationId = data['conversation_id'] as String?;
-    final messageId = data['message_id'] as String?;
-
-    if (conversationId == null || messageId == null) return;
-
-    _deleteMessageFromConversation(conversationId, messageId);
-  }
-
-  void _onReactionAdded(Map<String, dynamic> data) {
-    final conversationId = data['conversation_id'] as String?;
-    final messageId = data['message_id'] as String?;
-    final emoji = data['emoji'] as String?;
-    final userId = data['user_id'] as String?;
-
-    if (conversationId == null ||
-        messageId == null ||
-        emoji == null ||
-        userId == null)
-      return;
-
-    _addReactionToMessage(conversationId, messageId, emoji, userId);
-  }
-
-  void _onReactionRemoved(Map<String, dynamic> data) {
-    final conversationId = data['conversation_id'] as String?;
-    final messageId = data['message_id'] as String?;
-    final userId = data['user_id'] as String?;
-
-    if (conversationId == null || messageId == null || userId == null) return;
-
-    _removeReactionFromMessage(conversationId, messageId, userId);
-  }
 
   Future<void> loadConversations({bool refresh = false}) async {
     if (refresh) {
@@ -449,6 +345,130 @@ class ConversationsNotifier
     );
   }
 
+  /// Zeroes the unread badge for one conversation, with no network call.
+  ///
+  /// Separate from [markAsRead], which also PATCHes the server: when a push
+  /// lands for the thread the user already has open, the server has been told
+  /// already and only the local badge is stale.
+  void clearUnread(String conversationId) {
+    final conversations = state.valueOrNull;
+    if (conversations == null) return;
+
+    state = AsyncValue.data(
+      conversations
+          .map((c) => c.id == conversationId ? c.copyWith(unreadCount: 0) : c)
+          .toList(),
+    );
+  }
+
+  /// Applies the other participant's read receipt.
+  ///
+  /// This marks the messages WE sent as read. It must not touch
+  /// [Conversation.unreadCount] — that counts messages waiting for us, and the
+  /// other person reading their inbox says nothing about ours. Getting this
+  /// backwards would blank the badge every time they opened the thread.
+  void applyReadReceipt(String conversationId, String byUserId) {
+    final conversations = state.valueOrNull;
+    if (conversations == null) return;
+
+    state = AsyncValue.data(
+      conversations.map((c) {
+        if (c.id != conversationId) return c;
+        return c.copyWith(
+          messages: c.messages
+              .map((m) => m.senderId == byUserId
+                  ? m
+                  : m.copyWith(status: MessageStatus.read))
+              .toList(),
+        );
+      }).toList(),
+    );
+  }
+
+  /// Replaces an edited or deleted message in the cached list.
+  ///
+  /// Without this the Messages preview keeps showing the original text of a
+  /// message the sender has since edited or deleted — the list reads
+  /// `messages.last`, so a stale entry there is visible on the main screen.
+  /// A message we have not cached is ignored: the next fetch brings it in whole.
+  void applyMessageUpdate(String conversationId, Message message) {
+    final conversations = state.valueOrNull;
+    if (conversations == null) return;
+
+    state = AsyncValue.data(
+      conversations.map((c) {
+        if (c.id != conversationId) return c;
+        if (!c.messages.any((m) => m.id == message.id)) return c;
+        return c.copyWith(
+          messages:
+              c.messages.map((m) => m.id == message.id ? message : m).toList(),
+        );
+      }).toList(),
+    );
+  }
+
+  /// Flips the online dot in the Messages list.
+  ///
+  /// Presence used to be whatever the last REST fetch said, so the dots were
+  /// only ever correct at load time.
+  void applyPresence(String userId, bool online) {
+    final conversations = state.valueOrNull;
+    if (conversations == null) return;
+
+    state = AsyncValue.data(
+      conversations.map((c) {
+        if (c.otherUser.id != userId) return c;
+        if (c.otherUser.isOnline == online) return c;
+        return c.copyWith(otherUser: c.otherUser.copyWith(isOnline: online));
+      }).toList(),
+    );
+  }
+
+  final List<StreamSubscription<void>> _realtimeSubs = [];
+
+  /// Subscribes the conversation list to the app-level socket.
+  ///
+  /// Idempotent: a second call cancels the first set rather than stacking a
+  /// duplicate that would count every message twice.
+  void listenToRealtime(RealtimeConnection conn) {
+    for (final s in _realtimeSubs) {
+      s.cancel();
+    }
+    _realtimeSubs.clear();
+
+    _realtimeSubs.addAll([
+      conn.messageNew.listen((e) {
+        final id = e.conversationId;
+        if (id != null) addMessageToConversation(id, e.message);
+      }),
+      conn.messageEdited.listen((e) {
+        final id = e.conversationId;
+        if (id != null) applyMessageUpdate(id, e.message);
+      }),
+      conn.messageDeleted.listen((e) {
+        final id = e.conversationId;
+        if (id != null) applyMessageUpdate(id, e.message);
+      }),
+      conn.read.listen((e) => applyReadReceipt(e.conversationId, e.byUserId)),
+      conn.presence.listen((e) => applyPresence(e.userId, e.online)),
+      conn.presenceBulk.listen((ids) {
+        final online = ids.toSet();
+        for (final c in state.valueOrNull ?? const <Conversation>[]) {
+          applyPresence(c.otherUser.id, online.contains(c.otherUser.id));
+        }
+      }),
+    ]);
+  }
+
+  @override
+  void dispose() {
+    for (final s in _realtimeSubs) {
+      s.cancel();
+    }
+    _realtimeSubs.clear();
+    super.dispose();
+  }
+
   void _updateMessageInConversation(
     String conversationId,
     Message updatedMessage,
@@ -480,70 +500,6 @@ class ConversationsNotifier
             messages: conversation.messages
                 .where((m) => m.id != messageId)
                 .toList(),
-          );
-        }
-        return conversation;
-      }).toList(),
-    );
-  }
-
-  void _addReactionToMessage(
-    String conversationId,
-    String messageId,
-    String emoji,
-    String userId,
-  ) {
-    final conversations = state.valueOrNull ?? [];
-    state = AsyncValue.data(
-      conversations.map((conversation) {
-        if (conversation.id == conversationId) {
-          return conversation.copyWith(
-            messages: conversation.messages.map((m) {
-              if (m.id == messageId) {
-                // Remove any existing reaction from this user
-                final filteredReactions = m.reactions
-                    .where((r) => r.userId != userId)
-                    .toList();
-                return m.copyWith(
-                  reactions: [
-                    ...filteredReactions,
-                    MessageReaction(
-                      emoji: emoji,
-                      userId: userId,
-                      createdAt: DateTime.now(),
-                    ),
-                  ],
-                );
-              }
-              return m;
-            }).toList(),
-          );
-        }
-        return conversation;
-      }).toList(),
-    );
-  }
-
-  void _removeReactionFromMessage(
-    String conversationId,
-    String messageId,
-    String userId,
-  ) {
-    final conversations = state.valueOrNull ?? [];
-    state = AsyncValue.data(
-      conversations.map((conversation) {
-        if (conversation.id == conversationId) {
-          return conversation.copyWith(
-            messages: conversation.messages.map((m) {
-              if (m.id == messageId) {
-                return m.copyWith(
-                  reactions: m.reactions
-                      .where((r) => r.userId != userId)
-                      .toList(),
-                );
-              }
-              return m;
-            }).toList(),
           );
         }
         return conversation;
