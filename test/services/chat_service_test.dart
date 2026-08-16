@@ -340,4 +340,50 @@ void main() {
     final body = jsonDecode(req.body) as Map<String, dynamic>;
     expect(body['user_id'], 'user-2');
   });
+
+  // The app's "unmute" used to POST { duration_hours: 0 } to /mute, which the
+  // backend read as a mute with no duration — so unmuting silenced the
+  // conversation permanently and reported success. DELETE is the canonical
+  // unmute and always was.
+  test('unmuteConversation DELETEs /conversations/:id/mute', () async {
+    final mock = _MockClient(http.Response(
+      jsonEncode({'success': true, 'data': null}),
+      200,
+    ));
+    final apiClient = _buildApiClient(mock);
+    await apiClient.init();
+    final service = ChatService(apiClient: apiClient);
+
+    final result = await service.unmuteConversation('conv-1');
+
+    expect(result.success, true);
+    final req = mock.calls.single as http.Request;
+    expect(req.method, 'DELETE');
+    expect(req.url.path.endsWith('/conversations/conv-1/mute'), true);
+    expect(req.body, isEmpty,
+        reason: 'an unmute carries no body; a duration would be a mute');
+  });
+
+  test('muteConversation sends duration_hours, and omits it entirely when '
+      'muting indefinitely', () async {
+    final mock = _MockClient(http.Response(
+      jsonEncode({'success': true, 'data': {'muted_until': null}}),
+      201,
+    ));
+    final apiClient = _buildApiClient(mock);
+    await apiClient.init();
+    final service = ChatService(apiClient: apiClient);
+
+    await service.muteConversation('conv-1', durationHours: 8);
+    var body = jsonDecode((mock.calls.last as http.Request).body)
+        as Map<String, dynamic>;
+    expect(body['duration_hours'], 8);
+
+    await service.muteConversation('conv-1');
+    body = jsonDecode((mock.calls.last as http.Request).body)
+        as Map<String, dynamic>;
+    expect(body.containsKey('duration_hours'), false,
+        reason: 'absent means indefinite; an explicit null is a shape the '
+            'backend only tolerates for older clients');
+  });
 }

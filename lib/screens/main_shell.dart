@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/config/env.dart';
 import 'package:flame/providers/providers.dart';
+import 'package:flame/providers/realtime_provider.dart';
+import 'package:flame/services/api_client.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
@@ -19,7 +21,8 @@ class MainShell extends ConsumerStatefulWidget {
   ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends ConsumerState<MainShell> {
+class _MainShellState extends ConsumerState<MainShell>
+    with WidgetsBindingObserver {
   bool _initialized = false;
 
   // Create screens once to avoid GlobalKey conflicts
@@ -33,6 +36,11 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // The durable half of the token-refresh fix: ApiClient refreshes
+    // proactively without ever touching authProvider, so this is the only
+    // moment at which anything learns the socket's token just went stale.
+    ApiClient().onTokenRefreshed = _onTokenRefreshed;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_initialized) {
         _initialized = true;
@@ -41,12 +49,67 @@ class _MainShellState extends ConsumerState<MainShell> {
     });
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // Only clear the hook if it is still ours; a later shell may own it.
+    if (ApiClient().onTokenRefreshed == _onTokenRefreshed) {
+      ApiClient().onTokenRefreshed = null;
+    }
+    super.dispose();
+  }
+
+  void _onTokenRefreshed(String token) {
+    if (!mounted) return;
+    if (!EnvConfig.current.chatEnabled) return;
+    // `start` no-ops on an unchanged token, so this is cheap even when the
+    // socket is already holding the new one.
+    ref.read(realtimeConnectionProvider).start(token);
+  }
+
+  /// A resume is the other half of the same problem, from the other side.
+  ///
+  /// socket.io replays the token it was constructed with on every automatic
+  /// reconnect, so a session backgrounded past the 15-minute access-token TTL
+  /// (or moved between wifi and cellular after one) comes back to a socket
+  /// retrying forever with a token the handshake middleware will never accept
+  /// again. Nothing surfaces that: the Messages list simply stops updating and
+  /// — since prod disables ChatScreen's REST poll — an open conversation
+  /// receives nothing either. Re-syncing on resume rebuilds the socket with
+  /// whatever token ApiClient holds now.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state != AppLifecycleState.resumed) return;
+    if (!EnvConfig.current.chatEnabled) return;
+    _syncRealtime(ref.read(authProvider).status);
+  }
+
   Future<void> _initializeData() async {
     // Load user profile.
     await ref.read(currentUserProvider.notifier).loadUser();
 
     if (EnvConfig.current.chatEnabled) {
       await ref.read(conversationsProvider.notifier).loadConversations(refresh: true);
+      _syncRealtime(ref.read(authProvider).status);
+    }
+  }
+
+  /// The socket lives as long as the signed-in session. Starting it here rather
+  /// than in ChatScreen is the whole point of B1: the Messages list and the
+  /// unread badge must stay live when no conversation is open.
+  /// Called on every auth-state change, on resume, and once at mount, so it
+  /// must be safe to call redundantly. `applySessionStatus` no-ops on an
+  /// unchanged token and `listenToRealtime` no-ops on the connection it is
+  /// already subscribed to — the latter matters because re-registering would
+  /// move the list's subscriptions to the END of the broadcast listener order,
+  /// behind an open ChatScreen's, and the badge would light up for the thread
+  /// the user is actively reading.
+  void _syncRealtime(AuthStatus status) {
+    final conn = ref.read(realtimeConnectionProvider);
+    applySessionStatus(conn, status, () => ApiClient().accessToken);
+    if (conn.socket != null) {
+      ref.read(conversationsProvider.notifier).listenToRealtime(conn);
     }
   }
 
@@ -54,6 +117,14 @@ class _MainShellState extends ConsumerState<MainShell> {
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
     final chatUnreadCount = ref.watch(chatUnreadCountProvider);
+
+    // ApiClient refreshes the access token proactively, so a socket may be
+    // holding a dead one; and logout must tear it down. Both arrive here as an
+    // auth-state change.
+    ref.listen(authProvider, (_, next) {
+      if (!EnvConfig.current.chatEnabled) return;
+      _syncRealtime(next.status);
+    });
 
     return Scaffold(
       body: IndexedStack(

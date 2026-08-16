@@ -5,13 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/config/env.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
+import 'package:flame/providers/realtime_provider.dart';
 import 'package:flame/services/api_client.dart';
 import 'package:flame/services/flame_socket_service.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/screens/chat/widgets/widgets.dart';
-import '../../realtime/widgets/connection_banner.dart';
 
 /// How often to poll for new messages while a thread is open. This is a REST
 /// stand-in for realtime delivery — only runs when
@@ -39,7 +39,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Message? _replyingTo;
   Timer? _pollTimer;
-  FlameSocketService? _flameSocket;
+
+  /// The app-level connection, cached (not its socket) so every emit site
+  /// reads `.socket` fresh. `RealtimeConnection.start()` replaces the socket
+  /// on a token refresh (disposing the old one); caching the socket itself
+  /// would leave emits pointed at a disposed instance after that happens
+  /// mid-session, silently turning `emitTyping`/`emitStopTyping`/`emitMarkRead`
+  /// into no-ops (`FlameSocketService`'s emit guards are `_socket?.emit`, so
+  /// nothing throws or logs). The connection object itself is long-lived and
+  /// outlives any such swap.
+  RealtimeConnection? _realtime;
+  final List<StreamSubscription<void>> _realtimeSubs = [];
 
   // ==================== Typing indicator state (flame socket) ====================
 
@@ -92,12 +102,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _typingIdleTimer?.cancel();
     _typingSafetyTimer?.cancel();
     if (_isTyping) {
-      _flameSocket?.emitStopTyping(
+      _realtime?.socket?.emitStopTyping(
         widget.conversation.otherUser.id,
         widget.conversation.id,
       );
     }
-    _flameSocket?.dispose();
+    // The connection is app-level and outlives this screen: cancel our
+    // subscriptions instead of disposing it. Disposing it here would kill the
+    // conversation list's realtime and the unread badge along with the chat.
+    for (final s in _realtimeSubs) {
+      s.cancel();
+    }
+    _realtimeSubs.clear();
+    _realtime = null;
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -212,28 +229,57 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   // ==================== Realtime (Flame socket) ====================
 
-  /// Connects the `/flame` Socket.IO namespace for this thread when chat is
-  /// enabled (local dev only, per `EnvConfig.current.chatEnabled` — prod
-  /// stays off until the backend deploys the socket). This is additive on
-  /// top of the existing REST poll below, not a replacement: the poll's
-  /// merge-append de-dupe means a message delivered by both paths never
-  /// shows twice, so leaving polling running is a harmless fallback.
+  /// Subscribes this thread to the app-level realtime connection.
+  ///
+  /// It used to construct its own [FlameSocketService], which meant two sockets
+  /// per user whenever a chat was open: the server re-checks blocks on every
+  /// delivery, so the duplicate doubled that lookup and the presence fan-out
+  /// for nothing. The connection is held in [_realtime] — not its socket —
+  /// because this screen emits through it (typing, read receipts) — but it
+  /// does not own it and must never dispose it.
+  ///
+  /// Caching the connection rather than `conn.socket` matters for two reasons:
+  ///
+  /// 1. The socket can be null at mount (connection not up yet) or can be
+  ///    swapped mid-session (`RealtimeConnection.start` disposes the old
+  ///    socket and builds a new one on a token refresh). Reading `.socket`
+  ///    fresh at each emit site means a not-yet-connected mount still
+  ///    subscribes to every stream (no early return), and a mid-session swap
+  ///    never leaves an emit pointed at a disposed socket.
+  /// 2. Subscribing through streams rather than assigning the socket's
+  ///    callbacks matters: those fields are single-assignment, so assigning
+  ///    them here would silently steal every push from the conversation list
+  ///    and freeze the unread badge for other threads while this one is open.
   void _connectFlameSocket() {
     if (!EnvConfig.current.chatEnabled) return;
 
-    final token = ApiClient().accessToken;
-    if (token == null) return;
+    final conn = ref.read(realtimeConnectionProvider);
+    _realtime = conn;
 
-    final socket = FlameSocketService(token: token)
-      ..onMessageNew = _onSocketMessageNew
-      ..onMessageEdited = _onSocketMessageEdited
-      ..onMessageDeleted = _onSocketMessageDeleted
-      ..onTyping = _onSocketTyping
-      ..onStopTyping = _onSocketStopTyping
-      ..onPresence = _onSocketPresence
-      ..onPresenceBulk = _onSocketPresenceBulk;
-    _flameSocket = socket;
-    socket.connect();
+    // Opening a conversation is a refresh point for the connection, and it has
+    // to stay one. socket.io replays the token it was constructed with on every
+    // automatic reconnect, so a socket built before ApiClient last refreshed is
+    // authenticated with a string the server will never accept again — and
+    // nothing in the app-level path notices, because a refresh never touches
+    // authProvider. The pre-B1 code got this for free by building a fresh
+    // socket from `ApiClient().accessToken` on every mount; this restores it
+    // without going back to a socket per screen. `start` no-ops when the token
+    // is unchanged, so the common case costs nothing.
+    applySessionStatus(
+      conn,
+      AuthStatus.authenticated,
+      () => ApiClient().accessToken,
+    );
+
+    _realtimeSubs.addAll([
+      conn.messageNew.listen((e) => _onSocketMessageNew(e.message, e.conversationId)),
+      conn.messageEdited.listen((e) => _onSocketMessageEdited(e.message, e.conversationId)),
+      conn.messageDeleted.listen((e) => _onSocketMessageDeleted(e.message, e.conversationId)),
+      conn.typing.listen((e) => _onSocketTyping(e.fromUserId, e.conversationId)),
+      conn.stopTyping.listen((e) => _onSocketStopTyping(e.fromUserId, e.conversationId)),
+      conn.presence.listen((e) => _onSocketPresence(e.userId, e.online)),
+      conn.presenceBulk.listen(_onSocketPresenceBulk),
+    ]);
   }
 
   /// Handles a `message:new` push for this open thread. Reuses the same
@@ -250,6 +296,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     setState(() {
       _messages = [..._messages, message];
     });
+
+    // This thread is open and being read, so the server-side unread bump is
+    // already stale for us. `clearUnread` is local-only; the REST mark-read
+    // that tells the server runs on its own path.
+    ref.read(conversationsProvider.notifier).clearUnread(widget.conversation.id);
 
     _markMessagesAsRead();
 
@@ -351,7 +402,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _onMessageTextChanged(String text) {
     if (!EnvConfig.current.chatEnabled) return;
 
-    final socket = _flameSocket;
+    final socket = _realtime?.socket;
     if (socket == null || !socket.isConnected) return;
 
     if (text.isEmpty) {
@@ -380,7 +431,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (!_isTyping) return;
     _isTyping = false;
 
-    final socket = _flameSocket;
+    final socket = _realtime?.socket;
     if (socket != null && socket.isConnected) {
       socket.emitStopTyping(
         widget.conversation.otherUser.id,
@@ -441,7 +492,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ref
           .read(conversationsProvider.notifier)
           .markAsRead(widget.conversation.id);
-      _flameSocket?.emitMarkRead(
+      _realtime?.socket?.emitMarkRead(
         widget.conversation.otherUser.id,
         widget.conversation.id,
       );
@@ -691,7 +742,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       appBar: _buildAppBar(currentConversation, isOtherUserTyping),
       body: Column(
         children: [
-          const ConnectionBanner(),
           Expanded(child: _buildMessageList(currentUserId)),
           if (isOtherUserTyping)
             TypingIndicator(

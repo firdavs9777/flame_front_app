@@ -40,6 +40,18 @@ class ApiClient {
   // navigation.
   Future<void> Function()? onAuthLost;
 
+  // Fired with the freshly minted access token after every successful refresh,
+  // proactive or reactive.
+  //
+  // Registered by MainShell so the realtime socket can be rebuilt. socket.io
+  // captures its auth payload once, at construction, and replays that same
+  // token on every automatic reconnect — so once a refresh happens, the socket
+  // is holding a string that expires in at most FLAME_JWT_ACCESS_TTL (15m) and
+  // the handshake middleware rejects it forever after. Nothing else notices: a
+  // refresh updates _accessToken here and never touches authProvider, which is
+  // the only thing that used to re-drive the connection.
+  void Function(String accessToken)? onTokenRefreshed;
+
   // Singleton pattern
   static final ApiClient _instance = ApiClient._internal();
   factory ApiClient() => _instance;
@@ -418,10 +430,17 @@ class ApiClient {
       if (resp.statusCode != 200) return false;
       final data = jsonDecode(resp.body);
       final tokenData = data['data'] ?? data;
+      final newAccessToken = tokenData['access_token'] as String;
       await saveTokens(
-        accessToken: tokenData['access_token'],
+        accessToken: newAccessToken,
         refreshToken: tokenData['refresh_token'],
       );
+      // After the new token is stored, so a listener that reads back
+      // `accessToken` sees the same value it was handed. Guarded because a
+      // throwing listener must not turn a successful refresh into a failed one.
+      try {
+        onTokenRefreshed?.call(newAccessToken);
+      } catch (_) {}
       return true;
     } catch (_) {
       return false;
@@ -452,7 +471,7 @@ class ApiClient {
       request.files.add(await http.MultipartFile.fromPath(
         fieldName,
         file.path,
-        contentType: _mimeTypeForFile(file.path),
+        contentType: mimeTypeForFile(file.path),
       ));
 
       if (fields != null) {
@@ -471,13 +490,48 @@ class ApiClient {
     }
   }
 
-  MediaType _mimeTypeForFile(String path) {
+  // The backend allowlists content types PER KIND (mediaService.LIMITS):
+  // video/mp4|quicktime on the video route, audio/mpeg|mp4|aac|ogg on the
+  // audio and voice routes. This map was written when photo upload was the
+  // only caller and defaulted everything to image/jpeg, so a .mp4, .m4a or
+  // .mp3 arrived labelled as a JPEG and was rejected with a 422 — three of the
+  // four upload routes could not accept a single real client request. (The
+  // backend's own tests missed it because supertest's .attach sets the true
+  // content type, which no client ever does.)
+  //
+  // .heic deliberately still falls through to image/jpeg. Mapping it to
+  // image/heic would require adding that type to the backend allowlist, which
+  // would mean storing and serving HEIC to Android and web clients that
+  // largely cannot render it — a worse outcome than the current mislabel, and
+  // one no code path can reach today anyway: every picker in the app passes
+  // `imageQuality`, which makes image_picker hand back a re-encoded JPEG.
+  // Visible for testing because `uploadFile` sends through
+  // `MultipartRequest.send()`, which builds its own client and so cannot be
+  // intercepted by the injected one — there is no other seam from which to
+  // assert the label a real upload would carry.
+  @visibleForTesting
+  MediaType mimeTypeForFile(String path) {
     final ext = path.split('.').last.toLowerCase();
     switch (ext) {
       case 'png':
         return MediaType('image', 'png');
       case 'webp':
         return MediaType('image', 'webp');
+      case 'jpg':
+      case 'jpeg':
+        return MediaType('image', 'jpeg');
+      case 'mp4':
+        return MediaType('video', 'mp4');
+      case 'mov':
+        return MediaType('video', 'quicktime');
+      case 'm4a':
+        return MediaType('audio', 'mp4');
+      case 'mp3':
+        return MediaType('audio', 'mpeg');
+      case 'aac':
+        return MediaType('audio', 'aac');
+      case 'ogg':
+        return MediaType('audio', 'ogg');
       default:
         return MediaType('image', 'jpeg');
     }
