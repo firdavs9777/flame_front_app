@@ -348,8 +348,11 @@ class ChatService {
   }) async {
     final response = await _apiClient.post(
       '/conversations/$conversationId/mute',
+      // Omitted, not sent as null, when there is no duration: an absent field
+      // is what "mute indefinitely" means to the backend schema, and an
+      // explicit null is a shape it only tolerates for older clients.
       body: {
-        'duration_hours': durationHours,
+        if (durationHours != null) 'duration_hours': durationHours,
       },
     );
 
@@ -360,13 +363,16 @@ class ChatService {
     return ServiceResult.failure(response.error ?? 'Failed to mute conversation');
   }
 
-  // Unmute a conversation
+  // Unmute a conversation.
+  //
+  // DELETE /mute is the canonical unmute. This used to POST
+  // { duration_hours: 0 } to /mute instead, which the backend read as a mute
+  // with no duration — so "unmute" silenced the conversation permanently and
+  // reported success. (The backend now also treats duration_hours: 0 as an
+  // unmute, for clients already in users' hands; new builds take this path.)
   Future<ServiceResult<void>> unmuteConversation(String conversationId) async {
-    final response = await _apiClient.post(
+    final response = await _apiClient.delete(
       '/conversations/$conversationId/mute',
-      body: {
-        'duration_hours': 0,
-      },
     );
 
     if (response.success) {
