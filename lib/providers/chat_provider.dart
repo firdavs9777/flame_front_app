@@ -307,8 +307,15 @@ class ConversationsNotifier
     );
 
     if (result.success) {
+      // Re-read rather than reusing the `conversations` snapshot taken before
+      // the PATCH. A push landing while it was in flight is appended by
+      // `addMessageToConversation` on the same notifier, and writing the stale
+      // list back would drop that message from both the Messages-list preview
+      // and the cached thread until the next refetch. That race only became
+      // reachable when the socket started calling markAsRead on every push.
+      final current = state.valueOrNull ?? const <Conversation>[];
       state = AsyncValue.data(
-        conversations.map((c) {
+        current.map((c) {
           if (c.id == conversationId) {
             return c.copyWith(
               unreadCount: 0,
@@ -425,16 +432,27 @@ class ConversationsNotifier
   }
 
   final List<StreamSubscription<void>> _realtimeSubs = [];
+  RealtimeConnection? _realtimeConn;
 
   /// Subscribes the conversation list to the app-level socket.
   ///
-  /// Idempotent: a second call cancels the first set rather than stacking a
-  /// duplicate that would count every message twice.
+  /// Idempotent in two senses. A call with a *different* connection cancels the
+  /// first set rather than stacking a duplicate that would count every message
+  /// twice. A call with the connection already subscribed does nothing at all —
+  /// and that is not just an optimisation. `main_shell` calls this on every
+  /// auth-state change; cancelling and re-registering would move these
+  /// subscriptions to the END of the broadcast listener order, so an open
+  /// ChatScreen's `clearUnread` would then run BEFORE the
+  /// `addMessageToConversation` it is meant to cancel out, leaving the badge
+  /// showing 1 for the thread the user is looking at.
   void listenToRealtime(RealtimeConnection conn) {
+    if (identical(_realtimeConn, conn) && _realtimeSubs.isNotEmpty) return;
+
     for (final s in _realtimeSubs) {
       s.cancel();
     }
     _realtimeSubs.clear();
+    _realtimeConn = conn;
 
     _realtimeSubs.addAll([
       conn.messageNew.listen((e) {
@@ -466,6 +484,7 @@ class ConversationsNotifier
       s.cancel();
     }
     _realtimeSubs.clear();
+    _realtimeConn = null;
     super.dispose();
   }
 
