@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flame/screens/chat/media_viewer_screen.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/chat/widgets/voice_message_player.dart';
@@ -172,7 +174,7 @@ class MessageBubble extends StatelessWidget {
   Widget _buildContent(BuildContext context) {
     switch (message.type) {
       case MessageType.image:
-        return _buildImageContent();
+        return _buildImageContent(context);
       case MessageType.video:
         return _buildVideoContent();
       case MessageType.voice:
@@ -207,29 +209,25 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildImageContent() {
+  Widget _buildImageContent(BuildContext context) {
     final imageUrl = message.imageUrl ?? message.content;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        imageUrl,
-        width: 200,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: 200,
-            height: 150,
-            color: Colors.grey[300],
-            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          );
-        },
-        errorBuilder: (_, __, ___) => Container(
-          width: 200,
-          height: 150,
-          color: Colors.grey[300],
-          child: const Icon(Icons.broken_image),
-        ),
+    return _MediaThumbnail(
+      url: imageUrl,
+      heroTag: 'msg-${message.id}',
+      onTap: () => _openViewer(context, imageUrl),
+    );
+  }
+
+  /// Opens the full-screen, zoomable view.
+  ///
+  /// The thumbnail deliberately does not try to be the whole experience: it is
+  /// capped so it cannot dominate the thread, and this is how you actually look
+  /// at the photo. Before this there was no tap target at all.
+  void _openViewer(BuildContext context, String url) {
+    if (url.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MediaViewerScreen(url: url, heroTag: 'msg-${message.id}'),
       ),
     );
   }
@@ -512,6 +510,67 @@ class _TranslateSection extends ConsumerWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// A chat media thumbnail: cached, decode-sized, and tappable.
+///
+/// Replaces a raw `Image.network(width: 200, fit: BoxFit.cover)`, which had
+/// three problems at once. It refetched on every scroll because nothing cached
+/// it; it decoded a full-resolution photo into a 200px slot, so a 12MP image
+/// cost ~48MB of memory to show a thumbnail; and `cover` at a fixed width
+/// cropped every photo that was not roughly the assumed shape.
+///
+/// `memCacheWidth` fixes the decode cost, and a max-width box with the image's
+/// own aspect ratio preserved fixes the cropping — a portrait photo now reads
+/// as a portrait photo.
+class _MediaThumbnail extends StatelessWidget {
+  final String url;
+  final String? heroTag;
+  final VoidCallback onTap;
+
+  const _MediaThumbnail({
+    required this.url,
+    required this.onTap,
+    this.heroTag,
+  });
+
+  // Roughly two thirds of a phone's width: big enough to see, small enough
+  // that a photo does not push the surrounding conversation off screen.
+  static const double _maxWidth = 240;
+
+  @override
+  Widget build(BuildContext context) {
+    final dpr = MediaQuery.maybeOf(context)?.devicePixelRatio ?? 2.0;
+
+    final image = CachedNetworkImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      // Decode at display size, not source size. The multiplier keeps it sharp
+      // on high-DPI screens without decoding the original.
+      memCacheWidth: (_maxWidth * dpr).round(),
+      placeholder: (_, __) => Container(
+        height: 160,
+        color: Colors.grey[300],
+        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      errorWidget: (_, __, ___) => Container(
+        height: 160,
+        color: Colors.grey[300],
+        child: const Icon(Icons.broken_image_outlined),
+      ),
+    );
+
+    return GestureDetector(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _maxWidth, maxHeight: 320),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: heroTag == null ? image : Hero(tag: heroTag!, child: image),
+        ),
+      ),
     );
   }
 }
