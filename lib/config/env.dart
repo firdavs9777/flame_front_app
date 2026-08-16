@@ -48,11 +48,11 @@ class EnvConfig {
   /// /conversations (list, open, messages, read) and /messages/:id (edit,
   /// delete, reactions), plus the `/flame` socket namespace.
   ///
-  /// Scope note: the backend supports TEXT chat only. Media messages
-  /// (image/video/voice/audio/sticker), stickers, pin and mute have no routes.
-  /// The reachable composer ([ChatInput]) is already text-only, so no user can
-  /// trigger them — but do not surface ChatV2Screen or AttachmentModal (both
-  /// currently unreachable) until those endpoints exist.
+  /// Scope note: image and video messages, pin and mute now have routes, and
+  /// the composer surfaces photo/video attachments. Two gaps remain, both
+  /// deliberate — voice has a backend and a player but no recorder UI, and
+  /// stickers are cut, so all five sticker endpoints still 404. Do not surface
+  /// either affordance until that changes.
   final bool chatEnabled;
 
   /// Whether the advanced Discover filters (gender / interests / online-only)

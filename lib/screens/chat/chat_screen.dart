@@ -11,6 +11,7 @@ import 'package:flame/services/flame_socket_service.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/widgets/smart_image.dart';
+import 'package:flame/screens/chat/chat_attachments.dart';
 import 'package:flame/screens/chat/widgets/widgets.dart';
 
 /// How often to poll for new messages while a thread is open. This is a REST
@@ -542,6 +543,54 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  /// Opens the share sheet, then picks and sends whatever the user chose.
+  ///
+  /// Injectable [pick] so the flow can be driven in a test without a platform
+  /// picker; production passes nothing and gets the real one.
+  Future<void> _openAttachmentSheet({AttachmentPicker? pick}) async {
+    if (_isSending) return;
+
+    final kind = await showModalBottomSheet<ChatAttachmentKind>(
+      context: context,
+      builder: (sheetContext) => AttachmentModal(
+        onPick: (k) => Navigator.pop(sheetContext, k),
+      ),
+    );
+    if (kind == null || !mounted) return;
+
+    final file = await (pick ?? pickAttachment)(kind);
+    // Backing out of the picker is the common case, not an error.
+    if (file == null || !mounted) return;
+
+    // Capture the reply target before clearing it, so a failed send can put it
+    // back — same contract as _sendMessage.
+    final sentReplyingTo = _replyingTo;
+
+    setState(() {
+      _isSending = true;
+      _replyingTo = null;
+    });
+
+    final error = await sendAttachment(
+      kind: kind,
+      notifier: ref.read(conversationsProvider.notifier),
+      conversationId: widget.conversation.id,
+      file: file,
+      replyToId: sentReplyingTo?.id,
+    );
+
+    if (!mounted) return;
+    setState(() => _isSending = false);
+
+    if (error == null) {
+      await _refreshMessages();
+      _scrollToBottom(animated: true);
+    } else {
+      setState(() => _replyingTo = sentReplyingTo);
+      _showError(error);
+    }
+  }
+
   // ==================== Message Actions ====================
 
   void _onMessageLongPress(Message message) {
@@ -752,6 +801,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             isSending: _isSending,
             replyingTo: _replyingTo,
             onSend: _sendMessage,
+            onAttach: _openAttachmentSheet,
             onCancelReply: () => setState(() => _replyingTo = null),
             onChanged: _onMessageTextChanged,
           ),

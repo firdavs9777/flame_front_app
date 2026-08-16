@@ -1,56 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:flame/theme/app_theme.dart';
 
+import 'package:flame/screens/chat/chat_attachments.dart';
+
+/// The "share" sheet in the chat composer.
+///
+/// It used to offer six options — gallery, camera, video, voice, GIF and
+/// sticker — but it hung off `ChatV2Screen`, which nothing navigated to, so
+/// none of them were ever reachable. Now that it is wired into the live
+/// composer it offers only what the backend actually accepts: GIF has no
+/// endpoint at all, all five sticker endpoints 404 by design, and voice has a
+/// backend and a player but no recorder UI yet. A button that cannot work is
+/// worse than a missing one.
 class AttachmentModal extends StatelessWidget {
-  final VoidCallback onImageTap;
-  final VoidCallback onCameraTap;
-  final VoidCallback onVideoTap;
-  final VoidCallback onVoiceTap;
-  final VoidCallback onGifTap;
-  final VoidCallback onStickerTap;
+  final ValueChanged<ChatAttachmentKind> onPick;
 
-  const AttachmentModal({
-    super.key,
-    required this.onImageTap,
-    required this.onCameraTap,
-    required this.onVideoTap,
-    required this.onVoiceTap,
-    required this.onGifTap,
-    required this.onStickerTap,
-  });
+  const AttachmentModal({super.key, required this.onPick});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle bar
             Container(
               width: 40,
               height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: theme.dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            // Title
-            const Text(
-              'Share',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text('Share', style: theme.textTheme.titleMedium),
             const SizedBox(height: 24),
-            // Options grid
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -58,43 +48,19 @@ class AttachmentModal extends StatelessWidget {
                   icon: Icons.photo_library,
                   label: 'Gallery',
                   color: Colors.purple,
-                  onTap: onImageTap,
+                  onTap: () => onPick(ChatAttachmentKind.gallery),
                 ),
                 _AttachmentOption(
                   icon: Icons.camera_alt,
                   label: 'Camera',
                   color: Colors.pink,
-                  onTap: onCameraTap,
+                  onTap: () => onPick(ChatAttachmentKind.camera),
                 ),
                 _AttachmentOption(
                   icon: Icons.videocam,
                   label: 'Video',
                   color: Colors.red,
-                  onTap: onVideoTap,
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _AttachmentOption(
-                  icon: Icons.mic,
-                  label: 'Voice',
-                  color: Colors.orange,
-                  onTap: onVoiceTap,
-                ),
-                _AttachmentOption(
-                  icon: Icons.gif_box,
-                  label: 'GIF',
-                  color: Colors.teal,
-                  onTap: onGifTap,
-                ),
-                _AttachmentOption(
-                  icon: Icons.emoji_emotions,
-                  label: 'Sticker',
-                  color: AppTheme.primaryColor,
-                  onTap: onStickerTap,
+                  onTap: () => onPick(ChatAttachmentKind.video),
                 ),
               ],
             ),
@@ -123,6 +89,9 @@ class _AttachmentOption extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      // Opaque so the whole column is a tap target, not just the painted
+      // pixels of the icon and label.
+      behavior: HitTestBehavior.opaque,
       child: Column(
         children: [
           Container(
@@ -137,11 +106,7 @@ class _AttachmentOption extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[700],
-              fontWeight: FontWeight.w500,
-            ),
+            style: Theme.of(context).textTheme.labelMedium,
           ),
         ],
       ),

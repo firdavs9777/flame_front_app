@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
 
-/// Text-only chat composer. The backend currently supports text messages,
-/// replies, and reactions only — attachment/sticker/voice affordances are
-/// intentionally not rendered here so users can't trigger unsupported
-/// actions. See docs/PROJECT_OVERVIEW.md for backend capability notes.
+/// The chat composer: text, replies, and photo/video attachments.
+///
+/// This was text-only for as long as the backend had no media endpoints. It
+/// now does, and the message bubble already renders what comes back, so the
+/// attach affordance is real — but it appears only when [onAttach] is
+/// supplied, so a caller that cannot handle attachments never shows a button
+/// that does nothing. Sticker and voice affordances are still absent: sticker
+/// endpoints 404 by design, and voice has no recorder UI yet.
 class ChatInput extends StatelessWidget {
   final TextEditingController controller;
   final bool isSending;
@@ -13,6 +17,9 @@ class ChatInput extends StatelessWidget {
   final VoidCallback onSend;
   final VoidCallback? onCancelReply;
   final ValueChanged<String>? onChanged;
+
+  /// Opens the attachment sheet. Null hides the affordance entirely.
+  final VoidCallback? onAttach;
 
   const ChatInput({
     super.key,
@@ -22,6 +29,7 @@ class ChatInput extends StatelessWidget {
     required this.onSend,
     this.onCancelReply,
     this.onChanged,
+    this.onAttach,
   });
 
   @override
@@ -102,6 +110,7 @@ class ChatInput extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          if (onAttach != null) _buildAttachButton(),
           // Text field
           Expanded(
             child: Container(
@@ -133,6 +142,18 @@ class ChatInput extends StatelessWidget {
           _buildSendButton(),
         ],
       ),
+    );
+  }
+
+  /// Disabled while a send is in flight, for the same reason as the send
+  /// button: starting a second upload on top of one already running is a
+  /// mistake, not an intent.
+  Widget _buildAttachButton() {
+    return IconButton(
+      onPressed: isSending ? null : onAttach,
+      icon: const Icon(Icons.add_circle_outline),
+      color: AppTheme.primaryColor,
+      tooltip: 'Attach a photo or video',
     );
   }
 
