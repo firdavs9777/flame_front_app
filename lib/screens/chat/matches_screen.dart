@@ -230,6 +230,7 @@ class _MatchCircle extends ConsumerWidget {
           );
         }
       },
+      onLongPress: () => _confirmUnmatch(context, ref),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8),
         child: Column(
@@ -280,6 +281,47 @@ class _MatchCircle extends ConsumerWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmUnmatch(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Unmatch?'),
+        content: Text(
+          'You will no longer be matched with ${match.user.name} and this cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              'Unmatch',
+              style: TextStyle(color: AppTheme.errorColor),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (!context.mounted) return;
+
+    final ok = await ref.read(matchesProvider.notifier).unmatch(match.id);
+    if (!context.mounted) return;
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          ok ? 'Unmatched with ${match.user.name}' : 'Could not unmatch. Please try again.',
         ),
       ),
     );

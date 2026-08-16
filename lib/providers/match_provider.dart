@@ -74,14 +74,19 @@ class MatchesNotifier extends StateNotifier<AsyncValue<List<Match>>> {
     return false;
   }
 
+  /// Removes a match locally. Call after the server confirms the unmatch so the
+  /// list does not flicker back on a failed request.
+  void removeMatch(String matchId) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    state = AsyncValue.data(current.where((m) => m.id != matchId).toList());
+  }
+
   Future<bool> unmatch(String matchId) async {
     final result = await _matchService.unmatch(matchId);
 
     if (result.success) {
-      final currentMatches = state.valueOrNull ?? [];
-      state = AsyncValue.data(
-        currentMatches.where((m) => m.id != matchId).toList(),
-      );
+      removeMatch(matchId);
       return true;
     }
     return false;
