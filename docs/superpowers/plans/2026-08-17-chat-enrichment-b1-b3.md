@@ -827,13 +827,26 @@ git commit -m "feat(realtime): keep the conversation list and unread badge live"
 ### Task 3: Start and stop the socket with the session
 
 **Files:**
-- Modify: `APP lib/providers/auth_provider.dart`
+- Modify: `APP lib/providers/realtime_provider.dart` (add `applySessionStatus`)
 - Modify: `APP lib/screens/main_shell.dart`
 - Test: `APP test/providers/realtime_lifecycle_test.dart`
 
 **Interfaces:**
 - Consumes: `RealtimeConnection.start/stop` (Task 1), `ConversationsNotifier.listenToRealtime` (Task 2)
-- Produces: `AuthNotifier.onSessionEnded` — `void Function()?`, invoked whenever the session ends
+- Produces: `void applySessionStatus(RealtimeConnection conn, AuthStatus status, String? Function() tokenOf)`
+
+**Do not add a callback to `AuthNotifier`.** An earlier draft of this plan had
+`AuthNotifier.onSessionEnded`, tested by instantiating the notifier. That test
+cannot be written: `AuthNotifier()`'s constructor calls `_init()`, which reads
+`flutter_secure_storage` over a platform channel, and `logout()` calls the
+network. The repo's own `test/providers/auth_session_retention_test.dart` tests
+only `AuthNotifier`'s **static** methods for exactly this reason.
+
+Instead the transition rule is a free function taking the status and a token
+supplier. It is pure with respect to both auth and the network, so it is fully
+testable, and `auth_provider.dart` is not touched at all. `logout()` and
+`_handleAuthLost` both land on `AuthStatus.unauthenticated`, so one rule covers
+both without either knowing this feature exists.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -842,69 +855,160 @@ Create `APP test/providers/realtime_lifecycle_test.dart`:
 ```dart
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/providers/auth_provider.dart';
+import 'package:flame/providers/realtime_provider.dart';
+import 'package:flame/services/flame_socket_service.dart';
 
-// The socket must follow the session: up when authenticated, down on logout.
-// AuthNotifier has no `ref`, so it exposes a teardown hook the shell registers
-// rather than reaching for the provider container.
+class _FakeSocket extends FlameSocketService {
+  _FakeSocket(String token) : super(token: token);
+  bool disposed = false;
+  @override
+  void connect() {}
+  @override
+  void dispose() => disposed = true;
+  @override
+  bool get isConnected => !disposed;
+}
+
+// The socket must follow the session: up when authenticated, down on every
+// other status. `logout()` and `_handleAuthLost` both land on
+// `unauthenticated`, so one rule covers both.
 void main() {
-  test('logout fires onSessionEnded', () async {
-    final notifier = AuthNotifier();
-    addTearDown(notifier.dispose);
+  late List<_FakeSocket> made;
+  RealtimeConnection build() {
+    made = [];
+    return RealtimeConnection(createSocket: (t) {
+      final s = _FakeSocket(t);
+      made.add(s);
+      return s;
+    });
+  }
 
-    var ended = 0;
-    notifier.onSessionEnded = () => ended++;
+  test('authenticated starts the connection', () {
+    final conn = build();
+    addTearDown(conn.dispose);
 
-    await notifier.logout();
+    applySessionStatus(conn, AuthStatus.authenticated, () => 'token-a');
 
-    expect(ended, 1,
-        reason: 'a socket that outlives the session leaks the previous user');
+    expect(conn.isConnected, isTrue);
   });
 
-  test('onSessionEnded is optional — logout works without it', () async {
-    final notifier = AuthNotifier();
-    addTearDown(notifier.dispose);
+  test('every non-authenticated status stops it', () {
+    for (final status in [
+      AuthStatus.unauthenticated,
+      AuthStatus.initial,
+      AuthStatus.registering,
+      AuthStatus.profileIncomplete,
+    ]) {
+      final conn = build();
+      applySessionStatus(conn, AuthStatus.authenticated, () => 'token-a');
+      expect(conn.isConnected, isTrue);
 
-    await notifier.logout(); // must not throw
+      applySessionStatus(conn, status, () => 'token-a');
 
-    expect(notifier.state.status, AuthStatus.unauthenticated);
+      expect(conn.socket, isNull,
+          reason: '$status must not keep a live socket — the next user would '
+              'inherit one authenticated as the previous one');
+      expect(made.first.disposed, isTrue);
+      conn.dispose();
+    }
+  });
+
+  test('authenticated with no token does not crash or connect', () {
+    final conn = build();
+    addTearDown(conn.dispose);
+
+    applySessionStatus(conn, AuthStatus.authenticated, () => null);
+
+    expect(conn.socket, isNull);
+    expect(made, isEmpty);
+  });
+
+  test('a refreshed token reconnects rather than reusing a dead socket', () {
+    final conn = build();
+    addTearDown(conn.dispose);
+
+    applySessionStatus(conn, AuthStatus.authenticated, () => 'token-1');
+    applySessionStatus(conn, AuthStatus.authenticated, () => 'token-2');
+
+    expect(made, hasLength(2));
+    expect(made.first.disposed, isTrue);
+  });
+
+  test('repeated authenticated ticks with an unchanged token are cheap', () {
+    final conn = build();
+    addTearDown(conn.dispose);
+
+    applySessionStatus(conn, AuthStatus.authenticated, () => 'token-1');
+    applySessionStatus(conn, AuthStatus.authenticated, () => 'token-1');
+    applySessionStatus(conn, AuthStatus.authenticated, () => 'token-1');
+
+    expect(made, hasLength(1),
+        reason: 'ref.listen fires on every auth-state change, including ones '
+            'that do not affect the token');
+  });
+
+  test('stop then start opens a fresh socket', () {
+    final conn = build();
+    addTearDown(conn.dispose);
+
+    applySessionStatus(conn, AuthStatus.authenticated, () => 'token-1');
+    applySessionStatus(conn, AuthStatus.unauthenticated, () => 'token-1');
+    applySessionStatus(conn, AuthStatus.authenticated, () => 'token-1');
+
+    expect(conn.isConnected, isTrue);
+    expect(made, hasLength(2));
   });
 }
 ```
 
-> If `AuthNotifier()` requires constructor arguments, or if `logout()` needs a
-> live `ApiClient`, adapt: construct it the way `test/providers/` already does
-> for auth, and if no such test exists, assert on `_handleAuthLost`'s public
-> entry point instead. Report which you chose. Do not delete the assertion.
-
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `flutter test test/providers/realtime_lifecycle_test.dart`
-Expected: FAIL — `onSessionEnded` is not defined
+Expected: FAIL — `applySessionStatus` is not defined
 
-- [ ] **Step 3: Add the teardown hook**
+- [ ] **Step 3: Add the transition rule**
 
-In `APP lib/providers/auth_provider.dart`, add to `AuthNotifier`:
+At the bottom of `APP lib/providers/realtime_provider.dart`, below the provider:
 
 ```dart
-  /// Invoked when the session ends, so the app-level socket can be torn down.
-  /// Set by MainShell; null in tests and before the shell mounts.
-  ///
-  /// A callback rather than a `ref`: this notifier is constructed without a
-  /// container, and a socket that outlives a logout would deliver the previous
-  /// user's messages to the next one.
-  void Function()? onSessionEnded;
+/// Applies an auth-status change to the realtime connection.
+///
+/// A free function taking the status and a token supplier, rather than a hook
+/// on `AuthNotifier`: that notifier cannot be constructed in a unit test (its
+/// constructor reads secure storage over a platform channel), so a callback
+/// there would be untestable. This is pure with respect to both auth and the
+/// network.
+///
+/// Only `authenticated` keeps a socket. `profileIncomplete` and `registering`
+/// are mid-onboarding — there is nothing to receive yet — and leaving one open
+/// through `unauthenticated` would hand the next user a socket authenticated
+/// as the previous one.
+void applySessionStatus(
+  RealtimeConnection conn,
+  AuthStatus status,
+  String? Function() tokenOf,
+) {
+  if (status != AuthStatus.authenticated) {
+    conn.stop();
+    return;
+  }
+  final token = tokenOf();
+  if (token == null || token.isEmpty) return;
+  // `start` is a no-op when the token is unchanged, so calling this on every
+  // auth transition is cheap; when ApiClient has refreshed proactively it
+  // replaces the socket that is now holding a dead token.
+  conn.start(token);
+}
 ```
 
-Call `onSessionEnded?.call();` immediately after the state becomes
-`AuthStatus.unauthenticated` in **both** places that end a session:
-`_handleAuthLost` (around line 59-62) and `logout()` (around line 281-283).
+Import `package:flame/providers/auth_provider.dart` for `AuthStatus`.
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `flutter test test/providers/realtime_lifecycle_test.dart`
-Expected: PASS — 2 tests
+Expected: PASS — 6 tests
 
-- [ ] **Step 5: Start the socket with the signed-in shell**
+- [ ] **Step 5: Wire it in the shell**
 
 `APP lib/screens/main_shell.dart` already has a post-frame `_initialized` guard
 calling `_initializeData()`. Extend that method — do not add a second callback:
@@ -916,59 +1020,50 @@ calling `_initializeData()`. Extend that method — do not add a second callback
 
     if (EnvConfig.current.chatEnabled) {
       await ref.read(conversationsProvider.notifier).loadConversations(refresh: true);
-      _startRealtime();
+      _syncRealtime(ref.read(authProvider).status);
     }
   }
 
-  /// The socket lives as long as the signed-in shell. Starting it here rather
+  /// The socket lives as long as the signed-in session. Starting it here rather
   /// than in ChatScreen is the whole point of B1: the Messages list and the
   /// unread badge must stay live when no conversation is open.
-  void _startRealtime() {
-    final token = ApiClient().accessToken;
-    if (token == null) return;
-    final conn = ref.read(realtimeConnectionProvider)..start(token);
-    ref.read(conversationsProvider.notifier).listenToRealtime(conn);
+  void _syncRealtime(AuthStatus status) {
+    final conn = ref.read(realtimeConnectionProvider);
+    applySessionStatus(conn, status, () => ApiClient().accessToken);
+    if (conn.socket != null) {
+      ref.read(conversationsProvider.notifier).listenToRealtime(conn);
+    }
   }
-```
-
-Import `package:flame/providers/realtime_provider.dart` and
-`package:flame/services/api_client.dart`.
-
-- [ ] **Step 6: Stop on logout, reconnect on token refresh**
-
-Still in `_MainShellState.initState`, after the post-frame callback is
-registered:
-
-```dart
-    ref.read(authProvider.notifier).onSessionEnded =
-        () => ref.read(realtimeConnectionProvider).stop();
 ```
 
 and in `build`, before returning the `Scaffold`:
 
 ```dart
-    // ApiClient refreshes the access token proactively; a socket still holding
-    // the old one is dead. `start` is a no-op when the token is unchanged, so
-    // re-running it on every auth transition is cheap.
+    // ApiClient refreshes the access token proactively, so a socket may be
+    // holding a dead one; and logout must tear it down. Both arrive here as an
+    // auth-state change.
     ref.listen(authProvider, (_, next) {
-      if (next.status != AuthStatus.authenticated) return;
       if (!EnvConfig.current.chatEnabled) return;
-      _startRealtime();
+      _syncRealtime(next.status);
     });
 ```
 
 `ref.listen` belongs in `build` for a `ConsumerStatefulWidget` — Riverpod
-deduplicates it across rebuilds.
+deduplicates it across rebuilds. Import
+`package:flame/providers/realtime_provider.dart` and
+`package:flame/services/api_client.dart`; `authProvider` and `AuthStatus` come
+from `providers.dart`, which is already imported — verify that export before
+adding a second import.
 
-- [ ] **Step 7: Run the whole app suite**
+- [ ] **Step 6: Run the whole app suite**
 
 Run: `flutter test && flutter analyze`
 Expected: all tests pass, zero analyzer errors.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add lib/providers/auth_provider.dart lib/screens/main_shell.dart test/providers/realtime_lifecycle_test.dart
+git add lib/providers/realtime_provider.dart lib/screens/main_shell.dart test/providers/realtime_lifecycle_test.dart
 git commit -m "feat(realtime): tie the app socket to the session lifecycle"
 ```
 
