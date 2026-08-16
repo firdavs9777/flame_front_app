@@ -506,43 +506,6 @@ class ConversationsNotifier
       }).toList(),
     );
   }
-
-  void updateMessageStatus(
-    String conversationId,
-    List<String> messageIds,
-    MessageStatus status,
-  ) {
-    final conversations = state.valueOrNull ?? [];
-    state = AsyncValue.data(
-      conversations.map((conversation) {
-        if (conversation.id == conversationId) {
-          return conversation.copyWith(
-            messages: conversation.messages.map((m) {
-              if (messageIds.contains(m.id)) {
-                return m.copyWith(status: status);
-              }
-              return m;
-            }).toList(),
-          );
-        }
-        return conversation;
-      }).toList(),
-    );
-  }
-
-  void updateUserOnlineStatus(String userId, bool isOnline) {
-    final conversations = state.valueOrNull ?? [];
-    state = AsyncValue.data(
-      conversations.map((conversation) {
-        if (conversation.otherUser.id == userId) {
-          return conversation.copyWith(
-            otherUser: conversation.otherUser.copyWith(isOnline: isOnline),
-          );
-        }
-        return conversation;
-      }).toList(),
-    );
-  }
 }
 
 final conversationMessagesProvider =
