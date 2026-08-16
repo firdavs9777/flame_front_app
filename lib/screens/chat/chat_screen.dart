@@ -39,7 +39,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Message? _replyingTo;
   Timer? _pollTimer;
-  FlameSocketService? _flameSocket;
+
+  /// The app-level connection, cached (not its socket) so every emit site
+  /// reads `.socket` fresh. `RealtimeConnection.start()` replaces the socket
+  /// on a token refresh (disposing the old one); caching the socket itself
+  /// would leave emits pointed at a disposed instance after that happens
+  /// mid-session, silently turning `emitTyping`/`emitStopTyping`/`emitMarkRead`
+  /// into no-ops (`FlameSocketService`'s emit guards are `_socket?.emit`, so
+  /// nothing throws or logs). The connection object itself is long-lived and
+  /// outlives any such swap.
+  RealtimeConnection? _realtime;
   final List<StreamSubscription<void>> _realtimeSubs = [];
 
   // ==================== Typing indicator state (flame socket) ====================
@@ -93,7 +102,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _typingIdleTimer?.cancel();
     _typingSafetyTimer?.cancel();
     if (_isTyping) {
-      _flameSocket?.emitStopTyping(
+      _realtime?.socket?.emitStopTyping(
         widget.conversation.otherUser.id,
         widget.conversation.id,
       );
@@ -105,7 +114,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       s.cancel();
     }
     _realtimeSubs.clear();
-    _flameSocket = null;
+    _realtime = null;
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -225,21 +234,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// It used to construct its own [FlameSocketService], which meant two sockets
   /// per user whenever a chat was open: the server re-checks blocks on every
   /// delivery, so the duplicate doubled that lookup and the presence fan-out
-  /// for nothing. The socket is still held in [_flameSocket] because this
-  /// screen emits through it (typing, read receipts) — but it does not own it
-  /// and must never dispose it.
+  /// for nothing. The connection is held in [_realtime] — not its socket —
+  /// because this screen emits through it (typing, read receipts) — but it
+  /// does not own it and must never dispose it.
   ///
-  /// Subscribing through streams rather than assigning the socket's callbacks
-  /// matters: those fields are single-assignment, so assigning them here would
-  /// silently steal every push from the conversation list and freeze the unread
-  /// badge for other threads while this one is open.
+  /// Caching the connection rather than `conn.socket` matters for two reasons:
+  ///
+  /// 1. The socket can be null at mount (connection not up yet) or can be
+  ///    swapped mid-session (`RealtimeConnection.start` disposes the old
+  ///    socket and builds a new one on a token refresh). Reading `.socket`
+  ///    fresh at each emit site means a not-yet-connected mount still
+  ///    subscribes to every stream (no early return), and a mid-session swap
+  ///    never leaves an emit pointed at a disposed socket.
+  /// 2. Subscribing through streams rather than assigning the socket's
+  ///    callbacks matters: those fields are single-assignment, so assigning
+  ///    them here would silently steal every push from the conversation list
+  ///    and freeze the unread badge for other threads while this one is open.
   void _connectFlameSocket() {
     if (!EnvConfig.current.chatEnabled) return;
 
     final conn = ref.read(realtimeConnectionProvider);
-    final socket = conn.socket;
-    if (socket == null) return;
-    _flameSocket = socket;
+    _realtime = conn;
 
     _realtimeSubs.addAll([
       conn.messageNew.listen((e) => _onSocketMessageNew(e.message, e.conversationId)),
@@ -372,7 +387,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _onMessageTextChanged(String text) {
     if (!EnvConfig.current.chatEnabled) return;
 
-    final socket = _flameSocket;
+    final socket = _realtime?.socket;
     if (socket == null || !socket.isConnected) return;
 
     if (text.isEmpty) {
@@ -401,7 +416,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (!_isTyping) return;
     _isTyping = false;
 
-    final socket = _flameSocket;
+    final socket = _realtime?.socket;
     if (socket != null && socket.isConnected) {
       socket.emitStopTyping(
         widget.conversation.otherUser.id,
@@ -462,7 +477,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ref
           .read(conversationsProvider.notifier)
           .markAsRead(widget.conversation.id);
-      _flameSocket?.emitMarkRead(
+      _realtime?.socket?.emitMarkRead(
         widget.conversation.otherUser.id,
         widget.conversation.id,
       );

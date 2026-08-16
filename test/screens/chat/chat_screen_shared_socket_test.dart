@@ -11,6 +11,12 @@
 // ChatScreen through the real realtimeConnectionProvider. It requires no
 // live ApiClient and touches no network: chatServiceProvider, UserService
 // and ConversationsNotifier are all faked/seeded.
+//
+// Two further tests below pin a code-review finding on the fix itself:
+// ChatScreen must cache the *connection*, not its socket, because the socket
+// can be null at mount (not yet connected) or swapped out from under a
+// cached reference by a mid-session token refresh (RealtimeConnection.start
+// disposes the old socket and builds a new one).
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,12 +34,16 @@ import 'package:flame/services/user_service.dart';
 
 class _FakeSocket extends FlameSocketService {
   _FakeSocket(String token) : super(token: token);
+  bool disposed = false;
+  final List<String> typingEmittedTo = [];
   @override
   void connect() {}
   @override
-  void dispose() {}
+  void dispose() => disposed = true;
   @override
-  bool get isConnected => true;
+  bool get isConnected => !disposed;
+  @override
+  void emitTyping(String to, String conversationId) => typingEmittedTo.add(to);
 }
 
 // getMessages is the only chatService method ChatScreen calls on init;
@@ -89,6 +99,41 @@ User _me() => User.fromJson({
   'photos': [],
 });
 
+// Shared boilerplate for every test below: same fakes/seeds, same
+// localization wiring (MessageBubble needs AppLocalizations), differing only
+// in which RealtimeConnection and Conversation are plugged in.
+Future<void> _pumpChatScreen(
+  WidgetTester tester, {
+  required RealtimeConnection conn,
+  required Conversation conversation,
+}) {
+  return tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        chatServiceProvider.overrideWithValue(_FakeChatService()),
+        currentUserProvider.overrideWith(
+          (ref) => CurrentUserNotifier(_FakeUserService())..setUser(_me()),
+        ),
+        conversationsProvider.overrideWith(
+          (ref) => _SeededConversations([conversation]),
+        ),
+        realtimeConnectionProvider.overrideWithValue(conn),
+      ],
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: kSupportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: ChatScreen(conversation: conversation),
+      ),
+    ),
+  );
+}
+
 void main() {
   testWidgets(
     'a push on the shared connection reaches an open ChatScreen, and the '
@@ -109,31 +154,7 @@ void main() {
 
       final conversation = _conversation('c1', 'u1');
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            chatServiceProvider.overrideWithValue(_FakeChatService()),
-            currentUserProvider.overrideWith(
-              (ref) => CurrentUserNotifier(_FakeUserService())..setUser(_me()),
-            ),
-            conversationsProvider.overrideWith(
-              (ref) => _SeededConversations([conversation]),
-            ),
-            realtimeConnectionProvider.overrideWithValue(conn),
-          ],
-          child: MaterialApp(
-            locale: const Locale('en'),
-            supportedLocales: kSupportedLocales,
-            localizationsDelegates: const [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            home: ChatScreen(conversation: conversation),
-          ),
-        ),
-      );
+      await _pumpChatScreen(tester, conn: conn, conversation: conversation);
       await tester.pump();
       await tester.pump();
 
@@ -154,6 +175,82 @@ void main() {
         listSeen,
         ['m1'],
         reason: 'the list-level listener must still see the push too',
+      );
+    },
+  );
+
+  testWidgets(
+    'a mid-session token refresh does not silently kill emits from an open chat',
+    (tester) async {
+      // ApiClient's proactive refresh drives exactly this: RealtimeConnection
+      // .start() with a new token disposes the old socket and builds a new
+      // one. If ChatScreen cached the socket instead of the connection, its
+      // emits would keep targeting the disposed instance.
+      final sockets = <_FakeSocket>[];
+      final conn = RealtimeConnection(createSocket: (t) {
+        final s = _FakeSocket(t);
+        sockets.add(s);
+        return s;
+      });
+      addTearDown(conn.dispose);
+      conn.start('token-a');
+
+      final conversation = _conversation('c1', 'u1');
+      await _pumpChatScreen(tester, conn: conn, conversation: conversation);
+      await tester.pump();
+      await tester.pump();
+
+      // Force the reconnect.
+      conn.start('token-b');
+      expect(sockets, hasLength(2));
+      expect(sockets[0].disposed, isTrue,
+          reason: 'the pre-refresh socket is torn down by RealtimeConnection.start');
+
+      // Trigger `emitTyping` via the real input, exactly as a typing user
+      // would.
+      await tester.enterText(find.byType(TextField), 'hi');
+      await tester.pump();
+
+      expect(sockets[1].typingEmittedTo, ['u1'],
+          reason: 'the emit must reach the socket that is live after the '
+              'refresh, not the one RealtimeConnection already disposed');
+      expect(sockets[0].typingEmittedTo, isEmpty,
+          reason: 'the disposed pre-refresh socket must never be emitted to');
+    },
+  );
+
+  testWidgets(
+    'a screen mounted before the connection is up still receives a later push',
+    (tester) async {
+      // Covers the other half of the same defect: caching `conn.socket`
+      // (nullable at mount) instead of `conn` itself would mean a screen
+      // opened before the connection comes up never subscribes at all,
+      // since `_connectFlameSocket` runs exactly once, from `initState`.
+      late _FakeSocket socket;
+      final conn = RealtimeConnection(createSocket: (t) {
+        socket = _FakeSocket(t);
+        return socket;
+      });
+      addTearDown(conn.dispose);
+      // Deliberately not started yet: conn.socket is null at mount time.
+
+      final conversation = _conversation('c1', 'u1');
+      await _pumpChatScreen(tester, conn: conn, conversation: conversation);
+      await tester.pump();
+      await tester.pump();
+
+      // The connection comes up after the screen already mounted.
+      conn.start('token-a');
+
+      socket.onMessageNew!(_msg('m1', 'u1'), 'c1');
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        find.text('live push'),
+        findsOneWidget,
+        reason: 'subscribing must not depend on a socket already existing '
+            'at mount time',
       );
     },
   );
