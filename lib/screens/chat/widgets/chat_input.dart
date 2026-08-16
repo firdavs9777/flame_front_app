@@ -1,4 +1,7 @@
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/material.dart';
+import 'package:flame/screens/chat/voice_recording.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
 
@@ -8,8 +11,9 @@ import 'package:flame/theme/app_theme.dart';
 /// now does, and the message bubble already renders what comes back, so the
 /// attach affordance is real — but it appears only when [onAttach] is
 /// supplied, so a caller that cannot handle attachments never shows a button
-/// that does nothing. Sticker and voice affordances are still absent: sticker
-/// endpoints 404 by design, and voice has no recorder UI yet.
+/// that does nothing. The mic follows the same rule: it appears only when
+/// [onStartRecording] is supplied, and takes the send button's slot while the
+/// field is empty. Stickers remain absent — those endpoints 404 by design.
 class ChatInput extends StatelessWidget {
   final TextEditingController controller;
   final bool isSending;
@@ -21,6 +25,17 @@ class ChatInput extends StatelessWidget {
   /// Opens the attachment sheet. Null hides the affordance entirely.
   final VoidCallback? onAttach;
 
+  /// Begins a voice recording. Null hides the mic, so the send button simply
+  /// stays put — a composer that cannot record must not show a mic.
+  final VoidCallback? onStartRecording;
+
+  /// True while a recording is in progress: the text field is replaced by a
+  /// timer with discard and send.
+  final bool isRecording;
+  final Duration recordingElapsed;
+  final VoidCallback? onCancelRecording;
+  final VoidCallback? onSendRecording;
+
   const ChatInput({
     super.key,
     required this.controller,
@@ -30,6 +45,11 @@ class ChatInput extends StatelessWidget {
     this.onCancelReply,
     this.onChanged,
     this.onAttach,
+    this.onStartRecording,
+    this.isRecording = false,
+    this.recordingElapsed = Duration.zero,
+    this.onCancelRecording,
+    this.onSendRecording,
   });
 
   @override
@@ -49,8 +69,8 @@ class ChatInput extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (replyingTo != null) _buildReplyPreview(context),
-            _buildInputRow(context),
+            if (replyingTo != null && !isRecording) _buildReplyPreview(context),
+            if (isRecording) _buildRecordingRow(context) else _buildInputRow(context),
           ],
         ),
       ),
@@ -139,7 +159,78 @@ class ChatInput extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          _buildSendButton(),
+          // One slot, not two buttons competing for the corner: a mic while the
+          // field is empty, a send button the moment there is something to send.
+          // Same shape as BananaTalk's chat_input_bar.dart.
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              final hasText = value.text.trim().isNotEmpty;
+              if (!hasText && onStartRecording != null) return _buildMicButton();
+              return _buildSendButton();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMicButton() {
+    return GestureDetector(
+      onTap: isSending ? null : onStartRecording,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSending ? Colors.grey : AppTheme.primaryColor,
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.mic, color: Colors.white, size: 20),
+      ),
+    );
+  }
+
+  /// What the composer becomes while recording: no text field, because typing
+  /// mid-recording is not something the user can do, and both exits visible.
+  Widget _buildRecordingRow(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            color: Theme.of(context).colorScheme.error,
+            onPressed: onCancelRecording,
+            tooltip: 'Discard recording',
+          ),
+          const SizedBox(width: 4),
+          Container(
+            width: 10,
+            height: 10,
+            decoration: const BoxDecoration(
+              color: Colors.red,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            formatRecordingTime(recordingElapsed),
+            style: const TextStyle(
+              fontSize: 16,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: onSendRecording,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.send, color: Colors.white, size: 20),
+            ),
+          ),
         ],
       ),
     );

@@ -12,6 +12,7 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/screens/chat/chat_attachments.dart';
+import 'package:flame/screens/chat/voice_recording.dart';
 import 'package:flame/screens/chat/widgets/widgets.dart';
 
 /// How often to poll for new messages while a thread is open. This is a REST
@@ -100,6 +101,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _recordingTimer?.cancel();
+    // Fire-and-forget: dispose() cannot await, and a dangling recorder would
+    // hold the microphone after the screen is gone.
+    _recorder?.cancel().then((_) => _recorder?.dispose()).catchError((_) {});
     _typingIdleTimer?.cancel();
     _typingSafetyTimer?.cancel();
     if (_isTyping) {
@@ -543,6 +548,102 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  // ==================== Voice ====================
+
+  VoiceRecording? _recorder;
+  Timer? _recordingTimer;
+  Duration _recordingElapsed = Duration.zero;
+
+  /// Starts capture, or does nothing visible if the mic is refused.
+  ///
+  /// Injectable [make] so the flow is drivable in a test without a microphone
+  /// or a permission prompt.
+  Future<void> _startRecording({VoiceRecording Function()? make}) async {
+    if (_recorder != null || _isSending) return;
+
+    final rec = (make ?? DeviceVoiceRecording.new)();
+    if (!await rec.start()) {
+      await rec.dispose();
+      if (mounted) _showError('Microphone permission is needed to record');
+      return;
+    }
+    if (!mounted) {
+      await rec.cancel();
+      await rec.dispose();
+      return;
+    }
+
+    setState(() {
+      _recorder = rec;
+      _recordingElapsed = Duration.zero;
+    });
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() => _recordingElapsed += const Duration(seconds: 1));
+    });
+  }
+
+  Future<void> _stopRecordingTimer() async {
+    _recordingTimer?.cancel();
+    _recordingTimer = null;
+  }
+
+  Future<void> _cancelRecording() async {
+    final rec = _recorder;
+    if (rec == null) return;
+    await _stopRecordingTimer();
+    setState(() => _recorder = null);
+    await rec.cancel();
+    await rec.dispose();
+  }
+
+  Future<void> _sendRecording() async {
+    final rec = _recorder;
+    if (rec == null) return;
+
+    // Capture before clearing, so a failed send can restore the reply target —
+    // same contract as _sendMessage and the attachment path.
+    final sentReplyingTo = _replyingTo;
+    final seconds = _recordingElapsed.inSeconds;
+
+    await _stopRecordingTimer();
+    final file = await rec.stop();
+    await rec.dispose();
+    if (!mounted) return;
+
+    setState(() {
+      _recorder = null;
+      _recordingElapsed = Duration.zero;
+    });
+
+    // Nothing captured: a tap that started and stopped inside the same second
+    // is a mis-tap, not a message.
+    if (file == null) return;
+
+    setState(() {
+      _isSending = true;
+      _replyingTo = null;
+    });
+
+    final error = await ref.read(conversationsProvider.notifier).sendVoiceMessage(
+          widget.conversation.id,
+          file,
+          duration: seconds,
+          replyToId: sentReplyingTo?.id,
+        );
+
+    if (!mounted) return;
+    setState(() => _isSending = false);
+
+    if (error == null) {
+      await _refreshMessages();
+      _scrollToBottom(animated: true);
+    } else {
+      setState(() => _replyingTo = sentReplyingTo);
+      _showError(error);
+    }
+  }
+
   /// Opens the share sheet, then picks and sends whatever the user chose.
   ///
   /// Injectable [pick] so the flow can be driven in a test without a platform
@@ -802,6 +903,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             replyingTo: _replyingTo,
             onSend: _sendMessage,
             onAttach: _openAttachmentSheet,
+            onStartRecording: _startRecording,
+            isRecording: _recorder != null,
+            recordingElapsed: _recordingElapsed,
+            onCancelRecording: _cancelRecording,
+            onSendRecording: _sendRecording,
             onCancelReply: () => setState(() => _replyingTo = null),
             onChanged: _onMessageTextChanged,
           ),
