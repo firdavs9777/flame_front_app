@@ -42,11 +42,10 @@ fully implemented end to end.
 
 ## Scope and order
 
-**B1 → B2 → B3 → B5 → B4.**
+**B1 → B2 → B3 → B5.** B4 (stickers) is cut — see below.
 
 B1 first because it fixes a live defect. B2 and B3 close endpoints the app already
-calls. B5 is new product surface. B4 is last because it is the largest and the
-least justified.
+calls. B5 is new product surface.
 
 ---
 
@@ -199,34 +198,24 @@ can lag by a minute. The one feature here that genuinely fits dating.
 
 ---
 
-## B4 — Stickers
+## B4 — Stickers: CUT
 
-**Recommendation: cut this.**
+Not in scope. Recorded here so the decision is not re-litigated.
 
-The app calls five endpoints:
+The app calls five sticker endpoints (`/stickers/packs`, `/stickers/packs/:id`,
+`/stickers/my-packs`, and POST/DELETE on `/stickers/my-packs/:id`). They will
+continue to 404, which is harmless: nothing in the reachable UI surfaces a
+sticker picker. `ChatInput` is deliberately text-only and the picker lives in
+`ChatV2Screen`, which nothing navigates to.
 
-```
-GET    /stickers/packs
-GET    /stickers/packs/:id
-GET    /stickers/my-packs
-POST   /stickers/my-packs/:id
-DELETE /stickers/my-packs/:id
-```
+Delivering them would mean a content subsystem — pack catalog, per-user
+ownership, asset hosting, artwork licensing — for roughly half of this phase's
+total cost. BananaTalk has stickers because it is a language-learning product
+where they serve a pedagogical purpose; Flame inherited the client code, not the
+rationale.
 
-Delivering them means a content subsystem: a pack catalog, per-user ownership,
-asset hosting and a licensing story for the artwork. That is roughly half of
-Phase B's total cost.
-
-BananaTalk has stickers because it is a language-learning product where they serve
-a pedagogical purpose. Flame inherits the client code, not the rationale. Nothing
-in Flame's reachable UI surfaces a sticker picker today — `ChatInput` is
-deliberately text-only, and the sticker picker lives in the unreachable
-`ChatV2Screen`.
-
-If it ships anyway, the minimum is a seeded read-only catalog with per-user
-ownership, and no user-generated packs.
-
----
+If this is ever revisited, the minimum viable version is a seeded read-only
+catalog with per-user ownership and no user-generated packs.
 
 ## Testing
 
