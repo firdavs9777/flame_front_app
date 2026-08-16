@@ -7,9 +7,9 @@ class EnvConfig {
   final String apiBase;
   final String wsBase;
 
-  /// Whether the realtime chat WebSocket should connect. The Flame backend has
-  /// no chat socket yet, so this is off in prod to avoid an endless reconnect
-  /// loop. Flip to true once the socket server ships.
+  /// Whether the realtime chat WebSocket should connect. The socket has shipped:
+  /// `flameSocket.js` runs on the shared server under the `/flame` namespace and
+  /// is initialised in server.js.
   final bool realtimeEnabled;
 
   /// Social login is gated per provider, not all-or-nothing: the backend
@@ -44,8 +44,15 @@ class EnvConfig {
   /// backend yet — off until it ships.
   final bool forgotPasswordEnabled;
 
-  /// Whether the Chat tab is shown. Off in prod until the Flame backend chat
-  /// endpoints ship; on locally for development.
+  /// Whether the Chat tab is shown. The backend endpoints have shipped:
+  /// /conversations (list, open, messages, read) and /messages/:id (edit,
+  /// delete, reactions), plus the `/flame` socket namespace.
+  ///
+  /// Scope note: the backend supports TEXT chat only. Media messages
+  /// (image/video/voice/audio/sticker), stickers, pin and mute have no routes.
+  /// The reachable composer ([ChatInput]) is already text-only, so no user can
+  /// trigger them — but do not surface ChatV2Screen or AttachmentModal (both
+  /// currently unreachable) until those endpoints exist.
   final bool chatEnabled;
 
   /// Whether the advanced Discover filters (gender / interests / online-only)
@@ -107,12 +114,14 @@ class EnvConfig {
 
   static const _prod = EnvConfig._(
     AppEnv.prod,
-    // Flame is served as a sub-app of the BananaTalk backend at /flamebackend/v1.
-    // The api.flame.banatalk.com host currently has an SSL cert mismatch (causes
-    // HandshakeException on login), so we hit the working, valid-cert host.
+    // Flame is served as a sub-app of the BananaTalk backend at /flamebackend/v1
+    // (~/Projects/BananaTalk/backend/flame), sharing its server and socket.
+    // api.flame.banatalk.com is the separate Python service and is NOT in use:
+    // it resolves to 15.165.66.89 but has no listener on 80 or 443.
     'https://api.banatalk.com/flamebackend/v1',
     'wss://api.banatalk.com',
-    realtimeEnabled: false, // no chat socket on the Flame backend yet
+    realtimeEnabled: true,
+    chatEnabled: true,
     googleSignInEnabled: true,
     appleSignInEnabled: false,
     facebookSignInEnabled: false,

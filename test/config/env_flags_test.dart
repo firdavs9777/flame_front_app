@@ -2,9 +2,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/config/env.dart';
 
 void main() {
-  test('forgot-password and chat stay OFF by default (MVP)', () {
+  test('forgot-password stays OFF — no backend endpoint for it', () {
     expect(EnvConfig.current.forgotPasswordEnabled, isFalse);
-    expect(EnvConfig.current.chatEnabled, isFalse);
+  });
+
+  test('chat and its socket are ON in both environments', () {
+    // /conversations + /messages and the `/flame` socket namespace have all
+    // shipped. Text-only: media/stickers/pin/mute have no backend routes, and
+    // the reachable composer deliberately does not offer them.
+    expect(EnvConfig.prodConfig.chatEnabled, isTrue);
+    expect(EnvConfig.prodConfig.realtimeEnabled, isTrue);
+    expect(EnvConfig.localConfig.chatEnabled, isTrue);
   });
 
   group('prod', () {

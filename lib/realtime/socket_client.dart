@@ -29,20 +29,35 @@ class SocketClient {
     );
   }
 
+  /// Socket.IO namespace the Flame realtime chat lives on.
+  ///
+  /// The server is shared with BananaTalk and FitBowl: `flameSocket.js` isolates
+  /// Flame onto `io.of('/flame')`, so connecting to the default namespace would
+  /// silently join BananaTalk's and receive none of Flame's events.
+  static const _namespace = '/flame';
+
   void connect({required String token, required String deviceId}) {
     _setState(const SocketState(status: SocketStatus.connecting));
     final socket = io.io(
-      EnvConfig.current.wsBase,
+      '${EnvConfig.current.wsBase}$_namespace',
       io.OptionBuilder()
-        .setTransports(['websocket'])
-        .setPath('/ws/socket.io')
-        .setAuth({'token': token, 'device_id': deviceId})
-        .enableReconnection()
-        .setReconnectionAttempts(double.maxFinite.toInt())
-        .build(),
+          .setTransports(['websocket'])
+          // No setPath: the server constructs `new Server(server, {...})`
+          // without a `path` option, so it serves the Socket.IO default
+          // (/socket.io). The previous '/ws/socket.io' matched nothing and the
+          // handshake could never complete.
+          .setAuth({'token': token, 'device_id': deviceId})
+          .enableReconnection()
+          .setReconnectionAttempts(double.maxFinite.toInt())
+          .build(),
     );
     socket.onConnect((_) {
-      _setState(_state.copy(status: SocketStatus.connected, sinceLastChange: DateTime.now()));
+      _setState(
+        _state.copy(
+          status: SocketStatus.connected,
+          sinceLastChange: DateTime.now(),
+        ),
+      );
     });
     socket.onDisconnect((_) {
       _setState(_state.copy(status: SocketStatus.reconnecting));
@@ -62,13 +77,18 @@ class SocketClient {
 
   void emit(String event, dynamic data) => _socket?.emit(event, data);
 
-  Future<dynamic> emitWithAckTimeout(String event, dynamic data,
-      {Duration timeout = const Duration(seconds: 8)}) {
+  Future<dynamic> emitWithAckTimeout(
+    String event,
+    dynamic data, {
+    Duration timeout = const Duration(seconds: 8),
+  }) {
     final socket = _socket;
     if (socket == null) return Future.error(StateError('no socket'));
     return emitWithAckTimeoutVia(
       (e, d, ack) => socket.emitWithAck(e, d, ack: ack),
-      event, data, timeout: timeout,
+      event,
+      data,
+      timeout: timeout,
     );
   }
 
