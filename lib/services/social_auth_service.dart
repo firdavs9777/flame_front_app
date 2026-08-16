@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
@@ -31,12 +34,11 @@ class SocialAuthResult {
   factory SocialAuthResult.apple({
     required String idToken,
     required String authorizationCode,
-  }) =>
-      SocialAuthResult._(
-        success: true,
-        appleIdToken: idToken,
-        appleAuthorizationCode: authorizationCode,
-      );
+  }) => SocialAuthResult._(
+    success: true,
+    appleIdToken: idToken,
+    appleAuthorizationCode: authorizationCode,
+  );
 
   factory SocialAuthResult.facebook(String accessToken) =>
       SocialAuthResult._(success: true, facebookAccessToken: accessToken);
@@ -46,11 +48,16 @@ class SocialAuthResult {
 }
 
 class SocialAuthService {
-  // serverClientId is the Google **Web** OAuth client ID. Setting it makes
-  // the iOS/Android SDKs mint an ID token whose `aud` claim is the Web
-  // client ID, which is what the backend verifies against. Without this,
-  // tokens are audienced to the iOS client ID and the backend rejects them
-  // with "Invalid Google token".
+  // serverClientId is the Google **Web** OAuth client ID.
+  //
+  // NOTE: this does NOT make every platform mint a token audienced to the web
+  // client. It works that way on Android, but on iOS the plugin only forwards
+  // it to GIDConfiguration.serverClientID, which Google uses for the server
+  // auth code. Verified on device: `aud` came back as the **iOS** client ID and
+  // serverAuthCode was null.
+  //
+  // So the backend must accept every client ID we own, not just this one — see
+  // FLAME_GOOGLE_CLIENT_ID (a comma-separated list) in flame/utils/socialVerify.js.
   static final _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
     serverClientId:
@@ -64,11 +71,44 @@ class SocialAuthService {
 
       final auth = await account.authentication;
       final idToken = auth.idToken;
-      if (idToken == null) return SocialAuthResult.failure('No ID token returned');
+      if (idToken == null) {
+        return SocialAuthResult.failure('No ID token returned');
+      }
+
+      _debugLogTokenAudience(idToken, account.serverAuthCode);
 
       return SocialAuthResult.google(idToken);
     } catch (e) {
       return SocialAuthResult.failure(e.toString());
+    }
+  }
+
+  /// Debug-only: prints the ID token's `aud` / `azp` / `iss` claims.
+  ///
+  /// The backend verifies `aud` against FLAME_GOOGLE_CLIENT_ID and returns
+  /// INVALID_SOCIAL_TOKEN on any mismatch, so when sign-in fails server-side
+  /// this is the claim that identifies which client actually minted the token.
+  /// Only the claims are logged — never the token itself.
+  static void _debugLogTokenAudience(String idToken, String? serverAuthCode) {
+    if (!kDebugMode) return;
+    try {
+      final parts = idToken.split('.');
+      if (parts.length != 3) {
+        debugPrint('[google] id_token is not a JWT (${parts.length} segments)');
+        return;
+      }
+      final payload =
+          jsonDecode(
+                utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+              )
+              as Map<String, dynamic>;
+      debugPrint('[google] aud = ${payload['aud']}');
+      debugPrint('[google] azp = ${payload['azp']}');
+      debugPrint('[google] iss = ${payload['iss']}');
+      debugPrint('[google] email_verified = ${payload['email_verified']}');
+      debugPrint('[google] serverAuthCode present = ${serverAuthCode != null}');
+    } catch (e) {
+      debugPrint('[google] could not decode id_token claims: $e');
     }
   }
 
@@ -109,7 +149,9 @@ class SocialAuthService {
         return SocialAuthResult.failure('Sign-in cancelled');
       }
       if (result.status != LoginStatus.success || result.accessToken == null) {
-        return SocialAuthResult.failure(result.message ?? 'Facebook login failed');
+        return SocialAuthResult.failure(
+          result.message ?? 'Facebook login failed',
+        );
       }
 
       return SocialAuthResult.facebook(result.accessToken!.tokenString);
