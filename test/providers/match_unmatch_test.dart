@@ -1,5 +1,18 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/models/models.dart';
+import 'package:flame/providers/match_provider.dart';
+import 'package:flame/services/match_service.dart';
+
+// A MatchesNotifier that skips real loading and starts from a fixed list, so
+// removeMatch can be exercised without hitting the network. The constructor
+// only stores the MatchService — it does not call it — so this opens no
+// connection.
+class _SeededMatches extends MatchesNotifier {
+  _SeededMatches(List<Match> initial) : super(MatchService()) {
+    state = AsyncValue.data(initial);
+  }
+}
 
 // Matches are built through Match.fromJson rather than the constructor so the
 // test does not have to know User's required fields — and it doubles as a check
@@ -19,13 +32,21 @@ void main() {
     expect(m.isNew, isTrue);
   });
 
-  test('removing a match drops only that one', () {
-    final matches = [_match('m1'), _match('m2')];
+  test('removeMatch drops only the targeted match', () {
+    final notifier = _SeededMatches([_match('m1'), _match('m2')]);
 
-    // The transformation removeMatch performs on state.
-    final remaining = matches.where((m) => m.id != 'm1').toList();
+    notifier.removeMatch('m1');
 
+    final remaining = notifier.state.valueOrNull!;
     expect(remaining.length, 1);
     expect(remaining.single.id, 'm2');
+  });
+
+  test('removeMatch on an unknown id leaves state untouched', () {
+    final notifier = _SeededMatches([_match('m1'), _match('m2')]);
+
+    notifier.removeMatch('nope');
+
+    expect(notifier.state.valueOrNull!.length, 2);
   });
 }
