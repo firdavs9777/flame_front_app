@@ -6,6 +6,7 @@ import 'package:flame/config/env.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/providers/realtime_provider.dart';
+import 'package:flame/services/api_client.dart';
 import 'package:flame/services/flame_socket_service.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
@@ -255,6 +256,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     final conn = ref.read(realtimeConnectionProvider);
     _realtime = conn;
+
+    // Opening a conversation is a refresh point for the connection, and it has
+    // to stay one. socket.io replays the token it was constructed with on every
+    // automatic reconnect, so a socket built before ApiClient last refreshed is
+    // authenticated with a string the server will never accept again — and
+    // nothing in the app-level path notices, because a refresh never touches
+    // authProvider. The pre-B1 code got this for free by building a fresh
+    // socket from `ApiClient().accessToken` on every mount; this restores it
+    // without going back to a socket per screen. `start` no-ops when the token
+    // is unchanged, so the common case costs nothing.
+    applySessionStatus(
+      conn,
+      AuthStatus.authenticated,
+      () => ApiClient().accessToken,
+    );
 
     _realtimeSubs.addAll([
       conn.messageNew.listen((e) => _onSocketMessageNew(e.message, e.conversationId)),

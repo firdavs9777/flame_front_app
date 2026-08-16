@@ -28,9 +28,12 @@ import 'package:flame/providers/chat_provider.dart';
 import 'package:flame/providers/realtime_provider.dart';
 import 'package:flame/providers/user_provider.dart';
 import 'package:flame/screens/chat/chat_screen.dart';
+import 'package:flame/services/api_client.dart';
 import 'package:flame/services/chat_service.dart';
 import 'package:flame/services/flame_socket_service.dart';
 import 'package:flame/services/user_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeSocket extends FlameSocketService {
   _FakeSocket(String token) : super(token: token);
@@ -252,6 +255,49 @@ void main() {
         reason: 'subscribing must not depend on a socket already existing '
             'at mount time',
       );
+    },
+  );
+
+  // Critical: the app-level connection removed the only thing that used to
+  // re-authenticate the socket. socket.io captures its auth token once and
+  // replays it on every automatic reconnect, so after ApiClient's proactive
+  // refresh the socket holds a token the handshake will reject forever —
+  // and a refresh never touches authProvider, which is the only thing that
+  // re-drove the connection. Opening a conversation was a refresh point
+  // before B1 (the old code built a fresh socket from ApiClient().accessToken
+  // on every mount) and has to remain one.
+  testWidgets(
+    'opening a chat re-authenticates the connection from the current token',
+    (tester) async {
+      FlutterSecureStorage.setMockInitialValues({});
+      SharedPreferences.setMockInitialValues({});
+      await ApiClient().saveTokens(accessToken: 'live-token', refreshToken: 'r');
+      addTearDown(() async {
+        await ApiClient().clearTokens();
+      });
+
+      final sockets = <_FakeSocket>[];
+      final conn = RealtimeConnection(createSocket: (t) {
+        final s = _FakeSocket(t);
+        sockets.add(s);
+        return s;
+      });
+      addTearDown(conn.dispose);
+      // Deliberately never started: this stands in for a connection whose
+      // socket died on a token that has since been refreshed.
+
+      await _pumpChatScreen(
+        tester,
+        conn: conn,
+        conversation: _conversation('c1', 'u1'),
+      );
+      await tester.pump();
+
+      expect(sockets, hasLength(1),
+          reason: 'mounting a chat must bring the connection up on the token '
+              'ApiClient holds now');
+      expect(sockets.single.token, 'live-token');
+      expect(conn.socket, isNotNull);
     },
   );
 }

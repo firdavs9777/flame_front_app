@@ -21,7 +21,8 @@ class MainShell extends ConsumerStatefulWidget {
   ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends ConsumerState<MainShell> {
+class _MainShellState extends ConsumerState<MainShell>
+    with WidgetsBindingObserver {
   bool _initialized = false;
 
   // Create screens once to avoid GlobalKey conflicts
@@ -35,12 +36,53 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // The durable half of the token-refresh fix: ApiClient refreshes
+    // proactively without ever touching authProvider, so this is the only
+    // moment at which anything learns the socket's token just went stale.
+    ApiClient().onTokenRefreshed = _onTokenRefreshed;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_initialized) {
         _initialized = true;
         _initializeData();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // Only clear the hook if it is still ours; a later shell may own it.
+    if (ApiClient().onTokenRefreshed == _onTokenRefreshed) {
+      ApiClient().onTokenRefreshed = null;
+    }
+    super.dispose();
+  }
+
+  void _onTokenRefreshed(String token) {
+    if (!mounted) return;
+    if (!EnvConfig.current.chatEnabled) return;
+    // `start` no-ops on an unchanged token, so this is cheap even when the
+    // socket is already holding the new one.
+    ref.read(realtimeConnectionProvider).start(token);
+  }
+
+  /// A resume is the other half of the same problem, from the other side.
+  ///
+  /// socket.io replays the token it was constructed with on every automatic
+  /// reconnect, so a session backgrounded past the 15-minute access-token TTL
+  /// (or moved between wifi and cellular after one) comes back to a socket
+  /// retrying forever with a token the handshake middleware will never accept
+  /// again. Nothing surfaces that: the Messages list simply stops updating and
+  /// — since prod disables ChatScreen's REST poll — an open conversation
+  /// receives nothing either. Re-syncing on resume rebuilds the socket with
+  /// whatever token ApiClient holds now.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state != AppLifecycleState.resumed) return;
+    if (!EnvConfig.current.chatEnabled) return;
+    _syncRealtime(ref.read(authProvider).status);
   }
 
   Future<void> _initializeData() async {
@@ -56,6 +98,13 @@ class _MainShellState extends ConsumerState<MainShell> {
   /// The socket lives as long as the signed-in session. Starting it here rather
   /// than in ChatScreen is the whole point of B1: the Messages list and the
   /// unread badge must stay live when no conversation is open.
+  /// Called on every auth-state change, on resume, and once at mount, so it
+  /// must be safe to call redundantly. `applySessionStatus` no-ops on an
+  /// unchanged token and `listenToRealtime` no-ops on the connection it is
+  /// already subscribed to — the latter matters because re-registering would
+  /// move the list's subscriptions to the END of the broadcast listener order,
+  /// behind an open ChatScreen's, and the badge would light up for the thread
+  /// the user is actively reading.
   void _syncRealtime(AuthStatus status) {
     final conn = ref.read(realtimeConnectionProvider);
     applySessionStatus(conn, status, () => ApiClient().accessToken);

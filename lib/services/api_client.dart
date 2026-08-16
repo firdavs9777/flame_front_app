@@ -40,6 +40,18 @@ class ApiClient {
   // navigation.
   Future<void> Function()? onAuthLost;
 
+  // Fired with the freshly minted access token after every successful refresh,
+  // proactive or reactive.
+  //
+  // Registered by MainShell so the realtime socket can be rebuilt. socket.io
+  // captures its auth payload once, at construction, and replays that same
+  // token on every automatic reconnect — so once a refresh happens, the socket
+  // is holding a string that expires in at most FLAME_JWT_ACCESS_TTL (15m) and
+  // the handshake middleware rejects it forever after. Nothing else notices: a
+  // refresh updates _accessToken here and never touches authProvider, which is
+  // the only thing that used to re-drive the connection.
+  void Function(String accessToken)? onTokenRefreshed;
+
   // Singleton pattern
   static final ApiClient _instance = ApiClient._internal();
   factory ApiClient() => _instance;
@@ -418,10 +430,17 @@ class ApiClient {
       if (resp.statusCode != 200) return false;
       final data = jsonDecode(resp.body);
       final tokenData = data['data'] ?? data;
+      final newAccessToken = tokenData['access_token'] as String;
       await saveTokens(
-        accessToken: tokenData['access_token'],
+        accessToken: newAccessToken,
         refreshToken: tokenData['refresh_token'],
       );
+      // After the new token is stored, so a listener that reads back
+      // `accessToken` sees the same value it was handed. Guarded because a
+      // throwing listener must not turn a successful refresh into a failed one.
+      try {
+        onTokenRefreshed?.call(newAccessToken);
+      } catch (_) {}
       return true;
     } catch (_) {
       return false;
