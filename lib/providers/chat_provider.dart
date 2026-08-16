@@ -5,7 +5,6 @@ import 'package:flame/models/models.dart';
 import 'package:flame/providers/realtime_provider.dart';
 import 'package:flame/services/chat_service.dart';
 import 'package:flame/core/i18n/error_strings_for.dart';
-import 'package:flame/config/env.dart';
 
 final chatServiceProvider = Provider<ChatService>((ref) => ChatService());
 
