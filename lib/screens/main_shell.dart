@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/config/env.dart';
 import 'package:flame/providers/providers.dart';
+import 'package:flame/providers/realtime_provider.dart';
+import 'package:flame/services/api_client.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
@@ -47,6 +49,18 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     if (EnvConfig.current.chatEnabled) {
       await ref.read(conversationsProvider.notifier).loadConversations(refresh: true);
+      _syncRealtime(ref.read(authProvider).status);
+    }
+  }
+
+  /// The socket lives as long as the signed-in session. Starting it here rather
+  /// than in ChatScreen is the whole point of B1: the Messages list and the
+  /// unread badge must stay live when no conversation is open.
+  void _syncRealtime(AuthStatus status) {
+    final conn = ref.read(realtimeConnectionProvider);
+    applySessionStatus(conn, status, () => ApiClient().accessToken);
+    if (conn.socket != null) {
+      ref.read(conversationsProvider.notifier).listenToRealtime(conn);
     }
   }
 
@@ -54,6 +68,14 @@ class _MainShellState extends ConsumerState<MainShell> {
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
     final chatUnreadCount = ref.watch(chatUnreadCountProvider);
+
+    // ApiClient refreshes the access token proactively, so a socket may be
+    // holding a dead one; and logout must tear it down. Both arrive here as an
+    // auth-state change.
+    ref.listen(authProvider, (_, next) {
+      if (!EnvConfig.current.chatEnabled) return;
+      _syncRealtime(next.status);
+    });
 
     return Scaffold(
       body: IndexedStack(

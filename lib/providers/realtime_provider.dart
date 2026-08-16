@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
+import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/services/flame_socket_service.dart';
 
 /// A `message:new` / `message:edited` / `message:deleted` push.
@@ -145,3 +146,32 @@ final realtimeConnectionProvider = Provider<RealtimeConnection>((ref) {
   ref.onDispose(conn.dispose);
   return conn;
 });
+
+/// Applies an auth-status change to the realtime connection.
+///
+/// A free function taking the status and a token supplier, rather than a hook
+/// on `AuthNotifier`: that notifier cannot be constructed in a unit test (its
+/// constructor reads secure storage over a platform channel), so a callback
+/// there would be untestable. This is pure with respect to both auth and the
+/// network.
+///
+/// Only `authenticated` keeps a socket. `profileIncomplete` and `registering`
+/// are mid-onboarding — there is nothing to receive yet — and leaving one open
+/// through `unauthenticated` would hand the next user a socket authenticated
+/// as the previous one.
+void applySessionStatus(
+  RealtimeConnection conn,
+  AuthStatus status,
+  String? Function() tokenOf,
+) {
+  if (status != AuthStatus.authenticated) {
+    conn.stop();
+    return;
+  }
+  final token = tokenOf();
+  if (token == null || token.isEmpty) return;
+  // `start` is a no-op when the token is unchanged, so calling this on every
+  // auth transition is cheap; when ApiClient has refreshed proactively it
+  // replaces the socket that is now holding a dead token.
+  conn.start(token);
+}
