@@ -1,4 +1,4 @@
-package com.flame.flame
+package com.bananatalk.flame
 
 import io.flutter.embedding.android.FlutterActivity
 

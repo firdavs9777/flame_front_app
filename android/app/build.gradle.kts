@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.flame.flame"
+    namespace = "com.bananatalk.flame"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,8 +20,9 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.flame.flame"
+        // Must stay in sync with the iOS bundle ID (com.bananatalk.flame): the
+        // Google, Apple and Meta consoles all tie credentials to these IDs.
+        applicationId = "com.bananatalk.flame"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
