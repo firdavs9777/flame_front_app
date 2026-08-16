@@ -52,9 +52,12 @@ class RealtimePresenceEvent {
 ///    streams, so the conversation list and an open chat can both listen
 ///    instead of clobbering each other.
 class RealtimeConnection {
+  // The factory only BUILDS the socket; `start` connects it. Having both do it
+  // meant the real path called connect() twice — harmless, since the second
+  // call early-returns, but confusing to read.
   RealtimeConnection({FlameSocketService Function(String token)? createSocket})
-      : _createSocket = createSocket ??
-            ((token) => FlameSocketService(token: token)..connect());
+      : _createSocket =
+            createSocket ?? ((token) => FlameSocketService(token: token));
 
   final FlameSocketService Function(String token) _createSocket;
 
