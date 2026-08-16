@@ -94,8 +94,13 @@ class EnvConfig {
     'http://$_localHost:8000/v1',
     'ws://$_localHost:8000',
     googleSignInEnabled: true,
-    appleSignInEnabled: false,
-    facebookSignInEnabled: false,
+    // Apple and Facebook are ON in local purely so the buttons can be seen and
+    // reviewed while their credentials are still missing. Tapping them fails —
+    // Apple has no entitlement, Facebook has placeholder native keys, and the
+    // backend has neither provider's env vars. Prod deliberately keeps them off
+    // so real users and App Store reviewers never reach a dead button.
+    appleSignInEnabled: true,
+    facebookSignInEnabled: true,
     forgotPasswordEnabled: false,
     chatEnabled: true,
   );
@@ -114,6 +119,13 @@ class EnvConfig {
     forgotPasswordEnabled: false,
     advancedFiltersEnabled: false,
   );
+
+  /// The two shipped presets, exposed so tests can assert each one's flags
+  /// directly instead of only whichever [current] resolves to.
+  @visibleForTesting
+  static EnvConfig get localConfig => _local;
+  @visibleForTesting
+  static EnvConfig get prodConfig => _prod;
 
   static EnvConfig get current {
     const raw = String.fromEnvironment('APP_ENV', defaultValue: '');

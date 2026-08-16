@@ -8,11 +8,23 @@ A provider's button only renders when its flag is `true`. Flip a flag **only
 after** completing its section below — a flag on without credentials produces a
 button that fails at tap time.
 
-| Provider | Flag | Backend | iOS | Android |
-|---|---|---|---|---|
-| Google | `googleSignInEnabled` | ✅ configured | ✅ live | ⚠️ needs OAuth client (§1) |
-| Apple | `appleSignInEnabled` | ❌ not configured | ❌ needs capability (§2) | n/a — not supported |
-| Facebook | `facebookSignInEnabled` | ❌ not configured | ❌ needs Meta app (§3) | ❌ needs Meta app (§3) |
+| Provider | Flag | prod | local | Backend | iOS | Android |
+|---|---|---|---|---|---|---|
+| Google | `googleSignInEnabled` | ✅ on | ✅ on | ✅ configured | ✅ live | ⚠️ needs OAuth client (§1) |
+| Apple | `appleSignInEnabled` | ❌ off | 👁 on | ❌ not configured | ❌ needs capability (§2) | n/a — not supported |
+| Facebook | `facebookSignInEnabled` | ❌ off | 👁 on | ❌ not configured | ❌ needs Meta app (§3) | ❌ needs Meta app (§3) |
+
+👁 = **visible in local only, for design review.** Apple and Facebook are on in
+`_local` so the buttons can be seen while their credentials are still missing.
+**They still fail when tapped.** Prod keeps them off so neither real users nor
+App Store reviewers reach a dead button. To see all three:
+
+```bash
+flutter run --dart-define=APP_ENV=local
+```
+
+A plain `flutter run` resolves to prod and shows Google alone — that is correct,
+not a bug. Note that Apple stays hidden on Android even in local (see §2).
 
 ### Checking backend readiness
 

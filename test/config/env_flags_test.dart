@@ -7,18 +7,34 @@ void main() {
     expect(EnvConfig.current.chatEnabled, isFalse);
   });
 
-  test('Google sign-in is ON — backend /auth/google and iOS keys are live', () {
-    expect(EnvConfig.current.googleSignInEnabled, isTrue);
+  group('prod', () {
+    test('ships Google only — the one provider that works end to end', () {
+      expect(EnvConfig.prodConfig.googleSignInEnabled, isTrue);
+    });
+
+    test('keeps Apple and Facebook OFF so no user hits a dead button', () {
+      // Apple lacks its entitlement, Facebook has placeholder native keys, and
+      // the backend has neither provider's env vars. Showing them in prod would
+      // also fail App Store review. See docs/social-auth-setup.md.
+      expect(EnvConfig.prodConfig.appleSignInEnabled, isFalse);
+      expect(EnvConfig.prodConfig.facebookSignInEnabled, isFalse);
+    });
   });
 
-  test('Apple and Facebook stay OFF until their native config lands', () {
-    // Apple needs the Sign in with Apple entitlement/capability; Facebook needs
-    // real Meta App ID + Client Token. See docs/social-auth-setup.md.
-    expect(EnvConfig.current.appleSignInEnabled, isFalse);
-    expect(EnvConfig.current.facebookSignInEnabled, isFalse);
+  group('local', () {
+    test('shows all three so the buttons can be reviewed in dev', () {
+      expect(EnvConfig.localConfig.googleSignInEnabled, isTrue);
+      expect(EnvConfig.localConfig.appleSignInEnabled, isTrue);
+      expect(EnvConfig.localConfig.facebookSignInEnabled, isTrue);
+    });
   });
 
   test('authSocialEnabled is derived from the per-provider flags', () {
     expect(EnvConfig.current.authSocialEnabled, isTrue);
+    expect(
+      const EnvConfig.testing().authSocialEnabled,
+      isFalse,
+      reason: 'no providers on means no social section at all',
+    );
   });
 }
