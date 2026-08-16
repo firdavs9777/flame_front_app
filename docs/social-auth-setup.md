@@ -23,8 +23,18 @@ App Store reviewers reach a dead button. To see all three:
 flutter run --dart-define=APP_ENV=local
 ```
 
-A plain `flutter run` resolves to prod and shows Google alone — that is correct,
-not a bug. Note that Apple stays hidden on Android even in local (see §2).
+In VS Code, pick the **"Flame (local) — shows Apple + Facebook buttons"** launch
+configuration instead (`.vscode/launch.json`).
+
+**A plain `flutter run` resolves to prod and shows Google alone. That is correct,
+not a bug** — the flag is not optional. Verified behaviour:
+
+| Build | env | Google | Facebook | Apple |
+|---|---|---|---|---|
+| `flutter run` | prod | ✅ | ❌ | ❌ |
+| `flutter run --dart-define=APP_ENV=local` | local | ✅ | ✅ | ✅ iOS / ❌ Android |
+
+Apple stays hidden on Android even in local (see §2).
 
 ### Checking backend readiness
 

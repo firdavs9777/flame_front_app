@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flame (prod) — Google only",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "Flame (local) — shows Apple + Facebook buttons",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define=APP_ENV=local",
+        "--dart-define=LOCAL_HOST=192.168.100.114"
+      ]
+    }
+  ]
+}
