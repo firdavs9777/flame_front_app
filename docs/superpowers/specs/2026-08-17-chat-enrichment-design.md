@@ -78,7 +78,10 @@ Responsibilities of the app-level listener:
 - `message:new` → update `conversationsProvider` (last message, timestamp,
   unread count) so the list and badge move without a refetch
 - `message:edited` / `message:deleted` → update the cached conversation preview
-- `read` → clear the unread count for that conversation
+- `read` → mark the messages **we** sent as read. It is a receipt from the other
+  participant, not a statement about our own unread count; clearing our badge on
+  it would blank the list every time they opened the thread. Our unread clears
+  when we open a conversation, which `markAsRead` already does.
 - `presence` / `presence:bulk` → online indicators in the list
 
 ### Lifecycle — the part that will bite
@@ -119,10 +122,12 @@ Each returns a `Message` the app parses with `Message.fromJson`.
 
 - **`Message.messageType`** widens from `enum: ['text']` to
   `['text', 'image', 'video', 'audio', 'voice']`.
-- New fields for the media URL, and for video a thumbnail URL and duration; voice
-  carries a duration. The app's `Message` model already reads `image_url`,
-  `video_url`, `audio_url` and `media_info` — match those keys rather than
-  inventing new ones.
+- New fields for the media URL, and for video a thumbnail URL, duration and
+  dimensions; voice and audio carry a duration. The app's `Message` model already
+  reads `image_url`, `video_url`, `audio_url` and `media_info` — match those keys
+  rather than inventing new ones. Inside `media_info` the app reads `duration`,
+  `width`, `height`, `thumbnail_url`, `file_size`, `mime_type`, and **`duration`
+  is in seconds** (`message_bubble.dart` formats it as `mm:ss`).
 - **Storage reuses the proven path.** `userService.uploadPhoto` already does
   multer → MIME allowlist → size cap → S3 (DigitalOcean Spaces) → public URL.
   Media messages follow the same shape, with per-kind limits rather than one
@@ -141,7 +146,8 @@ media route that skips them reopens a hole Phase A closed.
   existing `ValidationError` → 422 convention).
 - Whether the server generates a video thumbnail when the client omits one, or
   rejects. Recommendation: accept the client's, do not transcode — transcoding is
-  a service, not a feature.
+  a service, not a feature. Note the shipped app sends no thumbnail at all today,
+  so the route must work without one.
 
 ---
 
