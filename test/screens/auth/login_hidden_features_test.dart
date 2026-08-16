@@ -21,15 +21,21 @@ Widget _host(Widget home) => ProviderScope(
     );
 
 void main() {
-  testWidgets('social login and forgot-password are hidden in MVP', (tester) async {
+  testWidgets('login shows Google but hides Apple/Facebook and forgot-password',
+      (tester) async {
     await tester.pumpWidget(_host(const LoginScreen()));
     await tester.pumpAndSettle();
 
     // Core login still present.
     expect(find.byType(TextFormField), findsWidgets);
 
-    // Hidden features absent (exact l10n English strings).
-    expect(find.text('Or continue with'), findsNothing);
+    // Google is live — backend endpoint and iOS keys are configured.
+    expect(find.text('Or continue with'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
+
+    // Still hidden: no native config yet (see docs/social-auth-setup.md).
+    expect(find.text('Continue with Apple'), findsNothing);
+    expect(find.text('Continue with Facebook'), findsNothing);
     expect(find.text('Forgot password?'), findsNothing);
   });
 }

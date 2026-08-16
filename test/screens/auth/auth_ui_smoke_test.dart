@@ -35,11 +35,17 @@ void main() {
     expect(find.text('Sign in'), findsOneWidget);
   });
 
-  testWidgets('SocialSignInButtons renders 3 providers when enabled',
+  testWidgets('SocialSignInButtons renders 3 providers when all are enabled',
       (tester) async {
     await tester.pumpWidget(_host(
       const Scaffold(
-        body: SocialSignInButtons(enabledOverride: true),
+        body: SocialSignInButtons(
+          visibilityOverride: SocialProviderVisibility(
+            google: true,
+            apple: true,
+            facebook: true,
+          ),
+        ),
       ),
     ));
     await tester.pumpAndSettle();
@@ -49,11 +55,31 @@ void main() {
     expect(find.text('Continue with Apple'), findsOneWidget);
   });
 
-  testWidgets('SocialSignInButtons renders nothing when disabled',
+  testWidgets('SocialSignInButtons renders only the enabled providers',
       (tester) async {
     await tester.pumpWidget(_host(
       const Scaffold(
-        body: SocialSignInButtons(enabledOverride: false),
+        body: SocialSignInButtons(
+          visibilityOverride: SocialProviderVisibility(google: true),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(find.text('Continue with Facebook'), findsNothing);
+    expect(find.text('Continue with Apple'), findsNothing);
+    // The divider still renders because at least one provider is visible.
+    expect(find.text('Or continue with'), findsOneWidget);
+  });
+
+  testWidgets('SocialSignInButtons renders nothing when all are disabled',
+      (tester) async {
+    await tester.pumpWidget(_host(
+      const Scaffold(
+        body: SocialSignInButtons(
+          visibilityOverride: SocialProviderVisibility(),
+        ),
       ),
     ));
     await tester.pumpAndSettle();

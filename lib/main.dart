@@ -23,10 +23,16 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
   final container = ProviderContainer();
-  await container.read(localeProvider.notifier).initialize(
-    deviceLocales: WidgetsBinding.instance.platformDispatcher.locales.toList(),
+  await container
+      .read(localeProvider.notifier)
+      .initialize(
+        deviceLocales: WidgetsBinding.instance.platformDispatcher.locales
+            .toList(),
+      );
+
+  runApp(
+    UncontrolledProviderScope(container: container, child: const FlameApp()),
   );
-  runApp(UncontrolledProviderScope(container: container, child: const FlameApp()));
 }
 
 Locale? _parseLocaleTag(String tag) {
@@ -84,12 +90,10 @@ class FlameApp extends ConsumerWidget {
         child: authState.isAuthenticated
             ? const MainShell()
             : authState.isProfileIncomplete
-                ? const SocialProfileCompletionFlow()
-                : const WelcomeScreen(),
+            ? const SocialProfileCompletionFlow()
+            : const WelcomeScreen(),
       ),
-      routes: {
-        '/discover': (context) => const DiscoverScreen(),
-      },
+      routes: {'/discover': (context) => const DiscoverScreen()},
     );
   }
 }

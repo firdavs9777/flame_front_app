@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flame/config/env.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
@@ -8,22 +10,103 @@ import 'package:flame/core/i18n/build_context_ext.dart';
 
 enum _Provider { google, apple, facebook }
 
-/// Renders Google / Apple / Facebook sign-in buttons — but ONLY when social
-/// auth is enabled. Kept behind [EnvConfig.authSocialEnabled] so the UI is
-/// built and shippable while staying invisible until the backend + provider
-/// keys are live.
+// Official brand marks. These are trademarked assets — the SVGs must not be
+// redrawn, recoloured (beyond the monochrome tints each brand permits), or
+// swapped for lookalike font glyphs. Material's `Icons.g_mobiledata_rounded`
+// etc. previously stood in here and are not compliant.
+const _kGoogleLogo = 'assets/images/social/google.svg';
+const _kAppleLogo = 'assets/images/social/apple.svg';
+const _kFacebookLogo = 'assets/images/social/facebook.svg';
+
+// Google's specified light-theme button palette.
+const _kGoogleSurface = Color(0xFFFFFFFF);
+const _kGoogleOnSurface = Color(0xFF1F1F1F);
+const _kGoogleBorder = Color(0xFF747775);
+
+// Facebook Blue.
+const _kFacebookBlue = Color(0xFF1877F2);
+
+/// Brand mark size. Google specifies 20dp inside a 40dp-plus button; Apple and
+/// Meta both sit comfortably at the same size, so one value keeps the stack
+/// optically aligned.
+const _kLogoSize = 20.0;
+
+/// Distance from the button's leading edge to the mark, and from the mark to
+/// the label. Google specifies 12dp either side of the mark at this size.
+const _kLogoInset = 16.0;
+const _kLogoGap = 12.0;
+
+/// Renders a brand SVG. [tint] recolours single-colour marks (Apple, Facebook);
+/// it is deliberately never applied to Google's multicolour "G".
+class _BrandLogo extends StatelessWidget {
+  final String asset;
+  final Color? tint;
+
+  const _BrandLogo({required this.asset, this.tint});
+
+  @override
+  Widget build(BuildContext context) {
+    return SvgPicture.asset(
+      asset,
+      width: _kLogoSize,
+      height: _kLogoSize,
+      colorFilter: tint == null
+          ? null
+          : ColorFilter.mode(tint!, BlendMode.srcIn),
+    );
+  }
+}
+
+/// Which social providers should render. Resolved from the per-provider env
+/// flags plus the running platform — a provider is shown only when its backend
+/// endpoint AND its native config are both usable.
+@immutable
+class SocialProviderVisibility {
+  final bool google;
+  final bool apple;
+  final bool facebook;
+
+  const SocialProviderVisibility({
+    this.google = false,
+    this.apple = false,
+    this.facebook = false,
+  });
+
+  /// Resolves the env flags for [platform].
+  ///
+  /// Apple is additionally pinned to iOS: [SocialAuthService.signInWithApple]
+  /// passes no `webAuthenticationOptions`, so the Android web flow is not
+  /// configured and the button could never succeed there.
+  factory SocialProviderVisibility.forEnv(
+    EnvConfig env,
+    TargetPlatform platform,
+  ) => SocialProviderVisibility(
+    google: env.googleSignInEnabled,
+    apple: env.appleSignInEnabled && platform == TargetPlatform.iOS,
+    facebook: env.facebookSignInEnabled,
+  );
+
+  /// True when at least one provider renders. Gates the divider and the
+  /// widget's entire subtree.
+  bool get any => google || apple || facebook;
+}
+
+/// Renders the Google / Apple / Facebook sign-in buttons that are currently
+/// live. Each provider is gated independently so a provider whose native
+/// credentials are still missing stays invisible instead of failing at tap
+/// time. See docs/social-auth-setup.md for what each one needs.
 ///
-/// [enabledOverride] is a test seam: when non-null it takes precedence over the
-/// env flag so widget tests can exercise both the shown and hidden states
-/// without flipping the real flag.
+/// [visibilityOverride] is a test seam: when non-null it replaces the resolved
+/// env + platform visibility entirely, letting widget tests exercise any
+/// combination without flipping real flags.
 class SocialSignInButtons extends ConsumerStatefulWidget {
-  final bool? enabledOverride;
+  final SocialProviderVisibility? visibilityOverride;
   final Color dividerColor;
   final Color dividerLabelColor;
 
   const SocialSignInButtons({
     super.key,
-    this.enabledOverride,
+    this.visibilityOverride,
     this.dividerColor = AppColors.gray300,
     this.dividerLabelColor = AppColors.gray600,
   });
@@ -36,47 +119,65 @@ class SocialSignInButtons extends ConsumerStatefulWidget {
 class _SocialSignInButtonsState extends ConsumerState<SocialSignInButtons> {
   _Provider? _loading;
 
-  bool get _enabled =>
-      widget.enabledOverride ?? EnvConfig.current.authSocialEnabled;
+  SocialProviderVisibility get _visible =>
+      widget.visibilityOverride ??
+      SocialProviderVisibility.forEnv(EnvConfig.current, defaultTargetPlatform);
 
   @override
   Widget build(BuildContext context) {
-    if (!_enabled) return const SizedBox.shrink();
+    final visible = _visible;
+    if (!visible.any) return const SizedBox.shrink();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Column(
-      children: [
-        _buildDivider(context),
-        const SizedBox(height: 20),
+    // Built as a list so a hidden provider leaves no stray spacing behind.
+    final buttons = <Widget>[
+      if (visible.google)
+        // Google branding: the four-colour "G" is never recoloured or placed on
+        // a tinted surface. White surface, #1F1F1F label, #747775 border.
         _SocialButton(
           label: context.l10n.loginGoogle,
-          icon: Icons.g_mobiledata_rounded,
-          background: AppColors.white,
-          foreground: AppColors.gray900,
-          border: const BorderSide(color: AppColors.gray300),
+          logo: const _BrandLogo(asset: _kGoogleLogo),
+          background: _kGoogleSurface,
+          foreground: _kGoogleOnSurface,
+          border: const BorderSide(color: _kGoogleBorder),
           isLoading: _loading == _Provider.google,
           onPressed: _loading == null ? _handleGoogle : null,
         ),
-        const SizedBox(height: 12),
+      if (visible.facebook)
+        // Meta branding: white "f" mark on Facebook Blue.
         _SocialButton(
           label: context.l10n.loginFacebook,
-          icon: Icons.facebook_rounded,
-          background: const Color(0xFF1877F2),
+          logo: const _BrandLogo(asset: _kFacebookLogo, tint: AppColors.white),
+          background: _kFacebookBlue,
           foreground: AppColors.white,
           isLoading: _loading == _Provider.facebook,
           onPressed: _loading == null ? _handleFacebook : null,
         ),
-        const SizedBox(height: 12),
-        // Apple per HIG: black in light mode, white in dark mode.
+      if (visible.apple)
+        // Apple HIG: black button in light mode, white in dark mode, with the
+        // logo always matching the label colour.
         _SocialButton(
           label: context.l10n.loginApple,
-          icon: Icons.apple_rounded,
+          logo: _BrandLogo(
+            asset: _kAppleLogo,
+            tint: isDark ? AppColors.black : AppColors.white,
+          ),
           background: isDark ? AppColors.white : AppColors.black,
           foreground: isDark ? AppColors.black : AppColors.white,
           isLoading: _loading == _Provider.apple,
           onPressed: _loading == null ? _handleApple : null,
         ),
+    ];
+
+    return Column(
+      children: [
+        _buildDivider(context),
+        const SizedBox(height: 20),
+        for (var i = 0; i < buttons.length; i++) ...[
+          if (i > 0) const SizedBox(height: 12),
+          buttons[i],
+        ],
       ],
     );
   }
@@ -100,32 +201,34 @@ class _SocialSignInButtonsState extends ConsumerState<SocialSignInButtons> {
   }
 
   Future<void> _handleGoogle() => _run(
-        _Provider.google,
-        SocialAuthService.signInWithGoogle,
-        (result) => ref.read(authProvider.notifier).socialLogin(
-              googleIdToken: result.idToken,
-            ),
-        () => context.l10n.loginGoogleFailed,
-      );
+    _Provider.google,
+    SocialAuthService.signInWithGoogle,
+    (result) => ref
+        .read(authProvider.notifier)
+        .socialLogin(googleIdToken: result.idToken),
+    () => context.l10n.loginGoogleFailed,
+  );
 
   Future<void> _handleApple() => _run(
-        _Provider.apple,
-        SocialAuthService.signInWithApple,
-        (result) => ref.read(authProvider.notifier).socialLogin(
-              appleIdToken: result.appleIdToken,
-              appleAuthorizationCode: result.appleAuthorizationCode,
-            ),
-        () => context.l10n.loginAppleFailed,
-      );
+    _Provider.apple,
+    SocialAuthService.signInWithApple,
+    (result) => ref
+        .read(authProvider.notifier)
+        .socialLogin(
+          appleIdToken: result.appleIdToken,
+          appleAuthorizationCode: result.appleAuthorizationCode,
+        ),
+    () => context.l10n.loginAppleFailed,
+  );
 
   Future<void> _handleFacebook() => _run(
-        _Provider.facebook,
-        SocialAuthService.signInWithFacebook,
-        (result) => ref.read(authProvider.notifier).socialLogin(
-              facebookAccessToken: result.facebookAccessToken,
-            ),
-        () => context.l10n.loginFacebookFailed,
-      );
+    _Provider.facebook,
+    SocialAuthService.signInWithFacebook,
+    (result) => ref
+        .read(authProvider.notifier)
+        .socialLogin(facebookAccessToken: result.facebookAccessToken),
+    () => context.l10n.loginFacebookFailed,
+  );
 
   Future<void> _run(
     _Provider provider,
@@ -158,7 +261,7 @@ class _SocialSignInButtonsState extends ConsumerState<SocialSignInButtons> {
 
 class _SocialButton extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final Widget logo;
   final Color background;
   final Color foreground;
   final BorderSide? border;
@@ -167,7 +270,7 @@ class _SocialButton extends StatelessWidget {
 
   const _SocialButton({
     required this.label,
-    required this.icon,
+    required this.logo,
     required this.background,
     required this.foreground,
     this.border,
@@ -191,21 +294,38 @@ class _SocialButton extends StatelessWidget {
         ),
         child: isLoading
             ? SizedBox(
-                width: 20,
-                height: 20,
+                width: _kLogoSize,
+                height: _kLogoSize,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(foreground),
                 ),
               )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+            // Every provider's guidelines put the mark on the leading edge with
+            // the label optically centred in the button, so this is a Stack
+            // rather than a Row (a Row centres mark+label as one group).
+            : Stack(
+                alignment: Alignment.center,
                 children: [
-                  Icon(icon, size: 24, color: foreground),
-                  const SizedBox(width: 10),
-                  Text(
-                    label,
-                    style: AppTypography.buttonMedium.copyWith(color: foreground),
+                  Padding(
+                    // Reserve the mark's footprint on BOTH sides so the label
+                    // centres in the button rather than in the leftover space.
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: _kLogoInset + _kLogoSize + _kLogoGap,
+                    ),
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.buttonMedium.copyWith(
+                        color: foreground,
+                      ),
+                    ),
+                  ),
+                  PositionedDirectional(
+                    start: _kLogoInset,
+                    child: ExcludeSemantics(child: logo),
                   ),
                 ],
               ),

@@ -19,58 +19,79 @@ class WelcomeScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFF6B6B),
-              Color(0xFFFF8E53),
-              Color(0xFFFF6B6B),
-            ],
+            colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53), Color(0xFFFF6B6B)],
             stops: [0.0, 0.5, 1.0],
           ),
         ),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              children: [
-                const Spacer(flex: 2),
+            // Scrolls only when the content cannot fit: IntrinsicHeight sizes
+            // the Column to its content (Spacers contribute 0), and the
+            // minHeight constraint stretches it back to fill a tall viewport so
+            // the Spacer-based layout is unchanged. Without this the social
+            // sign-in buttons overflow on short screens.
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      children: [
+                        const Spacer(flex: 2),
 
-                // Logo Placeholder
-                _buildLogoSection()
-                    .animate()
-                    .fadeIn(duration: 800.ms)
-                    .scale(delay: 200.ms, duration: 600.ms),
+                        // Logo Placeholder
+                        _buildLogoSection()
+                            .animate()
+                            .fadeIn(duration: 800.ms)
+                            .scale(delay: 200.ms, duration: 600.ms),
 
-                const Spacer(flex: 1),
+                        const Spacer(flex: 1),
 
-                // Tagline
-                _buildTagline(context)
-                    .animate()
-                    .fadeIn(delay: 400.ms, duration: 600.ms)
-                    .slideY(begin: 0.3, end: 0, delay: 400.ms, duration: 600.ms),
+                        // Tagline
+                        _buildTagline(context)
+                            .animate()
+                            .fadeIn(delay: 400.ms, duration: 600.ms)
+                            .slideY(
+                              begin: 0.3,
+                              end: 0,
+                              delay: 400.ms,
+                              duration: 600.ms,
+                            ),
 
-                const Spacer(flex: 2),
+                        const Spacer(flex: 2),
 
-                // Action Buttons
-                _buildActionButtons(context)
-                    .animate()
-                    .fadeIn(delay: 600.ms, duration: 600.ms)
-                    .slideY(begin: 0.5, end: 0, delay: 600.ms, duration: 600.ms),
+                        // Action Buttons
+                        _buildActionButtons(context)
+                            .animate()
+                            .fadeIn(delay: 600.ms, duration: 600.ms)
+                            .slideY(
+                              begin: 0.5,
+                              end: 0,
+                              delay: 600.ms,
+                              duration: 600.ms,
+                            ),
 
-                // Social sign-in (auto-hidden while authSocialEnabled is false).
-                const SocialSignInButtons(
-                  dividerColor: Colors.white54,
-                  dividerLabelColor: Colors.white,
+                        // Social sign-in. Each provider self-gates on its own env flag,
+                        // so this collapses to nothing when none are live.
+                        const SocialSignInButtons(
+                          dividerColor: Colors.white54,
+                          dividerLabelColor: Colors.white,
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Terms text
+                        _buildTermsText(
+                          context,
+                        ).animate().fadeIn(delay: 800.ms, duration: 600.ms),
+
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
                 ),
-
-                const SizedBox(height: 24),
-
-                // Terms text
-                _buildTermsText(context)
-                    .animate()
-                    .fadeIn(delay: 800.ms, duration: 600.ms),
-
-                const SizedBox(height: 32),
-              ],
+              ),
             ),
           ),
         ),
@@ -97,10 +118,7 @@ class WelcomeScreen extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(30),
-            child: Image.asset(
-              'assets/images/logo.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
           ),
         ),
         const SizedBox(height: 24),
@@ -163,10 +181,7 @@ class WelcomeScreen extends StatelessWidget {
             ),
             child: Text(
               context.l10n.welcomeCreateAccount,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -187,10 +202,7 @@ class WelcomeScreen extends StatelessWidget {
             ),
             child: Text(
               context.l10n.welcomeSignIn,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -217,13 +229,13 @@ class WelcomeScreen extends StatelessWidget {
             const LoginScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
+            position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+                .animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
             child: child,
           );
         },
@@ -239,13 +251,13 @@ class WelcomeScreen extends StatelessWidget {
             const RegistrationFlow(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1, 0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
+            position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+                .animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
             child: child,
           );
         },
