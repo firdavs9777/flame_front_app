@@ -3,17 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/chat_provider.dart';
 import 'package:flame/services/chat_service.dart';
-import 'package:flame/services/websocket_service.dart';
 
 // A ConversationsNotifier that skips real loading and starts from a fixed
 // AsyncValue, so chatUnreadCountProvider can be tested against known data
-// without hitting the network or a real WebSocket. Safe because
-// EnvConfig.current.realtimeEnabled is false in the test environment (no
-// APP_ENV=local dart-define), so the base constructor's _initWebSocket()
-// no-ops before touching the WebSocketService singleton.
+// without hitting the network. Realtime is owned by ChatScreen (via
+// FlameSocketService), not by this provider, so constructing the notifier
+// opens no socket.
 class _FixedConversationsNotifier extends ConversationsNotifier {
   _FixedConversationsNotifier(AsyncValue<List<Conversation>> initial)
-      : super(ChatService(), WebSocketService()) {
+    : super(ChatService()) {
     state = initial;
   }
 }
@@ -49,11 +47,13 @@ ProviderContainer _containerWith(AsyncValue<List<Conversation>> conversations) {
 
 void main() {
   test('sums unreadCount across all loaded conversations', () {
-    final container = _containerWith(AsyncValue.data([
-      _conversation('1', 3),
-      _conversation('2', 0),
-      _conversation('3', 5),
-    ]));
+    final container = _containerWith(
+      AsyncValue.data([
+        _conversation('1', 3),
+        _conversation('2', 0),
+        _conversation('3', 5),
+      ]),
+    );
     addTearDown(container.dispose);
 
     expect(container.read(chatUnreadCountProvider), 8);
@@ -74,7 +74,9 @@ void main() {
   });
 
   test('is 0 on an error state', () {
-    final container = _containerWith(AsyncValue.error('boom', StackTrace.empty));
+    final container = _containerWith(
+      AsyncValue.error('boom', StackTrace.empty),
+    );
     addTearDown(container.dispose);
 
     expect(container.read(chatUnreadCountProvider), 0);

@@ -49,8 +49,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _isTyping = false;
 
   /// Whether the other participant is currently typing, per the flame socket
-  /// (`typing`/`stopTyping` events). Separate from the legacy
-  /// `typingUsersProvider` (driven by the old `WebSocketService`) so the two
+  /// (`typing`/`stopTyping` events). This is the only source of truth: the
+  /// legacy `typingUsersProvider` was driven by a WebSocketService that
+  /// connected to a nonexistent endpoint, and has been removed.
   /// paths can coexist without interfering with each other.
   bool _isOtherUserTypingFlame = false;
 
@@ -77,7 +78,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _presence[widget.conversation.otherUser.id] = widget.conversation.otherUser.isOnline;
+    _presence[widget.conversation.otherUser.id] =
+        widget.conversation.otherUser.isOnline;
     _loadInitialMessages();
     _scrollController.addListener(_onScroll);
     _startPolling();
@@ -104,7 +106,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   // ==================== Data Loading ====================
 
   void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.minScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.minScrollExtent) {
       _loadMoreMessages();
     }
   }
@@ -146,7 +149,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       // Preserve the visual scroll position when older messages are
       // prepended above the currently visible content.
       final hasScrollClient = _scrollController.hasClients;
-      final oldExtent = hasScrollClient ? _scrollController.position.maxScrollExtent : 0.0;
+      final oldExtent = hasScrollClient
+          ? _scrollController.position.maxScrollExtent
+          : 0.0;
       final oldOffset = hasScrollClient ? _scrollController.offset : 0.0;
 
       setState(() {
@@ -279,7 +284,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (!_messages.any((m) => m.id == updated.id)) return;
 
     setState(() {
-      _messages = _messages.map((m) => m.id == updated.id ? updated : m).toList();
+      _messages = _messages
+          .map((m) => m.id == updated.id ? updated : m)
+          .toList();
     });
   }
 
@@ -354,7 +361,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     if (!_isTyping) {
       _isTyping = true;
-      socket.emitTyping(widget.conversation.otherUser.id, widget.conversation.id);
+      socket.emitTyping(
+        widget.conversation.otherUser.id,
+        widget.conversation.id,
+      );
     }
 
     _typingIdleTimer?.cancel();
@@ -372,7 +382,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     final socket = _flameSocket;
     if (socket != null && socket.isConnected) {
-      socket.emitStopTyping(widget.conversation.otherUser.id, widget.conversation.id);
+      socket.emitStopTyping(
+        widget.conversation.otherUser.id,
+        widget.conversation.id,
+      );
     }
   }
 
@@ -418,13 +431,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _markMessagesAsRead() {
     final currentUserId = ref.read(currentUserProvider).valueOrNull?.id ?? '';
     final unreadIds = _messages
-        .where((m) => m.status != MessageStatus.read && !m.isSentBy(currentUserId))
+        .where(
+          (m) => m.status != MessageStatus.read && !m.isSentBy(currentUserId),
+        )
         .map((m) => m.id)
         .toList();
 
     if (unreadIds.isNotEmpty) {
-      ref.read(conversationsProvider.notifier).markAsRead(widget.conversation.id);
-      _flameSocket?.emitMarkRead(widget.conversation.otherUser.id, widget.conversation.id);
+      ref
+          .read(conversationsProvider.notifier)
+          .markAsRead(widget.conversation.id);
+      _flameSocket?.emitMarkRead(
+        widget.conversation.otherUser.id,
+        widget.conversation.id,
+      );
     }
   }
 
@@ -447,11 +467,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
     _messageController.clear();
 
-    final error = await ref.read(conversationsProvider.notifier).sendMessage(
-      widget.conversation.id,
-      content,
-      replyToId: replyToId,
-    );
+    final error = await ref
+        .read(conversationsProvider.notifier)
+        .sendMessage(widget.conversation.id, content, replyToId: replyToId);
 
     if (mounted) {
       setState(() => _isSending = false);
@@ -463,7 +481,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         // Restore the user's input and reply target so nothing is lost.
         setState(() {
           _messageController.text = content;
-          _messageController.selection = TextSelection.collapsed(offset: content.length);
+          _messageController.selection = TextSelection.collapsed(
+            offset: content.length,
+          );
           _replyingTo = sentReplyingTo;
         });
         _showError(error);
@@ -507,11 +527,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _addReaction(String messageId, String emoji) async {
-    await ref.read(conversationsProvider.notifier).addReaction(
-      widget.conversation.id,
-      messageId,
-      emoji,
-    );
+    await ref
+        .read(conversationsProvider.notifier)
+        .addReaction(widget.conversation.id, messageId, emoji);
   }
 
   /// Prompts for new text via a dialog, then calls the real
@@ -537,7 +555,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
             child: const Text('Save'),
           ),
         ],
@@ -546,7 +565,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     controller.dispose();
 
     if (!mounted) return;
-    if (newText == null || newText.isEmpty || newText == message.content) return;
+    if (newText == null || newText.isEmpty || newText == message.content)
+      return;
 
     final chatService = ref.read(chatServiceProvider);
     final result = await chatService.editMessage(message.id, newText);
@@ -579,7 +599,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.delete_forever, color: Colors.red),
-              title: const Text('Delete for everyone', style: TextStyle(color: Colors.red)),
+              title: const Text(
+                'Delete for everyone',
+                style: TextStyle(color: Colors.red),
+              ),
               onTap: () {
                 Navigator.pop(sheetContext);
                 _deleteMessage(message, scope: 'everyone');
@@ -636,18 +659,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final conversationsState = ref.watch(conversationsProvider);
     final currentUserState = ref.watch(currentUserProvider);
-    final typingUsers = ref.watch(typingUsersProvider);
 
-    final currentConversation = conversationsState.maybeWhen(
-      data: (conversations) => conversations.where(
-        (c) => c.id == widget.conversation.id,
-      ).firstOrNull,
-      orElse: () => null,
-    ) ?? widget.conversation;
+    final currentConversation =
+        conversationsState.maybeWhen(
+          data: (conversations) => conversations
+              .where((c) => c.id == widget.conversation.id)
+              .firstOrNull,
+          orElse: () => null,
+        ) ??
+        widget.conversation;
 
     final currentUserId = currentUserState.valueOrNull?.id ?? '';
-    final isOtherUserTyping =
-        typingUsers[widget.conversation.id] != null || _isOtherUserTypingFlame;
+    final isOtherUserTyping = _isOtherUserTypingFlame;
 
     // Check for new messages from WebSocket and add them to local list
     for (final msg in currentConversation.messages) {
@@ -671,7 +694,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           const ConnectionBanner(),
           Expanded(child: _buildMessageList(currentUserId)),
           if (isOtherUserTyping)
-            TypingIndicator(userPhotoUrl: currentConversation.otherUser.primaryPhoto),
+            TypingIndicator(
+              userPhotoUrl: currentConversation.otherUser.primaryPhoto,
+            ),
           ChatInput(
             controller: _messageController,
             isSending: _isSending,
@@ -689,7 +714,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// live flame-socket `presence` state, falling back to the REST-seeded
   /// `is_online` snapshot if no presence event has been seen yet.
   bool _isPartnerOnline(Conversation conversation) {
-    return _presence[conversation.otherUser.id] ?? conversation.otherUser.isOnline;
+    return _presence[conversation.otherUser.id] ??
+        conversation.otherUser.isOnline;
   }
 
   PreferredSizeWidget _buildAppBar(Conversation conversation, bool isTyping) {
@@ -708,7 +734,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundImage: conversation.otherUser.primaryPhoto.toImageProvider(),
+                  backgroundImage: conversation.otherUser.primaryPhoto
+                      .toImageProvider(),
                 ),
                 if (_isPartnerOnline(conversation))
                   Positioned(
@@ -733,14 +760,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 children: [
                   Text(
                     conversation.otherUser.name,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   Text(
-                    isTyping ? 'typing...' : conversation.otherUser.lastActiveText,
+                    isTyping
+                        ? 'typing...'
+                        : conversation.otherUser.lastActiveText,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isTyping ? AppTheme.primaryColor : Colors.grey[600],
-                      fontWeight: isTyping ? FontWeight.w500 : FontWeight.normal,
+                      color: isTyping
+                          ? AppTheme.primaryColor
+                          : Colors.grey[600],
+                      fontWeight: isTyping
+                          ? FontWeight.w500
+                          : FontWeight.normal,
                     ),
                   ),
                 ],
@@ -803,7 +839,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         children: [
           CircleAvatar(
             radius: 50,
-            backgroundImage: widget.conversation.otherUser.primaryPhoto.toImageProvider(),
+            backgroundImage: widget.conversation.otherUser.primaryPhoto
+                .toImageProvider(),
           ),
           const SizedBox(height: 16),
           Text(
