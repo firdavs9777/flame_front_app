@@ -4,7 +4,6 @@ import '../../realtime/messages_provider.dart';
 import '../../realtime/typing_provider.dart';
 import '../../realtime/providers.dart';
 import '../../realtime/constants.dart';
-import '../../realtime/widgets/connection_banner.dart';
 import '../../realtime/widgets/gif_picker.dart';
 import '../../realtime/widgets/sticker_picker.dart';
 
@@ -89,7 +88,6 @@ class _ChatV2ScreenState extends ConsumerState<ChatV2Screen> {
       ),
       body: Column(
         children: [
-          const ConnectionBanner(),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
