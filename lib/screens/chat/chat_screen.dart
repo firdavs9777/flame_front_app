@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/config/env.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
-import 'package:flame/services/api_client.dart';
+import 'package:flame/providers/realtime_provider.dart';
 import 'package:flame/services/flame_socket_service.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
@@ -40,6 +40,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Message? _replyingTo;
   Timer? _pollTimer;
   FlameSocketService? _flameSocket;
+  final List<StreamSubscription<void>> _realtimeSubs = [];
 
   // ==================== Typing indicator state (flame socket) ====================
 
@@ -97,7 +98,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         widget.conversation.id,
       );
     }
-    _flameSocket?.dispose();
+    // The connection is app-level and outlives this screen: cancel our
+    // subscriptions instead of disposing it. Disposing it here would kill the
+    // conversation list's realtime and the unread badge along with the chat.
+    for (final s in _realtimeSubs) {
+      s.cancel();
+    }
+    _realtimeSubs.clear();
+    _flameSocket = null;
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -212,28 +220,36 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   // ==================== Realtime (Flame socket) ====================
 
-  /// Connects the `/flame` Socket.IO namespace for this thread when chat is
-  /// enabled (local dev only, per `EnvConfig.current.chatEnabled` — prod
-  /// stays off until the backend deploys the socket). This is additive on
-  /// top of the existing REST poll below, not a replacement: the poll's
-  /// merge-append de-dupe means a message delivered by both paths never
-  /// shows twice, so leaving polling running is a harmless fallback.
+  /// Subscribes this thread to the app-level realtime connection.
+  ///
+  /// It used to construct its own [FlameSocketService], which meant two sockets
+  /// per user whenever a chat was open: the server re-checks blocks on every
+  /// delivery, so the duplicate doubled that lookup and the presence fan-out
+  /// for nothing. The socket is still held in [_flameSocket] because this
+  /// screen emits through it (typing, read receipts) — but it does not own it
+  /// and must never dispose it.
+  ///
+  /// Subscribing through streams rather than assigning the socket's callbacks
+  /// matters: those fields are single-assignment, so assigning them here would
+  /// silently steal every push from the conversation list and freeze the unread
+  /// badge for other threads while this one is open.
   void _connectFlameSocket() {
     if (!EnvConfig.current.chatEnabled) return;
 
-    final token = ApiClient().accessToken;
-    if (token == null) return;
-
-    final socket = FlameSocketService(token: token)
-      ..onMessageNew = _onSocketMessageNew
-      ..onMessageEdited = _onSocketMessageEdited
-      ..onMessageDeleted = _onSocketMessageDeleted
-      ..onTyping = _onSocketTyping
-      ..onStopTyping = _onSocketStopTyping
-      ..onPresence = _onSocketPresence
-      ..onPresenceBulk = _onSocketPresenceBulk;
+    final conn = ref.read(realtimeConnectionProvider);
+    final socket = conn.socket;
+    if (socket == null) return;
     _flameSocket = socket;
-    socket.connect();
+
+    _realtimeSubs.addAll([
+      conn.messageNew.listen((e) => _onSocketMessageNew(e.message, e.conversationId)),
+      conn.messageEdited.listen((e) => _onSocketMessageEdited(e.message, e.conversationId)),
+      conn.messageDeleted.listen((e) => _onSocketMessageDeleted(e.message, e.conversationId)),
+      conn.typing.listen((e) => _onSocketTyping(e.fromUserId, e.conversationId)),
+      conn.stopTyping.listen((e) => _onSocketStopTyping(e.fromUserId, e.conversationId)),
+      conn.presence.listen((e) => _onSocketPresence(e.userId, e.online)),
+      conn.presenceBulk.listen(_onSocketPresenceBulk),
+    ]);
   }
 
   /// Handles a `message:new` push for this open thread. Reuses the same
@@ -250,6 +266,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     setState(() {
       _messages = [..._messages, message];
     });
+
+    // This thread is open and being read, so the server-side unread bump is
+    // already stale for us. `clearUnread` is local-only; the REST mark-read
+    // that tells the server runs on its own path.
+    ref.read(conversationsProvider.notifier).clearUnread(widget.conversation.id);
 
     _markMessagesAsRead();
 
