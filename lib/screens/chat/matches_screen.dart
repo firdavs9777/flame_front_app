@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
+import 'package:flame/screens/chat/widgets/matches_empty_state.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/chat/chat_screen.dart';
@@ -137,7 +138,13 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
               ),
               data: (conversations) {
                 if (conversations.isEmpty) {
-                  return SliverFillRemaining(child: _buildEmptyState());
+                  return const SliverFillRemaining(
+                    // hasScrollBody: false lets the sliver size to its
+                    // content instead of forcing it into whatever the
+                    // matches strip left over, which overflowed by 13px.
+                    hasScrollBody: false,
+                    child: MatchesEmptyState(),
+                  );
                 }
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
@@ -151,38 +158,6 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No messages yet',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Match with someone to start chatting!',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-          ),
-        ],
       ),
     );
   }
