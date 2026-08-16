@@ -262,13 +262,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ref.read(discoveryProvider.notifier).loadMore();
                         },
                         cardBuilder: (context, index, percentX, percentY) {
+                          // CardSwiper holds its own index; when the deck shrinks
+                          // (Discover now excludes swiped users, so it genuinely
+                          // empties) that index can outrun the list. Render
+                          // nothing rather than throwing RangeError.
+                          if (index < 0 || index >= users.length) {
+                            return const SizedBox.shrink();
+                          }
+                          final user = users[index];
                           return ProfileCard(
-                            user: users[index],
+                            user: user,
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => ProfileDetailScreen(user: users[index]),
+                                  builder: (_) => ProfileDetailScreen(user: user),
                                 ),
                               );
                             },
