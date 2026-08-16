@@ -188,48 +188,72 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
   }
 }
 
+/// Finds the conversation a match's chat should open against, refreshing the
+/// conversation cache once if the first look-up misses.
+///
+/// The miss is the NORMAL case for a brand-new match: `main_shell.dart` holds
+/// every tab in an `IndexedStack` and loads conversations once at startup,
+/// `MatchesScreen` refreshes once behind an `_initialized` guard, and
+/// `swipe_provider.addMatch` adds the match without touching
+/// `conversationsProvider`. The cached list therefore predates the match.
+///
+/// This used to fabricate a `Conversation` with `id: match.id` on a miss, which
+/// is a MATCH id, not a conversation id — `ChatScreen` then called
+/// `/conversations/<matchId>/messages` and every load and send 404'd. Returning
+/// null so the caller can decline to navigate is strictly better than opening a
+/// chat that cannot work.
+///
+/// Kept as a free function, separate from the widget, so the refresh-then-retry
+/// rule is testable without a network or a rendered tree.
+Future<Conversation?> resolveMatchConversation({
+  required String otherUserId,
+  required List<Conversation> Function() readConversations,
+  required Future<void> Function() refreshConversations,
+}) async {
+  Conversation? lookup() =>
+      readConversations().where((c) => c.otherUser.id == otherUserId).firstOrNull;
+
+  final cached = lookup();
+  if (cached != null) return cached;
+
+  await refreshConversations();
+  return lookup();
+}
+
 class _MatchCircle extends ConsumerWidget {
   final Match match;
 
   const _MatchCircle({required this.match});
 
+  Future<void> _openChat(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    final conversation = await resolveMatchConversation(
+      otherUserId: match.user.id,
+      readConversations: () => ref.read(conversationsProvider).valueOrNull ?? [],
+      refreshConversations: () =>
+          ref.read(conversationsProvider.notifier).loadConversations(refresh: true),
+    );
+
+    if (!context.mounted) return;
+
+    if (conversation == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not open this chat. Please try again.')),
+      );
+      return;
+    }
+
+    navigator.push(
+      MaterialPageRoute(builder: (_) => ChatScreen(conversation: conversation)),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
-      onTap: () {
-        // Navigate to chat with this match
-        final conversationsState = ref.read(conversationsProvider);
-        final conversations = conversationsState.valueOrNull ?? [];
-
-        // Find existing conversation or navigate to new chat
-        final existingConversation = conversations.where(
-          (c) => c.otherUser.id == match.user.id,
-        ).firstOrNull;
-
-        if (existingConversation != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatScreen(conversation: existingConversation),
-            ),
-          );
-        } else {
-          // Create a temporary conversation object for navigation
-          final tempConversation = Conversation(
-            id: match.id,
-            matchId: match.id,
-            otherUser: match.user,
-            messages: [],
-            lastMessageAt: match.matchedAt,
-          );
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ChatScreen(conversation: tempConversation),
-            ),
-          );
-        }
-      },
+      onTap: () => _openChat(context, ref),
       onLongPress: () => _confirmUnmatch(context, ref),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8),
