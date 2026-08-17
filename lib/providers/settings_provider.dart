@@ -27,7 +27,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kThemeModeKey, mode.name);
   }
-
 }
 
 ThemeMode _themeModeFromString(String? value) {
