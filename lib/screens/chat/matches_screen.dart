@@ -5,6 +5,7 @@ import 'package:flame/screens/chat/widgets/matches_empty_state.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/chat/chat_screen.dart';
+import 'package:flame/screens/chat/chat_search_screen.dart';
 import 'package:flame/screens/stories/widgets/story_tray.dart';
 import 'package:flame/widgets/smart_image.dart';
 
@@ -30,6 +31,24 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
     });
   }
 
+  /// Opens search, unwrapping ServiceResult into the screen's contract:
+  /// results on success, a throw on failure so its error branch renders.
+  void _openSearch(BuildContext context, WidgetRef ref) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatSearchScreen(
+          search: (query, {int limit = 20, int offset = 0}) async {
+            final result = await ref.read(chatServiceProvider).searchMessages(
+                  query: query, limit: limit, offset: offset,
+                );
+            if (!result.success) throw Exception(result.error ?? 'Search failed');
+            return result.data ?? [];
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final matchesState = ref.watch(matchesProvider);
@@ -38,6 +57,13 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Messages'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Search messages',
+            onPressed: () => _openSearch(context, ref),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
