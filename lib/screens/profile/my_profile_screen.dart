@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
@@ -147,7 +146,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     color: context.secondaryText,
                   ),
                 ),
-                if (_isPremiumActive(user)) ...[
+                if (user.isPremiumActive) ...[
                   const SizedBox(height: 10),
                   Container(
                     key: const Key('premium_badge'),
@@ -277,19 +276,6 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
         },
       ),
     );
-  }
-
-  // Mirrors swipe_provider.dart's _canUndo() gating rule: premium is active
-  // only when isPremium is true AND premiumExpiresAt is null or in the
-  // future. A lapsed subscription rendering as active is the one failure
-  // here that costs real money to get wrong.
-  bool _isPremiumActive(User user) {
-    if (!user.isPremium) return false;
-    if (user.premiumExpiresAt != null &&
-        user.premiumExpiresAt!.isBefore(DateTime.now())) {
-      return false;
-    }
-    return true;
   }
 
   Widget _buildStat(String label, String value) {

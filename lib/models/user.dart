@@ -64,6 +64,23 @@ class User {
     this.preferredLanguage,
   });
 
+  /// Whether premium is active right now: `isPremium` is true AND
+  /// `premiumExpiresAt` is null (no expiry) or still in the future.
+  ///
+  /// This rule is money-relevant — a lapsed subscription reading as active
+  /// is the one failure worth getting wrong here — and it had already
+  /// drifted into two separate call sites (a swipe-undo gate and the
+  /// profile header) each re-deriving the same two fields. It lives on the
+  /// model, next to the fields it reads, so every caller asks this one
+  /// question instead of writing its own copy that can quietly disagree.
+  bool get isPremiumActive {
+    if (!isPremium) return false;
+    if (premiumExpiresAt != null && premiumExpiresAt!.isBefore(DateTime.now())) {
+      return false;
+    }
+    return true;
+  }
+
   factory User.fromJson(Map<String, dynamic> json) {
     // Parse photos into aligned URL + id lists. Entries can be bare URL strings
     // or objects {url, id}; entries without a usable URL are dropped from both.

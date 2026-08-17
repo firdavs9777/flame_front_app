@@ -178,22 +178,12 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
   }
 
   bool _canUndo() {
-    // Check if user is premium
     final userState = _ref.read(currentUserProvider);
     final user = userState.valueOrNull;
 
     if (user == null) return false;
 
-    // Check if user is premium and premium hasn't expired
-    if (!user.isPremium) return false;
-
-    if (user.premiumExpiresAt != null) {
-      if (user.premiumExpiresAt!.isBefore(DateTime.now())) {
-        return false;
-      }
-    }
-
-    return true;
+    return user.isPremiumActive;
   }
 
   Future<bool> undo() async {
