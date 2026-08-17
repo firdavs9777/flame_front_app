@@ -23,6 +23,7 @@
   1. Fixture user names must be ≥2 characters (`User.name` has `minlength: 2`). A one-letter name throws before teardown registers, leaking the mongod process and hanging the suite.
   2. Set `FLAME_SPACES_BUCKET`, `SPACES_ENDPOINT`, `DO_SPACES_KEY`, `DO_SPACES_SECRET` **before** any `require` — `flame/utils/s3.js` reads them at module load.
   3. Clear every service you require from the require-cache array, **including `matchService` and `Match`** for anything touching chat.
+  4. **Register the teardown before anything that can throw.** `setup(t)` must call `t.after(...)` immediately after `dbHelper.start()`, not at the end. A require that fails in between leaves the mongod running and node never exits — the RED phase of Task 1 was correct and still hung for five minutes.
 - App baselines to preserve: `flutter test` all passing, `flutter analyze` **0 errors and 0 warnings**.
 - **Known flake:** a full-suite backend run fails roughly one test per run, a different one each time, and does so on `main` too. Individual files pass. Do not chase it; re-run the single file to confirm.
 
@@ -99,20 +100,24 @@ function withStubbedAxios(handler) {
   };
 }
 
-async function setup() {
+// Takes the test context so teardown is registered BEFORE anything that can
+// throw. Registering it afterwards — the obvious order — means a failing
+// require leaves the mongod running and node never exits, turning one broken
+// test into a hung suite. This bit during execution: the RED run was correct
+// but never terminated.
+async function setup(t) {
   await dbHelper.start();
+  t.after(async () => {
+    try { await require('../db').close(); } catch { /* never opened */ }
+    await dbHelper.stop();
+  });
+
   ['../db', '../models/Translation', '../services/translationService']
     .forEach((p) => { try { delete require.cache[require.resolve(p)]; } catch {} });
   const { connect } = require('../db');
   await connect();
   return require('../services/translationService');
 }
-
-const teardown = (t) => t.after(async () => {
-  const { close } = require('../db');
-  await close();
-  await dbHelper.stop();
-});
 
 test('translates with an explicit source language', async (t) => {
   const calls = [];
@@ -122,8 +127,7 @@ test('translates with an explicit source language', async (t) => {
   });
   t.after(restore);
 
-  const svc = await setup();
-  teardown(t);
+  const svc = await setup(t);
 
   const out = await svc.translate({ text: 'hello', targetLang: 'es', sourceLang: 'en' });
 
@@ -146,8 +150,7 @@ test('detects the source language when none is given', async (t) => {
   });
   t.after(restore);
 
-  const svc = await setup();
-  teardown(t);
+  const svc = await setup(t);
 
   const out = await svc.translate({ text: 'bonjour', targetLang: 'en' });
 
@@ -166,8 +169,7 @@ test('a repeat request is served from the cache without calling the provider', a
   });
   t.after(restore);
 
-  const svc = await setup();
-  teardown(t);
+  const svc = await setup(t);
 
   const first = await svc.translate({ text: 'hello', targetLang: 'es', sourceLang: 'en' });
   const second = await svc.translate({ text: 'hello', targetLang: 'es', sourceLang: 'en' });
@@ -188,8 +190,7 @@ test('an auto-detect request hits the cache written by an explicit-source one', 
   });
   t.after(restore);
 
-  const svc = await setup();
-  teardown(t);
+  const svc = await setup(t);
 
   await svc.translate({ text: 'hello', targetLang: 'es', sourceLang: 'en' });
   const auto = await svc.translate({ text: 'hello', targetLang: 'es' });
@@ -203,8 +204,7 @@ test('a provider failure is a ValidationError, not a raw throw', async (t) => {
   const restore = withStubbedAxios(async () => { throw new Error('ECONNREFUSED'); });
   t.after(restore);
 
-  const svc = await setup();
-  teardown(t);
+  const svc = await setup(t);
 
   await assert.rejects(
     () => svc.translate({ text: 'hello', targetLang: 'es', sourceLang: 'en' }),
@@ -218,8 +218,7 @@ test('empty text is rejected before any provider call', async (t) => {
   const restore = withStubbedAxios(async () => { called = true; return { data: {} }; });
   t.after(restore);
 
-  const svc = await setup();
-  teardown(t);
+  const svc = await setup(t);
 
   await assert.rejects(
     () => svc.translate({ text: '   ', targetLang: 'es' }),

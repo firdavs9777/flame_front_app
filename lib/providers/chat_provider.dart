@@ -351,6 +351,33 @@ class ConversationsNotifier
     );
   }
 
+  /// Archives and drops the conversation from the cached list, so the row
+  /// disappears immediately rather than waiting for a refetch.
+  ///
+  /// Returns null on success, or a message for the caller to show.
+  Future<String?> archive(String conversationId) async {
+    final result = await _chatService.archiveConversation(conversationId);
+    if (!result.success) return ErrorStringsFor.fromString(result.error);
+
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncValue.data(
+        current.where((c) => c.id != conversationId).toList(),
+      );
+    }
+    return null;
+  }
+
+  /// Unarchives.
+  ///
+  /// The row is not added back to this list: this notifier holds the DEFAULT
+  /// list, and whoever calls this is looking at the archived one. They refresh
+  /// the default list afterwards.
+  Future<String?> unarchive(String conversationId) async {
+    final result = await _chatService.unarchiveConversation(conversationId);
+    return result.success ? null : ErrorStringsFor.fromString(result.error);
+  }
+
   /// Zeroes the unread badge for one conversation, with no network call.
   ///
   /// Separate from [markAsRead], which also PATCHes the server: when a push
