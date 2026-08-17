@@ -18,6 +18,13 @@ import 'package:flame/theme/app_theme.dart';
 // tests goes through an injected callback, not this service.
 class _FakeUserService extends UserService {}
 
+// A 1x1 transparent PNG as a data URI. SmartImage routes `data:` sources to
+// Image.memory, so a photo tile renders without CachedNetworkImage reaching
+// for the network in a widget test.
+const _tinyPng = 'data:image/png;base64,'
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/'
+    'q842iQAAAABJRU5ErkJggg==';
+
 User _user({
   String name = 'Alex',
   int age = 28,
@@ -28,6 +35,7 @@ User _user({
   int maxAge = 40,
   double maxDistance = 25,
   bool showOnlineStatus = true,
+  List<String> photos = const <String>[],
 }) {
   return User.fromJson({
     'id': 'u1',
@@ -37,7 +45,7 @@ User _user({
     'interests': interests,
     'gender': 'male',
     'looking_for': lookingFor.toApiString(),
-    'photos': <String>[],
+    'photos': photos,
     'preferences': {
       'min_age': minAge,
       'max_age': maxAge,
@@ -310,5 +318,301 @@ void main() {
         );
       },
     );
+
+    // The route's schema is `max_distance: Field(ge=1, le=500)`
+    // (flame_backend app/community/schemas.py:100). Only the floor was
+    // effectively enforced, and it said "Enter a valid distance" without
+    // saying which end was wrong.
+    testWidgets(
+      'a max distance above 500 is rejected before any request',
+      (tester) async {
+        var calls = 0;
+        await tester.pumpWidget(_host(
+          _user(),
+          savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
+            calls++;
+            return true;
+          },
+        ));
+
+        await tester.enterText(
+          find.byKey(const Key('preferences_max_distance_field')),
+          '5000',
+        );
+        await tester.ensureVisible(
+          find.byKey(const Key('preferences_save_button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('preferences_save_button')));
+        await tester.pump();
+
+        expect(calls, 0);
+        expect(
+          find.text('Maximum distance is 500 km'),
+          findsOneWidget,
+          reason: 'the message must name the bound that was hit',
+        );
+      },
+    );
+
+    testWidgets(
+      'exactly 500 km is accepted — the bound is inclusive',
+      (tester) async {
+        double? captured;
+        await tester.pumpWidget(_host(
+          _user(),
+          savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
+            captured = maxDistance;
+            return true;
+          },
+        ));
+
+        await tester.enterText(
+          find.byKey(const Key('preferences_max_distance_field')),
+          '500',
+        );
+        await tester.ensureVisible(
+          find.byKey(const Key('preferences_save_button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('preferences_save_button')));
+        await tester.pump();
+
+        expect(
+          captured,
+          500,
+          reason: 'le=500 means 500 is valid; an off-by-one here would '
+              'block a legitimate value',
+        );
+      },
+    );
+
+    testWidgets(
+      'a max distance below the floor names the floor',
+      (tester) async {
+        var calls = 0;
+        await tester.pumpWidget(_host(
+          _user(),
+          savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
+            calls++;
+            return true;
+          },
+        ));
+
+        await tester.enterText(
+          find.byKey(const Key('preferences_max_distance_field')),
+          '0',
+        );
+        await tester.ensureVisible(
+          find.byKey(const Key('preferences_save_button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('preferences_save_button')));
+        await tester.pump();
+
+        expect(calls, 0);
+        expect(find.text('Minimum distance is 1 km'), findsOneWidget);
+      },
+    );
+  });
+
+  group('About section length ceiling', () {
+    testWidgets(
+      'a name longer than 50 characters is rejected before any request',
+      (tester) async {
+        var calls = 0;
+        await tester.pumpWidget(_host(
+          _user(),
+          saveAbout: ({required name, required age, required bio}) async {
+            calls++;
+            return true;
+          },
+        ));
+
+        await tester.enterText(
+          find.byKey(const Key('about_name_field')),
+          'A' * 51,
+        );
+        await tester.ensureVisible(find.byKey(const Key('about_save_button')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('about_save_button')));
+        await tester.pump();
+
+        expect(
+          calls,
+          0,
+          reason:
+              'User.name is maxlength 50 server-side; only the floor was '
+              'checked, so a 51-character name went out and came back as a '
+              'bare "Could not save"',
+        );
+        expect(
+          find.text('Name must be 50 characters or fewer (currently 51)'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets('exactly 50 characters is accepted', (tester) async {
+      String? captured;
+      await tester.pumpWidget(_host(
+        _user(),
+        saveAbout: ({required name, required age, required bio}) async {
+          captured = name;
+          return true;
+        },
+      ));
+
+      await tester.enterText(
+        find.byKey(const Key('about_name_field')),
+        'A' * 50,
+      );
+      await tester.ensureVisible(find.byKey(const Key('about_save_button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('about_save_button')));
+      await tester.pump();
+
+      expect(captured, 'A' * 50);
+    });
+  });
+
+  // The Interests section had no Form and no validator at all, in the task
+  // whose whole thesis is validating before the request. The route requires
+  // 1 to 10 interests; the picker offers 16 chips with no floor and no cap.
+  group('Interests section bounds', () {
+    Future<void> tapSave(WidgetTester tester) async {
+      await tester.ensureVisible(
+        find.byKey(const Key('interests_save_button')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('interests_save_button')));
+      await tester.pump();
+    }
+
+    testWidgets(
+      'saving with no interests selected is rejected before any request',
+      (tester) async {
+        var calls = 0;
+        await tester.pumpWidget(_host(
+          _user(interests: const <String>[]),
+          saveInterests: ({required lookingFor, required interests}) async {
+            calls++;
+            return true;
+          },
+        ));
+
+        await tapSave(tester);
+
+        expect(
+          calls,
+          0,
+          reason:
+              'interests has min_length=1 server-side; deselecting your last '
+              'interest used to produce a bare "Could not save — try again"',
+        );
+        expect(find.text('Pick at least 1 interest'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'saving with 11 interests is rejected before any request',
+      (tester) async {
+        var calls = 0;
+        await tester.pumpWidget(_host(
+          _user(interests: const [
+            'Travel', 'Music', 'Movies', 'Sports', 'Fitness', 'Food',
+            'Art', 'Gaming', 'Reading', 'Photography', 'Coffee',
+          ]),
+          saveInterests: ({required lookingFor, required interests}) async {
+            calls++;
+            return true;
+          },
+        ));
+
+        await tapSave(tester);
+
+        expect(calls, 0, reason: 'interests has max_length=10 server-side');
+        expect(
+          find.text('Pick at most 10 interests — 11 are selected'),
+          findsOneWidget,
+          reason:
+              'the message must say which bound was hit, and how far over',
+        );
+      },
+    );
+
+    testWidgets('exactly 10 interests is accepted', (tester) async {
+      List<String>? captured;
+      await tester.pumpWidget(_host(
+        _user(interests: const [
+          'Travel', 'Music', 'Movies', 'Sports', 'Fitness', 'Food',
+          'Art', 'Gaming', 'Reading', 'Photography',
+        ]),
+        saveInterests: ({required lookingFor, required interests}) async {
+          captured = interests;
+          return true;
+        },
+      ));
+
+      await tapSave(tester);
+
+      expect(
+        captured,
+        hasLength(10),
+        reason: 'max_length=10 means 10 is valid; the cap must not be '
+            'off by one against a legitimate selection',
+      );
+      expect(find.byKey(const Key('interests_bounds_error')), findsNothing);
+    });
+
+    testWidgets(
+      'a bounds message already on screen tracks the selection',
+      (tester) async {
+        await tester.pumpWidget(_host(
+          _user(interests: const <String>[]),
+          saveInterests: ({required lookingFor, required interests}) async =>
+              true,
+        ));
+
+        await tapSave(tester);
+        expect(find.byKey(const Key('interests_bounds_error')), findsOneWidget);
+
+        // Selecting one interest makes the selection savable; the message
+        // must not linger and contradict the screen.
+        await tester.ensureVisible(find.text('Travel'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Travel'));
+        await tester.pump();
+
+        expect(find.byKey(const Key('interests_bounds_error')), findsNothing);
+      },
+    );
+  });
+
+  // "Set as main photo" called setMainPhotoAt -> reorderPhotos ->
+  // PATCH /users/me/photos/reorder. The route exists and persists, but its
+  // response serialises photos as {id, order, is_primary} with no `url`, and
+  // Photo.fromJson defaults a missing url to ''. So the tap reported success
+  // and then blanked every photo url in local state.
+  group('photo options', () {
+    testWidgets('offer no "Set as main photo" action', (tester) async {
+      await tester.pumpWidget(_host(
+        _user(photos: const [_tinyPng, _tinyPng]),
+      ));
+      await tester.pumpAndSettle();
+
+      // The second tile's menu — the only one the item was ever shown on,
+      // since it was hidden for index 0.
+      await tester.tap(find.byIcon(Icons.more_vert).at(1));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Delete photo'),
+        findsOneWidget,
+        reason: 'the sheet must actually be open, or the assertion below '
+            'passes for the wrong reason',
+      );
+      expect(find.text('Set as main photo'), findsNothing);
+    });
   });
 }

@@ -34,6 +34,7 @@ User _user({
   bool isVerified = false,
   bool isPremium = false,
   DateTime? premiumExpiresAt,
+  double maxDistance = 25,
 }) {
   return User.fromJson({
     'id': 'u1',
@@ -44,6 +45,7 @@ User _user({
     'gender': 'male',
     'looking_for': 'female',
     'photos': <String>[],
+    'preferences': {'max_distance': maxDistance},
     'is_verified': isVerified,
     'is_premium': isPremium,
     if (premiumExpiresAt != null)
@@ -147,6 +149,33 @@ void main() {
         expect(find.byKey(const Key('premium_badge')), findsOneWidget);
       },
     );
+  });
+
+  // This screen rendered `maxDistancePreference.toInt()`, truncating, while
+  // the editor one tap away deliberately stopped rounding. A stored 24.6 read
+  // as "24 km" here and "24.6" there — two answers to the same stored number,
+  // and the truncated one is the one the user is more likely to believe.
+  group('max distance formatting', () {
+    testWidgets('a fractional stored distance is not truncated', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_host(_user(maxDistance: 24.6)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('24.6 km'), findsOneWidget);
+      expect(
+        find.text('24 km'),
+        findsNothing,
+        reason: 'the profile and the editor must agree on the same value',
+      );
+    });
+
+    testWidgets('a whole stored distance prints without a .0', (tester) async {
+      await tester.pumpWidget(_host(_user(maxDistance: 25)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('25 km'), findsOneWidget);
+    });
   });
 
   // Task 5 exists so these screens are dark-mode-correct; a header addition

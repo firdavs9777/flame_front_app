@@ -7,6 +7,7 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/screens/profile/edit_profile_screen.dart';
+import 'package:flame/core/format/distance_format.dart';
 
 class MyProfileScreen extends ConsumerStatefulWidget {
   const MyProfileScreen({super.key});
@@ -264,7 +265,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                       ),
                       _buildPreferenceRow(
                         'Max Distance',
-                        '${user.maxDistancePreference.toInt()} km',
+                        // Same formatter the editor seeds its field from, so
+                        // a stored 24.6 does not read "24 km" here and "24.6"
+                        // one tap away.
+                        '${formatDistance(user.maxDistancePreference)} km',
                       ),
                     ],
                   ),

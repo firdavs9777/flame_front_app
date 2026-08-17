@@ -7,6 +7,7 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/models/models.dart';
+import 'package:flame/core/format/distance_format.dart';
 
 /// Saves the About section (name, age, bio) — nothing else. The signature is
 /// the independence guarantee: this function has no parameter through which
@@ -245,18 +246,6 @@ class _SaveButton extends StatelessWidget {
   }
 }
 
-/// Renders a stored preference number for display without discarding
-/// precision: a whole number prints without a trailing `.0`, anything else
-/// prints as Dart's own shortest round-tripping decimal. Rounding here
-/// (e.g. `.round()`) would silently rewrite a stored `24.6` to `25` the next
-/// time the section saves, even if the user never touched the field.
-String _formatDistance(double value) {
-  if (value == value.truncateToDouble()) {
-    return value.truncate().toString();
-  }
-  return value.toString();
-}
-
 Widget _fieldLabel(BuildContext context, String label) {
   return Text(
     label,
@@ -264,9 +253,20 @@ Widget _fieldLabel(BuildContext context, String label) {
   );
 }
 
-/// Photos grid. Every action (upload, delete, reorder) already saves
-/// immediately against the backend, so there is no separate Save button
-/// here — the section is independent by construction.
+/// Photos grid. Both actions it offers (upload, delete) save immediately
+/// against the backend, so there is no separate Save button here — the
+/// section is independent by construction.
+///
+/// It offers no reordering. An earlier "Set as main photo" item called
+/// `CurrentUserNotifier.setMainPhotoAt`, and `PATCH /users/me/photos/reorder`
+/// does exist and does persist — but its response serialises each photo as
+/// `{id, order, is_primary}` with no `url`, while `Photo.fromJson` defaults a
+/// missing url to `''`. So the tap reported "Main photo updated" and then
+/// blanked the url of every photo in local state, emptying the grid until the
+/// next `loadUser()`. Removed rather than papered over: making it work means
+/// either the backend including `url` in that payload, or `setMainPhotoAt`
+/// reordering the lists it already holds instead of trusting the response.
+/// Both are a change to the contract, not to this widget.
 class _PhotosSection extends ConsumerStatefulWidget {
   final User user;
 
@@ -397,25 +397,6 @@ class _PhotosSectionState extends ConsumerState<_PhotosSection> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (index != 0)
-              ListTile(
-                leading: const Icon(Icons.star),
-                title: const Text('Set as main photo'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final ok = await ref
-                      .read(currentUserProvider.notifier)
-                      .setMainPhotoAt(index);
-                  if (!mounted) return;
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text(ok
-                          ? 'Main photo updated'
-                          : 'Could not update main photo'),
-                    ),
-                  );
-                },
-              ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
               title: const Text('Delete photo', style: TextStyle(color: Colors.red)),
@@ -576,9 +557,17 @@ class _AboutSectionState extends State<_AboutSection> {
             key: const Key('about_name_field'),
             controller: _nameController,
             decoration: _fieldDecoration(context, 'Your name'),
+            // Both bounds are the route's own: User.name is minlength 2,
+            // maxlength 50. Only the floor was checked, so a 60-character
+            // name went out and came back as a bare "Could not save".
             validator: (value) {
-              if ((value ?? '').trim().length < 2) {
+              final name = (value ?? '').trim();
+              if (name.length < 2) {
                 return 'Name must be at least 2 characters';
+              }
+              if (name.length > 50) {
+                return 'Name must be 50 characters or fewer '
+                    '(currently ${name.length})';
               }
               return null;
             },
@@ -623,6 +612,15 @@ class _AboutSectionState extends State<_AboutSection> {
 
 /// Looking-for gender and interest tags, saved together — the pair the
 /// original form always submitted as one unit.
+///
+/// This section has no `Form` because it has no text fields, which is how it
+/// ended up as the one section in a form-validation task with no validation at
+/// all: the route requires 1 to 10 interests
+/// (`interests: Field(min_length=1, max_length=10)`), while the picker offers
+/// 16 chips with no floor and no cap. Deselecting your last interest, or
+/// picking an eleventh, produced a bare "Could not save — try again" with no
+/// hint as to which. [_boundsError] is checked before [onSave] is called, and
+/// names the bound that was hit.
 class _InterestsSection extends StatefulWidget {
   final User user;
   final InterestsSave onSave;
@@ -640,8 +638,13 @@ class _InterestsSectionState extends State<_InterestsSection> {
     'Dancing', 'Cooking', 'Yoga', 'Nature',
   ];
 
+  /// The route's own bounds on `interests`.
+  static const _minInterests = 1;
+  static const _maxInterests = 10;
+
   late Gender? _lookingFor;
   late List<String> _selectedInterests;
+  String? _boundsError;
   bool _isSaving = false;
 
   @override
@@ -651,8 +654,29 @@ class _InterestsSectionState extends State<_InterestsSection> {
     _selectedInterests = List<String>.from(widget.user.interests);
   }
 
+  /// Names the bound that was hit, or null when the selection is savable.
+  String? _validate() {
+    final count = _selectedInterests.length;
+    if (count < _minInterests) {
+      return 'Pick at least $_minInterests interest';
+    }
+    if (count > _maxInterests) {
+      return 'Pick at most $_maxInterests interests — $count are selected';
+    }
+    return null;
+  }
+
   Future<void> _save() async {
-    setState(() => _isSaving = true);
+    final error = _validate();
+    if (error != null) {
+      setState(() => _boundsError = error);
+      return;
+    }
+
+    setState(() {
+      _boundsError = null;
+      _isSaving = true;
+    });
     final ok = await widget.onSave(
       lookingFor: _lookingFor,
       interests: _selectedInterests,
@@ -679,6 +703,14 @@ class _InterestsSectionState extends State<_InterestsSection> {
         _fieldLabel(context, 'Interests'),
         const SizedBox(height: 12),
         _buildInterestsSelector(context),
+        if (_boundsError != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _boundsError!,
+            key: const Key('interests_bounds_error'),
+            style: TextStyle(color: AppTheme.errorColor, fontSize: 12),
+          ),
+        ],
         const SizedBox(height: 12),
         _SaveButton(
           buttonKey: const Key('interests_save_button'),
@@ -730,6 +762,10 @@ class _InterestsSectionState extends State<_InterestsSection> {
               } else {
                 _selectedInterests.add(interest);
               }
+              // Re-evaluate a message already on screen so it tracks the
+              // selection instead of going stale, but don't surface one before
+              // the user has asked to save.
+              if (_boundsError != null) _boundsError = _validate();
             });
           },
           child: Container(
@@ -793,7 +829,7 @@ class _PreferencesSectionState extends State<_PreferencesSection> {
     _maxAgeController =
         TextEditingController(text: widget.user.maxAgePreference.toString());
     _maxDistanceController = TextEditingController(
-      text: _formatDistance(widget.user.maxDistancePreference),
+      text: formatDistance(widget.user.maxDistancePreference),
     );
     _showOnlineStatus = widget.user.showOnlineStatus;
   }
@@ -876,10 +912,27 @@ class _PreferencesSectionState extends State<_PreferencesSection> {
             controller: _maxDistanceController,
             keyboardType: TextInputType.number,
             decoration: _fieldDecoration(context, 'Maximum distance'),
+            // Bounds taken from the route's own schema, which is
+            // `max_distance: Optional[int] = Field(ge=1, le=500)`
+            // (flame_backend app/community/schemas.py:100). The ceiling was
+            // not checked at all, so 5000 went out and came back as a bare
+            // "Could not save". The floor was already effectively right; it
+            // now names the bound instead of saying "valid".
+            //
+            // NOTE: that schema types the field `int`, so a fractional value
+            // like 24.6 is a 422 even though this field accepts one and Task 6
+            // deliberately stopped rounding it. Not changed here — see the
+            // report; it is a contract question, not a widget question.
             validator: (value) {
               final distance = double.tryParse(value ?? '');
-              if (distance == null || distance <= 0) {
-                return 'Enter a valid distance';
+              if (distance == null) {
+                return 'Enter a distance in kilometres';
+              }
+              if (distance < 1) {
+                return 'Minimum distance is 1 km';
+              }
+              if (distance > 500) {
+                return 'Maximum distance is 500 km';
               }
               return null;
             },
