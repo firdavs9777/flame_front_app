@@ -14,6 +14,70 @@ import 'package:flame/theme/app_theme.dart';
 // token references, not literals. This test pins onOverlay to a value that
 // does not move when onPrimary does.
 void main() {
+  Future<Map<String, Color>> readTokens(
+    WidgetTester tester,
+    ThemeData theme,
+  ) async {
+    late Map<String, Color> values;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: theme,
+        home: Builder(
+          builder: (context) {
+            values = {
+              'surface': context.surface,
+              'onSurface': context.onSurface,
+              'secondaryText': context.secondaryText,
+              'fill': context.fill,
+            };
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+    return values;
+  }
+
+  // A token that silently resolves to the same colour as another token is
+  // invisible to profile_settings_theme_test, which only bans `Colors.*`
+  // literals — the code reads `context.fill`, looks correct, and renders
+  // nothing.
+  //
+  // Both of these collapsed because `AppTokens` reads two ColorScheme roles
+  // (`surfaceContainerHighest`, `onSurfaceVariant`) that `AppTheme` never
+  // passed to `ColorScheme.light()` / `ColorScheme.dark()`, and the SDK
+  // getters fall back to `surface` / `onSurface` respectively. The cost was
+  // real: `fill == surface` removed the only delineation the edit-profile
+  // form's fields had, because `inputDecorationTheme.enabledBorder` is
+  // `BorderSide.none` in both themes.
+  group('semantic tokens stay distinct from the ones they sit on', () {
+    final themes = {'light': AppTheme.lightTheme, 'dark': AppTheme.darkTheme};
+
+    for (final entry in themes.entries) {
+      testWidgets('in ${entry.key} theme', (tester) async {
+        final tokens = await readTokens(tester, entry.value);
+
+        expect(
+          tokens['fill'],
+          isNot(tokens['surface']),
+          reason:
+              'fill is an input fill drawn INSIDE a surface-coloured card, '
+              'and with enabledBorder: BorderSide.none it is the only thing '
+              'marking the field boundary. Equal to surface, every text '
+              'field on the edit-profile form renders as bare text.',
+        );
+        expect(
+          tokens['secondaryText'],
+          isNot(tokens['onSurface']),
+          reason:
+              'secondaryText is documented as "present but not the point"; '
+              'equal to onSurface, every caption, hint and section header '
+              'prints at full body strength and the hierarchy flattens.',
+        );
+      });
+    }
+  });
+
   Future<Color> readOnOverlay(WidgetTester tester, ThemeData theme) async {
     late Color value;
     await tester.pumpWidget(
