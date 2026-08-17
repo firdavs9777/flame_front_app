@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/models/models.dart';
 
@@ -108,7 +109,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     decoration: InputDecoration(
                       hintText: 'Your name',
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: context.fill,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -132,7 +133,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     decoration: InputDecoration(
                       hintText: 'Your age',
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: context.fill,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -161,7 +162,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     decoration: InputDecoration(
                       hintText: 'Tell others about yourself...',
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: context.fill,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -238,13 +239,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             onTap: () => _showPhotoOptions(index),
             child: Container(
               padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: Colors.black54,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.54),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.more_vert,
-                color: Colors.white,
+                color: context.onPrimary,
                 size: 16,
               ),
             ),
@@ -260,10 +261,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 color: AppTheme.primaryColor,
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Text(
+              child: Text(
                 'Main',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: context.onPrimary,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),
@@ -279,10 +280,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       onTap: () => _pickPhoto(index),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey[200],
+          color: context.fill,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Colors.grey[400]!,
+            color: context.divider,
             width: 2,
             style: BorderStyle.solid,
           ),
@@ -290,7 +291,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         child: Icon(
           Icons.add_a_photo,
           size: 32,
-          color: Colors.grey[500],
+          color: context.secondaryText,
         ),
       ),
     );
@@ -427,13 +428,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected ? AppTheme.primaryColor : Colors.grey[200],
+              color: isSelected ? AppTheme.primaryColor : context.fill,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               gender.displayName,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black87,
+                color: isSelected ? context.onPrimary : context.onSurface,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -464,17 +465,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             decoration: BoxDecoration(
               color: isSelected
                   ? AppTheme.primaryColor.withOpacity(0.1)
-                  : Colors.grey[100],
+                  : context.fill,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? AppTheme.primaryColor : Colors.grey[300]!,
+                color: isSelected ? AppTheme.primaryColor : context.divider,
                 width: isSelected ? 2 : 1,
               ),
             ),
             child: Text(
               interest,
               style: TextStyle(
-                color: isSelected ? AppTheme.primaryColor : Colors.black87,
+                color: isSelected ? AppTheme.primaryColor : context.onSurface,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/widgets/report_block_menu.dart';
 
@@ -33,9 +34,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
             pinned: true,
             backgroundColor: AppTheme.primaryColor,
             leading: IconButton(
-              icon: const CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(Icons.arrow_back, color: Colors.black),
+              icon: CircleAvatar(
+                backgroundColor: context.surface,
+                child: Icon(Icons.arrow_back, color: context.onSurface),
               ),
               onPressed: () => Navigator.pop(context),
             ),
@@ -60,10 +61,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         imageSource: widget.user.photos[index],
                         fit: BoxFit.cover,
                         placeholder: Container(
-                          color: Colors.grey[300],
+                          color: context.fill,
                         ),
                         errorWidget: Container(
-                          color: Colors.grey[300],
+                          color: context.fill,
                           child: const Icon(Icons.person, size: 100),
                         ),
                       );
@@ -86,8 +87,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: index == _currentPage
-                                  ? Colors.white
-                                  : Colors.white.withValues(alpha: 0.5),
+                                  ? context.onPrimary
+                                  : context.onPrimary.withValues(alpha: 0.5),
                             ),
                           ),
                         ),
@@ -106,7 +107,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withValues(alpha: 0.7),
+                            Theme.of(context).colorScheme.shadow.withValues(alpha: 0.7),
                           ],
                         ),
                       ),
@@ -143,10 +144,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             color: AppTheme.successColor,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Online',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: context.onPrimary,
                               fontSize: 12,
                             ),
                           ),
@@ -158,12 +159,12 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   // Location
                   Row(
                     children: [
-                      Icon(Icons.location_on, color: Colors.grey[600], size: 18),
+                      Icon(Icons.location_on, color: context.secondaryText, size: 18),
                       const SizedBox(width: 4),
                       Text(
                         '${widget.user.location} - ${widget.user.distanceText}',
                         style: TextStyle(
-                          color: Colors.grey[600],
+                          color: context.secondaryText,
                           fontSize: 14,
                         ),
                       ),
@@ -234,10 +235,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       bottomSheet: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -286,7 +287,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         width: 60,
         height: 60,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.surface,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(

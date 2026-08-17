@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/screens/profile/edit_profile_screen.dart';
 
@@ -54,9 +55,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 60, color: Colors.grey[400]),
+              Icon(Icons.error_outline, size: 60, color: context.secondaryText),
               const SizedBox(height: 16),
-              Text('Failed to load profile', style: TextStyle(color: Colors.grey[600])),
+              Text('Failed to load profile', style: TextStyle(color: context.secondaryText)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
@@ -103,11 +104,11 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                           decoration: BoxDecoration(
                             color: AppTheme.primaryColor,
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+                            border: Border.all(color: context.surface, width: 2),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.camera_alt,
-                            color: Colors.white,
+                            color: context.onPrimary,
                             size: 20,
                           ),
                         ),
@@ -128,7 +129,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                   user.location,
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey[600],
+                    color: context.secondaryText,
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -173,7 +174,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: context.fill,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -246,7 +247,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           label,
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: context.secondaryText,
           ),
         ),
       ],
@@ -276,9 +277,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
       child: SmartImage(
         imageSource: photoUrl,
         fit: BoxFit.cover,
-        placeholder: Container(color: Colors.grey[300]),
+        placeholder: Container(color: context.fill),
         errorWidget: Container(
-          color: Colors.grey[300],
+          color: context.fill,
           child: const Icon(Icons.error),
         ),
       ),
@@ -290,10 +291,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
       onTap: () => _showPhotoOptions(context),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey[200],
+          color: context.fill,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Colors.grey[400]!,
+            color: context.divider,
             width: 2,
             style: BorderStyle.solid,
           ),
@@ -301,7 +302,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
         child: Icon(
           Icons.add,
           size: 40,
-          color: Colors.grey[500],
+          color: context.secondaryText,
         ),
       ),
     );
@@ -386,7 +387,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[700],
+              color: context.secondaryText,
             ),
           ),
           Text(
