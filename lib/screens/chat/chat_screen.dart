@@ -13,6 +13,7 @@ import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/screens/chat/chat_attachments.dart';
 import 'package:flame/screens/chat/chat_rows.dart';
+import 'package:flame/services/chat_service.dart' show PinnedMessage;
 import 'package:flame/screens/chat/voice_recording.dart';
 import 'package:flame/screens/chat/widgets/widgets.dart';
 
@@ -42,6 +43,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Message? _replyingTo;
   Timer? _pollTimer;
+
+  /// The caller's pinned messages. Loaded on open — before this the backend had
+  /// no way to report them, so a bar would have been empty on entry and
+  /// vanished on reopen.
+  List<PinnedMessage> _pinned = [];
+
+  /// Mirrors the conversation's is_muted, kept locally so the menu reflects a
+  /// toggle immediately rather than waiting for a list refetch.
+  late bool _isMuted = widget.conversation.isMuted;
 
   /// The app-level connection, cached (not its socket) so every emit site
   /// reads `.socket` fresh. `RealtimeConnection.start()` replaces the socket
@@ -97,6 +107,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollController.addListener(_onScroll);
     _startPolling();
     _connectFlameSocket();
+    _loadPinned();
   }
 
   @override
@@ -549,6 +560,79 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  // ==================== Pin & mute ====================
+
+  Future<void> _loadPinned() async {
+    final result = await ref
+        .read(chatServiceProvider)
+        .getPinnedMessages(widget.conversation.id);
+    if (!mounted || !result.success) return;
+    setState(() => _pinned = result.data ?? []);
+  }
+
+  Future<void> _pin(Message message) async {
+    final result = await ref
+        .read(chatServiceProvider)
+        .pinMessage(widget.conversation.id, message.id);
+    if (!mounted) return;
+
+    if (!result.success) {
+      _showError(result.error ?? 'Could not pin');
+      return;
+    }
+    // The endpoint answers with the caller's FULL pin list, so replace rather
+    // than append — merging would drift from the server's view.
+    setState(() => _pinned = result.data ?? []);
+  }
+
+  Future<void> _unpin(String messageId) async {
+    final result = await ref
+        .read(chatServiceProvider)
+        .unpinMessage(widget.conversation.id, messageId);
+    if (!mounted) return;
+
+    if (!result.success) {
+      _showError(result.error ?? 'Could not unpin');
+      return;
+    }
+    setState(() => _pinned.removeWhere((p) => p.messageId == messageId));
+  }
+
+  /// Scrolls to a pinned message if it is loaded.
+  void _jumpToMessage(String messageId) {
+    final index = _messages.indexWhere((m) => m.id == messageId);
+    if (index == -1) {
+      // Older than the loaded page. Saying so beats a tap that does nothing.
+      _showError('That message is further back in the conversation');
+      return;
+    }
+    // Approximate: rows carry separators too, so this lands near rather than
+    // exactly on it. Better than not moving at all.
+    _scrollController.animateTo(
+      (index / _messages.length) * _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  Future<void> _toggleMute() async {
+    final service = ref.read(chatServiceProvider);
+    final wasMuted = _isMuted;
+
+    // Optimistic, so the menu closes on a settled state; reverted on failure.
+    setState(() => _isMuted = !wasMuted);
+
+    final result = wasMuted
+        ? await service.unmuteConversation(widget.conversation.id)
+        : await service.muteConversation(widget.conversation.id);
+
+    if (!mounted) return;
+    if (!result.success) {
+      setState(() => _isMuted = wasMuted);
+      _showError(result.error ?? 'Could not change notifications');
+    }
+  }
+
   // ==================== Voice ====================
 
   VoiceRecording? _recorder;
@@ -704,6 +788,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     showModalBottomSheet(
       context: context,
       builder: (context) => _MessageActionsSheet(
+        isPinned: _pinned.any((p) => p.messageId == message.id),
+        onTogglePin: () {
+          Navigator.pop(context);
+          if (_pinned.any((p) => p.messageId == message.id)) {
+            _unpin(message.id);
+          } else {
+            _pin(message);
+          }
+        },
         onReply: () {
           Navigator.pop(context);
           setState(() => _replyingTo = message);
@@ -893,6 +986,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       appBar: _buildAppBar(currentConversation, isOtherUserTyping),
       body: Column(
         children: [
+          if (_pinned.isNotEmpty)
+            _PinnedMessagesBar(
+              pinned: _pinned,
+              onTap: _jumpToMessage,
+              onUnpin: _unpin,
+            ),
           Expanded(child: _buildMessageList(currentUserId)),
           if (isOtherUserTyping)
             TypingIndicator(
@@ -993,8 +1092,49 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ),
       ),
       actions: [
-        IconButton(icon: const Icon(Icons.videocam_outlined), onPressed: () {}),
-        IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
+        // The videocam button that used to sit here did nothing — there is no
+        // calling feature anywhere in the app. A control that cannot work is
+        // worse than a missing one.
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert),
+          onSelected: (value) {
+            switch (value) {
+              case 'mute':
+                _toggleMute();
+              case 'profile':
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProfileDetailScreen(user: conversation.otherUser),
+                  ),
+                );
+            }
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'mute',
+              child: Row(
+                children: [
+                  Icon(_isMuted
+                      ? Icons.notifications_active_outlined
+                      : Icons.notifications_off_outlined),
+                  const SizedBox(width: 12),
+                  Text(_isMuted ? 'Unmute notifications' : 'Mute notifications'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'profile',
+              child: Row(
+                children: [
+                  Icon(Icons.person_outline),
+                  SizedBox(width: 12),
+                  Text('View profile'),
+                ],
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -1083,9 +1223,16 @@ class _MessageActionsSheet extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
+  /// Pin state and toggle. Pinning is per-user, so this reflects whether the
+  /// CALLER has pinned it, not whether anyone has.
+  final bool isPinned;
+  final VoidCallback onTogglePin;
+
   const _MessageActionsSheet({
     required this.onReply,
     required this.onReact,
+    required this.isPinned,
+    required this.onTogglePin,
     this.onEdit,
     this.onDelete,
   });
@@ -1117,6 +1264,11 @@ class _MessageActionsSheet extends StatelessWidget {
             ),
           ),
           const Divider(height: 1),
+          ListTile(
+            leading: Icon(isPinned ? Icons.push_pin : Icons.push_pin_outlined),
+            title: Text(isPinned ? 'Unpin' : 'Pin'),
+            onTap: onTogglePin,
+          ),
           ListTile(
             leading: const Icon(Icons.reply),
             title: const Text('Reply'),
@@ -1162,6 +1314,72 @@ class _DateSeparatorChip extends StatelessWidget {
           child: Text(
             chatDayLabel(day, DateTime.now()),
             style: theme.textTheme.labelSmall,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The caller's pinned messages, shown under the app bar.
+///
+/// Pinning is per-user — this is what YOU pinned, not what either participant
+/// did. Shows the most recent, with a count when there is more than one, since
+/// a bar tall enough for five pins is a bar that swallows the conversation.
+class _PinnedMessagesBar extends StatelessWidget {
+  final List<PinnedMessage> pinned;
+  final void Function(String messageId) onTap;
+  final void Function(String messageId) onUnpin;
+
+  const _PinnedMessagesBar({
+    required this.pinned,
+    required this.onTap,
+    required this.onUnpin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final latest = pinned.last;
+
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: InkWell(
+        onTap: () => onTap(latest.messageId),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Icon(Icons.push_pin, size: 16, color: AppTheme.primaryColor),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      pinned.length == 1
+                          ? 'Pinned message'
+                          : 'Pinned · ${pinned.length}',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      latest.content.isEmpty ? 'Attachment' : latest.content,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                tooltip: 'Unpin',
+                onPressed: () => onUnpin(latest.messageId),
+              ),
+            ],
           ),
         ),
       ),

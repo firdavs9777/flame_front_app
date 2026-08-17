@@ -9,6 +9,13 @@ class Conversation {
   final DateTime lastMessageAt;
   final int unreadCount;
 
+  /// Whether the CURRENT user has muted this conversation. Muting is per
+  /// participant, so this is the viewer's state, not a property of the chat.
+  /// Defaults false: an older backend omits it, and a conversation that
+  /// silently read as muted would suppress notifications with nothing on
+  /// screen explaining why.
+  final bool isMuted;
+
   const Conversation({
     required this.id,
     this.matchId,
@@ -16,6 +23,7 @@ class Conversation {
     required this.messages,
     required this.lastMessageAt,
     this.unreadCount = 0,
+    this.isMuted = false,
   });
 
   factory Conversation.fromJson(Map<String, dynamic> json) {
@@ -49,6 +57,7 @@ class Conversation {
               ? DateTime.parse(json['last_message_at'])
               : DateTime.now()),
       unreadCount: json['unread_count'] ?? 0,
+      isMuted: json['is_muted'] ?? false,
     );
   }
 
@@ -60,6 +69,7 @@ class Conversation {
       'messages': messages.map((m) => m.toJson()).toList(),
       'last_message_at': lastMessageAt.toIso8601String(),
       'unread_count': unreadCount,
+      'is_muted': isMuted,
     };
   }
 
@@ -70,6 +80,7 @@ class Conversation {
     List<Message>? messages,
     DateTime? lastMessageAt,
     int? unreadCount,
+    bool? isMuted,
   }) {
     return Conversation(
       id: id ?? this.id,
@@ -78,6 +89,7 @@ class Conversation {
       messages: messages ?? this.messages,
       lastMessageAt: lastMessageAt ?? this.lastMessageAt,
       unreadCount: unreadCount ?? this.unreadCount,
+      isMuted: isMuted ?? this.isMuted,
     );
   }
 

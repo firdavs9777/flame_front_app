@@ -102,6 +102,25 @@ class ChatService {
     return ServiceResult.failure(response.error ?? 'Failed to send message');
   }
 
+  /// The caller's pinned messages for a conversation.
+  ///
+  /// A read of its own rather than a field on the conversation payload: pins
+  /// need message content, so serving them in the conversation LIST would be an
+  /// N+1 across every row to populate a bar only the open chat renders.
+  Future<ServiceResult<List<PinnedMessage>>> getPinnedMessages(
+    String conversationId,
+  ) async {
+    final response = await _apiClient.get('/conversations/$conversationId/pins');
+
+    if (response.success && response.data != null) {
+      final raw = response.data['pinned_messages'] as List? ?? [];
+      return ServiceResult.success(
+        raw.map((p) => PinnedMessage.fromJson(p)).toList(),
+      );
+    }
+    return ServiceResult.failure(response.error ?? 'Failed to load pinned messages');
+  }
+
   /// Archives a conversation for the current user only. The other participant
   /// still sees it in their list.
   Future<ServiceResult<void>> archiveConversation(String conversationId) async {
