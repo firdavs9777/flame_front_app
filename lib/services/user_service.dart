@@ -117,28 +117,6 @@ class UserService {
     return ServiceResult.failure(response.error ?? 'Failed to update preferences');
   }
 
-  // Update notification settings
-  Future<ServiceResult<Map<String, dynamic>>> updateNotificationSettings({
-    bool? newMatches,
-    bool? newMessages,
-    bool? superLikes,
-    bool? promotions,
-  }) async {
-    final body = <String, dynamic>{};
-    if (newMatches != null) body['new_matches'] = newMatches;
-    if (newMessages != null) body['new_messages'] = newMessages;
-    if (superLikes != null) body['super_likes'] = superLikes;
-    if (promotions != null) body['promotions'] = promotions;
-
-    final response = await _apiClient.patch('/users/me/notifications', body: body);
-
-    if (response.success && response.data != null) {
-      return ServiceResult.success(response.data['notifications'] ?? response.data);
-    }
-
-    return ServiceResult.failure(response.error ?? 'Failed to update notification settings');
-  }
-
   // Upload photo (for logged-in users)
   Future<ServiceResult<Photo>> uploadPhoto(File photo, {bool isPrimary = false}) async {
     final response = await _apiClient.uploadFile(
