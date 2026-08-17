@@ -73,39 +73,25 @@ class SettingsScreen extends ConsumerWidget {
               );
             },
           ),
-          const SizedBox(height: 20),
-          _buildSectionHeader(context, 'Discovery'),
+          // One control, one path. This switch and the one in Edit Profile →
+          // Preferences now both read the stored preference off the current
+          // user and both write through `updatePreferences`, so they cannot
+          // disagree. It previously pointed at `settingsProvider`, which
+          // mutated in-memory state and issued no request at all.
+          //
+          // Disabled rather than hidden while the user is loading: hiding it
+          // would reflow the list, and a switch that is visibly inert is
+          // honest about not knowing the value yet.
           _buildSwitchTile(
-            context: context,
-            icon: Icons.explore_outlined,
-            title: 'Discovery',
-            subtitle: 'Show me in discovery',
-            value: settings.discoveryEnabled,
-            onChanged: (_) {
-              ref
-                  .read(settingsProvider.notifier)
-                  .setDiscoveryEnabled(!settings.discoveryEnabled);
-            },
-          ),
-          _buildSwitchTile(
-            context: context,
-            icon: Icons.location_on_outlined,
-            title: 'Show Distance',
-            subtitle: 'Show distance on profile',
-            value: settings.showDistance,
-            onChanged: (_) {
-              ref.read(settingsProvider.notifier).toggleShowDistance();
-            },
-          ),
-          _buildSwitchTile(
+            key: const Key('settings_show_online_switch'),
             context: context,
             icon: Icons.circle_outlined,
             title: 'Show Online Status',
             subtitle: 'Let others know when you\'re online',
-            value: settings.showOnlineStatus,
-            onChanged: (_) {
-              ref.read(settingsProvider.notifier).toggleShowOnlineStatus();
-            },
+            value: user?.showOnlineStatus ?? true,
+            onChanged: user == null
+                ? null
+                : (value) => _setShowOnlineStatus(context, ref, value),
           ),
           const SizedBox(height: 20),
 
@@ -326,15 +312,37 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  /// Writes "show online status" through the same server-backed path the Edit
+  /// Profile control uses. On failure the notifier leaves state alone, so the
+  /// switch snaps back on its own — the SnackBar is there so that snap-back
+  /// reads as a failed save rather than an unresponsive control.
+  Future<void> _setShowOnlineStatus(
+    BuildContext context,
+    WidgetRef ref,
+    bool value,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await ref
+        .read(currentUserProvider.notifier)
+        .updatePreferences(showOnlineStatus: value);
+    if (!ok) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not save — try again')),
+      );
+    }
+  }
+
   Widget _buildSwitchTile({
+    Key? key,
     required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     required bool value,
-    required ValueChanged<bool> onChanged,
+    required ValueChanged<bool>? onChanged,
   }) {
     return SwitchListTile(
+      key: key,
       secondary: Icon(icon, color: context.secondaryText),
       title: Text(title),
       subtitle: Text(subtitle),

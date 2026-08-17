@@ -35,14 +35,12 @@ void main() {
     expect(notifier.state.themeMode, ThemeMode.light);
   });
 
-  test('setThemeMode leaves other settings untouched', () async {
-    final notifier = SettingsNotifier();
-    final before = notifier.state;
-
-    await notifier.setThemeMode(ThemeMode.dark);
-
-    expect(notifier.state.showOnlineStatus, before.showOnlineStatus);
-    expect(notifier.state.discoveryEnabled, before.discoveryEnabled);
-    expect(notifier.state.showDistance, before.showDistance);
-  });
+  // There is no longer a "leaves other settings untouched" case to make:
+  // AppSettings holds themeMode and nothing else. The three booleans this
+  // assertion used to guard (showOnlineStatus, discoveryEnabled, showDistance)
+  // were in-memory only — no request, no SharedPreferences write. Two of them
+  // were read solely by the switch that set them, and the third had a
+  // server-backed twin in Edit Profile that it silently contradicted. All
+  // three are gone; showOnlineStatus now lives on User.preferences, where the
+  // server can see it. See test/screens/settings/settings_online_status_test.
 }
