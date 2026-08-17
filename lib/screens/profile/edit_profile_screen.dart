@@ -8,48 +8,92 @@ import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/models/models.dart';
 
+/// Saves the About section (name, age, bio) — nothing else. The signature is
+/// the independence guarantee: this function has no parameter through which
+/// preferences or interests could travel along for the ride.
+typedef AboutSave = Future<bool> Function({
+  required String name,
+  required int age,
+  required String bio,
+});
+
+/// Saves who the user is looking for together with their interest tags.
+typedef InterestsSave = Future<bool> Function({
+  required Gender? lookingFor,
+  required List<String> interests,
+});
+
+/// Saves discovery preferences. `showDistance` is deliberately not a
+/// parameter: the Preferences section renders no control for it (see
+/// `_PreferencesSection`), so nothing here ever needs to carry it.
+typedef PreferencesSave = Future<bool> Function({
+  int? minAge,
+  int? maxAge,
+  double? maxDistance,
+  bool? showOnlineStatus,
+});
+
+/// A form split into independently-saving section cards — Photos, About,
+/// Interests, Preferences — each validating before it calls its save
+/// callback rather than discovering a bad value after a request already
+/// went out.
+///
+/// The three save callbacks are injected, the way `ChatSearchScreen` takes
+/// `search`, so the screen (and each section) is drivable in a test without
+/// a network. Left null — the case for every real navigation site in the
+/// app — each section falls back to the matching `CurrentUserNotifier`
+/// method.
 class EditProfileScreen extends ConsumerStatefulWidget {
-  const EditProfileScreen({super.key});
+  final AboutSave? saveAbout;
+  final InterestsSave? saveInterests;
+  final PreferencesSave? savePreferences;
+
+  const EditProfileScreen({
+    super.key,
+    this.saveAbout,
+    this.saveInterests,
+    this.savePreferences,
+  });
 
   @override
   ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _bioController = TextEditingController();
-  final _ageController = TextEditingController();
-
-  Gender? _lookingFor;
-  List<String> _selectedInterests = [];
-  bool _isLoading = false;
-  bool _initialized = false;
-
-  static const allInterests = [
-    'Travel', 'Music', 'Movies', 'Sports', 'Fitness', 'Food',
-    'Art', 'Gaming', 'Reading', 'Photography', 'Coffee', 'Hiking',
-    'Dancing', 'Cooking', 'Yoga', 'Nature',
-  ];
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _bioController.dispose();
-    _ageController.dispose();
-    super.dispose();
+  Future<bool> _defaultSaveAbout({
+    required String name,
+    required int age,
+    required String bio,
+  }) {
+    return ref.read(currentUserProvider.notifier).updateProfile(
+          name: name,
+          age: age,
+          bio: bio,
+        );
   }
 
-  void _initializeFromUser() {
-    final user = ref.read(currentUserProvider).valueOrNull;
-    if (user != null && !_initialized) {
-      _nameController.text = user.name;
-      _bioController.text = user.bio;
-      _ageController.text = user.age.toString();
-      _lookingFor = user.lookingFor;
-      _selectedInterests = List<String>.from(user.interests);
-      _initialized = true;
-    }
+  Future<bool> _defaultSaveInterests({
+    required Gender? lookingFor,
+    required List<String> interests,
+  }) {
+    return ref.read(currentUserProvider.notifier).updateProfile(
+          lookingFor: lookingFor,
+          interests: interests,
+        );
+  }
+
+  Future<bool> _defaultSavePreferences({
+    int? minAge,
+    int? maxAge,
+    double? maxDistance,
+    bool? showOnlineStatus,
+  }) {
+    return ref.read(currentUserProvider.notifier).updatePreferences(
+          minAge: minAge,
+          maxAge: maxAge,
+          maxDistance: maxDistance,
+          showOnlineStatus: showOnlineStatus,
+        );
   }
 
   @override
@@ -57,27 +101,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final userState = ref.watch(currentUserProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Profile'),
-        actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _saveProfile,
-            child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(
-                    'Save',
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Edit Profile')),
       body: userState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('Error: $error')),
@@ -86,122 +110,178 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             return const Center(child: Text('No user data'));
           }
 
-          _initializeFromUser();
-
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Photos section
-                  _buildSectionTitle('Photos'),
-                  const SizedBox(height: 12),
-                  _buildPhotosGrid(user),
-                  const SizedBox(height: 24),
-
-                  // Name
-                  _buildSectionTitle('Name'),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      hintText: 'Your name',
-                      filled: true,
-                      fillColor: context.fill,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your name';
-                      }
-                      return null;
-                    },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SectionCard(
+                  title: 'Photos',
+                  child: _PhotosSection(user: user),
+                ),
+                const SizedBox(height: 20),
+                _SectionCard(
+                  title: 'About',
+                  child: _AboutSection(
+                    user: user,
+                    onSave: widget.saveAbout ?? _defaultSaveAbout,
                   ),
-                  const SizedBox(height: 24),
-
-                  // Age
-                  _buildSectionTitle('Age'),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _ageController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      hintText: 'Your age',
-                      filled: true,
-                      fillColor: context.fill,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your age';
-                      }
-                      final age = int.tryParse(value);
-                      if (age == null || age < 18 || age > 100) {
-                        return 'Please enter a valid age (18-100)';
-                      }
-                      return null;
-                    },
+                ),
+                const SizedBox(height: 20),
+                _SectionCard(
+                  title: 'Interests',
+                  child: _InterestsSection(
+                    user: user,
+                    onSave: widget.saveInterests ?? _defaultSaveInterests,
                   ),
-                  const SizedBox(height: 24),
-
-                  // Bio
-                  _buildSectionTitle('About Me'),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _bioController,
-                    maxLines: 4,
-                    maxLength: 500,
-                    decoration: InputDecoration(
-                      hintText: 'Tell others about yourself...',
-                      filled: true,
-                      fillColor: context.fill,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
+                ),
+                const SizedBox(height: 20),
+                _SectionCard(
+                  title: 'Preferences',
+                  child: _PreferencesSection(
+                    user: user,
+                    onSave: widget.savePreferences ?? _defaultSavePreferences,
                   ),
-                  const SizedBox(height: 24),
-
-                  // Looking for
-                  _buildSectionTitle('Looking For'),
-                  const SizedBox(height: 12),
-                  _buildGenderSelector(),
-                  const SizedBox(height: 24),
-
-                  // Interests
-                  _buildSectionTitle('Interests'),
-                  const SizedBox(height: 12),
-                  _buildInterestsSelector(),
-                  const SizedBox(height: 40),
-                ],
-              ),
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
           );
         },
       ),
     );
   }
+}
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
+/// Shared chrome for every section: a titled card on [BuildContext.surface].
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _SectionCard({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: context.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
       ),
     );
   }
+}
 
-  Widget _buildPhotosGrid(user) {
+InputDecoration _fieldDecoration(BuildContext context, String hint) {
+  return InputDecoration(
+    hintText: hint,
+    filled: true,
+    fillColor: context.fill,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide.none,
+    ),
+  );
+}
+
+/// A Save button in `AppTheme.primaryColor`, with [context.onPrimary] as its
+/// foreground — text and spinner sit ON a primary-coloured surface.
+///
+/// [buttonKey] goes on the `ElevatedButton` itself rather than on this
+/// wrapper: the wrapper's render object is the enclosing `Align`, which
+/// spans the full row width, so a tap computed against its center would
+/// land beside the (right-aligned) button rather than on it.
+class _SaveButton extends StatelessWidget {
+  final Key buttonKey;
+  final bool isSaving;
+  final VoidCallback? onPressed;
+
+  const _SaveButton({
+    required this.buttonKey,
+    required this.isSaving,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: ElevatedButton(
+        key: buttonKey,
+        onPressed: isSaving ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: context.onPrimary,
+        ),
+        child: isSaving
+            ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: context.onPrimary,
+                ),
+              )
+            : const Text('Save'),
+      ),
+    );
+  }
+}
+
+Widget _fieldLabel(BuildContext context, String label) {
+  return Text(
+    label,
+    style: TextStyle(fontWeight: FontWeight.w600, color: context.onSurface),
+  );
+}
+
+/// Photos grid. Every action (upload, delete, reorder) already saves
+/// immediately against the backend, so there is no separate Save button
+/// here — the section is independent by construction.
+class _PhotosSection extends ConsumerStatefulWidget {
+  final User user;
+
+  const _PhotosSection({required this.user});
+
+  @override
+  ConsumerState<_PhotosSection> createState() => _PhotosSectionState();
+}
+
+class _PhotosSectionState extends ConsumerState<_PhotosSection> {
+  bool _isUploading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildPhotosGrid(widget.user),
+        if (_isUploading) ...[
+          const SizedBox(height: 12),
+          const Center(child: CircularProgressIndicator()),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildPhotosGrid(User user) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -394,7 +474,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _uploadPhoto(File photo) async {
-    setState(() => _isLoading = true);
+    setState(() => _isUploading = true);
 
     final user = ref.read(currentUserProvider).valueOrNull;
     final isPrimary = user?.photos.isEmpty ?? true;
@@ -404,20 +484,200 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       isPrimary: isPrimary,
     );
 
-    setState(() => _isLoading = false);
+    if (!mounted) return;
+    setState(() => _isUploading = false);
 
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Photo uploaded successfully')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to upload photo')),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(success
+            ? 'Photo uploaded successfully'
+            : 'Failed to upload photo'),
+      ),
+    );
+  }
+}
+
+/// Name, age and bio. Validates locally before calling [onSave] — an
+/// invalid age or too-short name never reaches it — and keeps the user's
+/// typed values on screen if the save fails, since [onSave] failing doesn't
+/// touch [User] state at all.
+class _AboutSection extends StatefulWidget {
+  final User user;
+  final AboutSave onSave;
+
+  const _AboutSection({required this.user, required this.onSave});
+
+  @override
+  State<_AboutSection> createState() => _AboutSectionState();
+}
+
+class _AboutSectionState extends State<_AboutSection> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameController;
+  late final TextEditingController _ageController;
+  late final TextEditingController _bioController;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.user.name);
+    _ageController = TextEditingController(text: widget.user.age.toString());
+    _bioController = TextEditingController(text: widget.user.bio);
   }
 
-  Widget _buildGenderSelector() {
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _ageController.dispose();
+    _bioController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+    final ok = await widget.onSave(
+      name: _nameController.text.trim(),
+      age: int.parse(_ageController.text),
+      bio: _bioController.text,
+    );
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(ok ? 'About updated' : 'Could not save — try again')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _fieldLabel(context, 'Name'),
+          const SizedBox(height: 8),
+          TextFormField(
+            key: const Key('about_name_field'),
+            controller: _nameController,
+            decoration: _fieldDecoration(context, 'Your name'),
+            validator: (value) {
+              if ((value ?? '').trim().length < 2) {
+                return 'Name must be at least 2 characters';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          _fieldLabel(context, 'Age'),
+          const SizedBox(height: 8),
+          TextFormField(
+            key: const Key('about_age_field'),
+            controller: _ageController,
+            keyboardType: TextInputType.number,
+            decoration: _fieldDecoration(context, 'Your age'),
+            validator: (value) {
+              final age = int.tryParse(value ?? '');
+              if (age == null || age < 18 || age > 100) {
+                return 'Enter a valid age (18-100)';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          _fieldLabel(context, 'About Me'),
+          const SizedBox(height: 8),
+          TextFormField(
+            key: const Key('about_bio_field'),
+            controller: _bioController,
+            maxLines: 4,
+            maxLength: 500,
+            decoration: _fieldDecoration(context, 'Tell others about yourself...'),
+          ),
+          const SizedBox(height: 8),
+          _SaveButton(
+            buttonKey: const Key('about_save_button'),
+            isSaving: _isSaving,
+            onPressed: _save,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Looking-for gender and interest tags, saved together — the pair the
+/// original form always submitted as one unit.
+class _InterestsSection extends StatefulWidget {
+  final User user;
+  final InterestsSave onSave;
+
+  const _InterestsSection({required this.user, required this.onSave});
+
+  @override
+  State<_InterestsSection> createState() => _InterestsSectionState();
+}
+
+class _InterestsSectionState extends State<_InterestsSection> {
+  static const _allInterests = [
+    'Travel', 'Music', 'Movies', 'Sports', 'Fitness', 'Food',
+    'Art', 'Gaming', 'Reading', 'Photography', 'Coffee', 'Hiking',
+    'Dancing', 'Cooking', 'Yoga', 'Nature',
+  ];
+
+  late Gender? _lookingFor;
+  late List<String> _selectedInterests;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _lookingFor = widget.user.lookingFor;
+    _selectedInterests = List<String>.from(widget.user.interests);
+  }
+
+  Future<void> _save() async {
+    setState(() => _isSaving = true);
+    final ok = await widget.onSave(
+      lookingFor: _lookingFor,
+      interests: _selectedInterests,
+    );
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? 'Interests updated' : 'Could not save — try again'),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _fieldLabel(context, 'Looking For'),
+        const SizedBox(height: 12),
+        _buildGenderSelector(context),
+        const SizedBox(height: 20),
+        _fieldLabel(context, 'Interests'),
+        const SizedBox(height: 12),
+        _buildInterestsSelector(context),
+        const SizedBox(height: 12),
+        _SaveButton(
+          buttonKey: const Key('interests_save_button'),
+          isSaving: _isSaving,
+          onPressed: _save,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGenderSelector(BuildContext context) {
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -444,11 +704,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  Widget _buildInterestsSelector() {
+  Widget _buildInterestsSelector(BuildContext context) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: allInterests.map((interest) {
+      children: _allInterests.map((interest) {
         final isSelected = _selectedInterests.contains(interest);
         return GestureDetector(
           onTap: () {
@@ -464,7 +724,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppTheme.primaryColor.withOpacity(0.1)
+                  ? AppTheme.primaryColor.withValues(alpha: 0.1)
                   : context.fill,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
@@ -484,31 +744,154 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }).toList(),
     );
   }
+}
 
-  Future<void> _saveProfile() async {
+/// Discovery preferences: min age, max age, max distance, and "Show online
+/// status" — deliberately NOT "Show distance". `showDistance` is stored and
+/// saveable server-side, but `discoveryService.toDiscoverUser` hardcodes
+/// `distance: 0`, so a toggle here would govern a number that always reads
+/// zero. That is the dead-button pattern this codebase has already spent
+/// effort removing twice; it becomes real the day distance itself does.
+///
+/// Validates min age <= max age before calling [onSave], matching the
+/// route's own refine — catching it here saves a round trip and a 422.
+class _PreferencesSection extends StatefulWidget {
+  final User user;
+  final PreferencesSave onSave;
+
+  const _PreferencesSection({required this.user, required this.onSave});
+
+  @override
+  State<_PreferencesSection> createState() => _PreferencesSectionState();
+}
+
+class _PreferencesSectionState extends State<_PreferencesSection> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _minAgeController;
+  late final TextEditingController _maxAgeController;
+  late final TextEditingController _maxDistanceController;
+  late bool _showOnlineStatus;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _minAgeController =
+        TextEditingController(text: widget.user.minAgePreference.toString());
+    _maxAgeController =
+        TextEditingController(text: widget.user.maxAgePreference.toString());
+    _maxDistanceController = TextEditingController(
+      text: widget.user.maxDistancePreference.round().toString(),
+    );
+    _showOnlineStatus = widget.user.showOnlineStatus;
+  }
+
+  @override
+  void dispose() {
+    _minAgeController.dispose();
+    _maxAgeController.dispose();
+    _maxDistanceController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
-
-    final success = await ref.read(currentUserProvider.notifier).updateProfile(
-      name: _nameController.text,
-      age: int.parse(_ageController.text),
-      bio: _bioController.text,
-      lookingFor: _lookingFor,
-      interests: _selectedInterests,
+    setState(() => _isSaving = true);
+    final ok = await widget.onSave(
+      minAge: int.parse(_minAgeController.text),
+      maxAge: int.parse(_maxAgeController.text),
+      maxDistance: double.parse(_maxDistanceController.text),
+      showOnlineStatus: _showOnlineStatus,
     );
+    if (!mounted) return;
+    setState(() => _isSaving = false);
 
-    setState(() => _isLoading = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? 'Preferences updated' : 'Could not save — try again'),
+      ),
+    );
+  }
 
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully')),
-      );
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update profile')),
-      );
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _fieldLabel(context, 'Minimum Age'),
+          const SizedBox(height: 8),
+          TextFormField(
+            key: const Key('preferences_min_age_field'),
+            controller: _minAgeController,
+            keyboardType: TextInputType.number,
+            decoration: _fieldDecoration(context, 'Minimum age'),
+            validator: (value) {
+              final age = int.tryParse(value ?? '');
+              if (age == null || age < 18 || age > 100) {
+                return 'Enter a valid age (18-100)';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          _fieldLabel(context, 'Maximum Age'),
+          const SizedBox(height: 8),
+          TextFormField(
+            key: const Key('preferences_max_age_field'),
+            controller: _maxAgeController,
+            keyboardType: TextInputType.number,
+            decoration: _fieldDecoration(context, 'Maximum age'),
+            validator: (value) {
+              final age = int.tryParse(value ?? '');
+              if (age == null || age < 18 || age > 100) {
+                return 'Enter a valid age (18-100)';
+              }
+              final minAge = int.tryParse(_minAgeController.text);
+              if (minAge != null && age < minAge) {
+                return 'Must be at least the minimum age';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          _fieldLabel(context, 'Maximum Distance (km)'),
+          const SizedBox(height: 8),
+          TextFormField(
+            key: const Key('preferences_max_distance_field'),
+            controller: _maxDistanceController,
+            keyboardType: TextInputType.number,
+            decoration: _fieldDecoration(context, 'Maximum distance'),
+            validator: (value) {
+              final distance = double.tryParse(value ?? '');
+              if (distance == null || distance <= 0) {
+                return 'Enter a valid distance';
+              }
+              return null;
+            },
+          ),
+          SwitchListTile(
+            key: const Key('preferences_show_online_switch'),
+            contentPadding: EdgeInsets.zero,
+            title: Text('Show online status', style: TextStyle(color: context.onSurface)),
+            subtitle: Text(
+              'Let others see when you\'re active',
+              style: TextStyle(color: context.secondaryText),
+            ),
+            value: _showOnlineStatus,
+            activeColor: AppTheme.primaryColor,
+            onChanged: (value) => setState(() => _showOnlineStatus = value),
+          ),
+          const SizedBox(height: 8),
+          _SaveButton(
+            buttonKey: const Key('preferences_save_button'),
+            isSaving: _isSaving,
+            onPressed: _save,
+          ),
+        ],
+      ),
+    );
   }
 }
