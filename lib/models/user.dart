@@ -156,10 +156,17 @@ class User {
       commonInterests: json['common_interests'] != null
           ? List<String>.from(json['common_interests'])
           : null,
-      isPremium: json['is_premium'] ?? false,
-      premiumExpiresAt: json['premium_expires_at'] != null
-          ? DateTime.parse(json['premium_expires_at'])
-          : null,
+      // Accept both conventions, like every neighbouring field. These two
+      // were the only pair here without a camelCase fallback, so an
+      // entitlement delivered as `isPremium` parsed to false and a paying
+      // user read as not premium — silently, since `?? false` cannot tell
+      // "absent" from "not premium".
+      isPremium: json['is_premium'] ?? json['isPremium'] ?? false,
+      premiumExpiresAt:
+          (json['premium_expires_at'] ?? json['premiumExpiresAt']) != null
+              ? DateTime.parse(
+                  json['premium_expires_at'] ?? json['premiumExpiresAt'])
+              : null,
       superLikesRemaining: json['super_likes_remaining'] ?? 3,
       isProfileComplete: json['is_profile_complete'] as bool?,
       preferredLanguage: json['preferred_language'] as String?,

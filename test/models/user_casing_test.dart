@@ -15,6 +15,8 @@ Map<String, dynamic> _camelPayload() => {
       'lookingFor': 'male',
       'isOnline': true,
       'isVerified': true,
+      'isPremium': true,
+      'premiumExpiresAt': '2027-01-01T00:00:00.000Z',
       'lastActive': '2026-07-20T10:00:00.000Z',
       'createdAt': '2026-01-01T00:00:00.000Z',
       'preferences': {
@@ -38,6 +40,8 @@ Map<String, dynamic> _snakePayload() => {
       'looking_for': 'female',
       'is_online': true,
       'is_verified': true,
+      'is_premium': true,
+      'premium_expires_at': '2027-01-01T00:00:00.000Z',
       'last_active': '2026-07-20T10:00:00.000Z',
       'created_at': '2026-01-01T00:00:00.000Z',
       'preferences': {
@@ -60,6 +64,26 @@ void main() {
       expect(u.lastActive.year, 2026);
     });
 
+    // isPremium / premiumExpiresAt were the only pair in the constructor with
+    // no camelCase fallback, while every neighbouring field had one. That gap
+    // is not visible from either side on its own: the model test seeded
+    // snake_case and passed, so a camelCase server would have parsed the pair
+    // as (false, null) and the premium badge would have stayed hidden for a
+    // paying user with no failing test anywhere.
+    test('parses camelCase premium fields', () {
+      final u = User.fromJson(_camelPayload());
+      expect(u.isPremium, isTrue);
+      expect(u.premiumExpiresAt, isNotNull);
+      expect(u.premiumExpiresAt!.year, 2027);
+      expect(
+        u.isPremiumActive,
+        isTrue,
+        reason:
+            'a paying user whose entitlement arrives in camelCase must not '
+            'read as lapsed',
+      );
+    });
+
     test('parses camelCase preferences', () {
       final u = User.fromJson(_camelPayload());
       expect(u.minAgePreference, 21);
@@ -78,6 +102,12 @@ void main() {
       expect(u.minAgePreference, 22);
       expect(u.maxDistancePreference, 30);
       expect(u.showOnlineStatus, isFalse);
+    });
+
+    test('still parses snake_case premium fields', () {
+      final u = User.fromJson(_snakePayload());
+      expect(u.isPremium, isTrue);
+      expect(u.premiumExpiresAt!.year, 2027);
     });
   });
 }
