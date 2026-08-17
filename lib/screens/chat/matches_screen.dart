@@ -6,6 +6,7 @@ import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/chat/chat_screen.dart';
 import 'package:flame/screens/chat/chat_search_screen.dart';
+import 'package:flame/screens/chat/archived_conversations_screen.dart';
 import 'package:flame/screens/stories/widgets/story_tray.dart';
 import 'package:flame/widgets/smart_image.dart';
 
@@ -49,6 +50,34 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
     );
   }
 
+  /// Opens the archived list, unwrapping ServiceResult into the screen's
+  /// contract: conversations on success, a throw on failure so its error
+  /// branch renders.
+  void _openArchived(BuildContext context, WidgetRef ref) {
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (_) => ArchivedConversationsScreen(
+              load: () async {
+                final result = await ref
+                    .read(chatServiceProvider)
+                    .getConversations(archived: true);
+                if (!result.success) {
+                  throw Exception(result.error ?? 'Could not load');
+                }
+                return result.data?.conversations ?? [];
+              },
+              unarchive: (id) =>
+                  ref.read(conversationsProvider.notifier).unarchive(id),
+            ),
+          ),
+        )
+        // Anything unarchived while in there belongs in the default list again.
+        .then((_) => ref
+            .read(conversationsProvider.notifier)
+            .loadConversations(refresh: true));
+  }
+
   @override
   Widget build(BuildContext context) {
     final matchesState = ref.watch(matchesProvider);
@@ -62,6 +91,11 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
             icon: const Icon(Icons.search),
             tooltip: 'Search messages',
             onPressed: () => _openSearch(context, ref),
+          ),
+          IconButton(
+            icon: const Icon(Icons.archive_outlined),
+            tooltip: 'Archived',
+            onPressed: () => _openArchived(context, ref),
           ),
         ],
       ),
@@ -175,7 +209,33 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      return _ConversationTile(conversation: conversations[index]);
+                      final conversation = conversations[index];
+                      return Dismissible(
+                        key: ValueKey(conversation.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: const Icon(Icons.archive, color: Colors.white),
+                        ),
+                        // confirmDismiss, not onDismissed: returning false on
+                        // failure keeps a conversation on screen that is still
+                        // there on the server. Dismissing first and reconciling
+                        // later would show the user a lie.
+                        confirmDismiss: (_) async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final error = await ref
+                              .read(conversationsProvider.notifier)
+                              .archive(conversation.id);
+                          if (error != null) {
+                            messenger.showSnackBar(SnackBar(content: Text(error)));
+                            return false;
+                          }
+                          return true;
+                        },
+                        child: _ConversationTile(conversation: conversation),
+                      );
                     },
                     childCount: conversations.length,
                   ),
