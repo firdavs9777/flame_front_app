@@ -245,6 +245,18 @@ class _SaveButton extends StatelessWidget {
   }
 }
 
+/// Renders a stored preference number for display without discarding
+/// precision: a whole number prints without a trailing `.0`, anything else
+/// prints as Dart's own shortest round-tripping decimal. Rounding here
+/// (e.g. `.round()`) would silently rewrite a stored `24.6` to `25` the next
+/// time the section saves, even if the user never touched the field.
+String _formatDistance(double value) {
+  if (value == value.truncateToDouble()) {
+    return value.truncate().toString();
+  }
+  return value.toString();
+}
+
 Widget _fieldLabel(BuildContext context, String label) {
   return Text(
     label,
@@ -781,7 +793,7 @@ class _PreferencesSectionState extends State<_PreferencesSection> {
     _maxAgeController =
         TextEditingController(text: widget.user.maxAgePreference.toString());
     _maxDistanceController = TextEditingController(
-      text: widget.user.maxDistancePreference.round().toString(),
+      text: _formatDistance(widget.user.maxDistancePreference),
     );
     _showOnlineStatus = widget.user.showOnlineStatus;
   }

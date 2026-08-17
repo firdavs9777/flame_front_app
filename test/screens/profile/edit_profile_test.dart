@@ -11,6 +11,7 @@ import 'package:flame/models/models.dart';
 import 'package:flame/providers/user_provider.dart';
 import 'package:flame/screens/profile/edit_profile_screen.dart';
 import 'package:flame/services/user_service.dart';
+import 'package:flame/theme/app_theme.dart';
 
 // Never actually invoked: the screen reads its initial data off
 // currentUserProvider (seeded below via setUser) and every save in these
@@ -51,6 +52,7 @@ Widget _host(
   AboutSave? saveAbout,
   InterestsSave? saveInterests,
   PreferencesSave? savePreferences,
+  ThemeData? theme,
 }) {
   return ProviderScope(
     overrides: [
@@ -59,6 +61,7 @@ Widget _host(
       ),
     ],
     child: MaterialApp(
+      theme: theme,
       home: EditProfileScreen(
         saveAbout: saveAbout,
         saveInterests: saveInterests,
@@ -130,12 +133,30 @@ void main() {
         String? capturedName;
         int? capturedAge;
         String? capturedBio;
+        var interestsCalls = 0;
+        var preferencesCalls = 0;
         await tester.pumpWidget(_host(
           _user(minAge: 21, maxAge: 40),
           saveAbout: ({required name, required age, required bio}) async {
             capturedName = name;
             capturedAge = age;
             capturedBio = bio;
+            return true;
+          },
+          // Spies on the *other* two sections' save paths. Asserting on
+          // these directly — rather than inferring "preferences untouched"
+          // from unchanged provider state — matters because state would
+          // also stay unchanged if a regression fell through to the real
+          // (unmocked) UserService: Flutter's test binding stubs every HTTP
+          // response to 400, and CurrentUserNotifier.updatePreferences only
+          // mutates state on success, so an unrelated network failure would
+          // make this assertion pass for the wrong reason.
+          saveInterests: ({required lookingFor, required interests}) async {
+            interestsCalls++;
+            return true;
+          },
+          savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
+            preferencesCalls++;
             return true;
           },
         ));
@@ -157,17 +178,16 @@ void main() {
         expect(capturedName, 'Alexandra');
         expect(capturedAge, 29);
         expect(capturedBio, 'Updated bio');
-
-        // The callback's own signature is the independence guarantee: it has
-        // no parameter through which minAge/maxAge/interests could travel.
-        // Saving About must not have touched the Preferences the user
-        // arrived with.
-        final container = ProviderScope.containerOf(
-          tester.element(find.byType(EditProfileScreen)),
+        expect(
+          interestsCalls,
+          0,
+          reason: 'saving About must never touch the Interests save path',
         );
-        final user = container.read(currentUserProvider).valueOrNull;
-        expect(user!.minAgePreference, 21);
-        expect(user.maxAgePreference, 40);
+        expect(
+          preferencesCalls,
+          0,
+          reason: 'saving About must never touch the Preferences save path',
+        );
       },
     );
 
@@ -197,6 +217,29 @@ void main() {
         );
       },
     );
+  });
+
+  // Task 5 exists so these screens are dark-mode-correct; a rework with no
+  // dark coverage would leave that claim untested for the file it most
+  // applies to. A smoke test, not a golden — goldens on themed screens break
+  // on every palette change and get regenerated without being read.
+  group('renders without throwing', () {
+    final themes = {'light': AppTheme.lightTheme, 'dark': AppTheme.darkTheme};
+
+    for (final entry in themes.entries) {
+      testWidgets('in ${entry.key} theme', (tester) async {
+        await tester.pumpWidget(_host(_user(), theme: entry.value));
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('Photos'), findsOneWidget);
+        expect(find.text('About'), findsOneWidget);
+        // The section card title and the in-section field label are both
+        // literally "Interests".
+        expect(find.text('Interests'), findsNWidgets(2));
+        expect(find.text('Preferences'), findsOneWidget);
+      });
+    }
   });
 
   group('Preferences section', () {
@@ -233,6 +276,37 @@ void main() {
           reason:
               'the route rejects min_age > max_age with a 422; catch it '
               'client-side and save the round trip',
+        );
+      },
+    );
+
+    testWidgets(
+      'a fractional max distance is not rounded away by an unrelated save',
+      (tester) async {
+        double? capturedDistance;
+        await tester.pumpWidget(_host(
+          _user(maxDistance: 24.6),
+          savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
+            capturedDistance = maxDistance;
+            return true;
+          },
+        ));
+
+        // Never touch the distance field — only saving, as if the user only
+        // meant to flip the online-status switch.
+        await tester.ensureVisible(
+          find.byKey(const Key('preferences_save_button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('preferences_save_button')));
+        await tester.pump();
+
+        expect(
+          capturedDistance,
+          24.6,
+          reason:
+              'rounding the field on load would silently rewrite the '
+              "user's stored 24.6 to 25 on their next save",
         );
       },
     );
