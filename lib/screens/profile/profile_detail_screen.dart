@@ -87,8 +87,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: index == _currentPage
-                                  ? context.onPrimary
-                                  : context.onPrimary.withValues(alpha: 0.5),
+                                  ? context.onOverlay
+                                  : context.onOverlay.withValues(alpha: 0.5),
                             ),
                           ),
                         ),
@@ -147,7 +147,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                           child: Text(
                             'Online',
                             style: TextStyle(
-                              color: context.onPrimary,
+                              color: context.onOverlay,
                               fontSize: 12,
                             ),
                           ),

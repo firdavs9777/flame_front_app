@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flame/theme/app_theme.dart';
 
 /// Semantic colours, resolved from the active [ColorScheme].
 ///
@@ -36,4 +37,20 @@ extension AppTokens on BuildContext {
   /// Text and icons sitting ON a primary-coloured surface — a filled button,
   /// a selected chip. Not the same as [surface]'s foreground.
   Color get onPrimary => _scheme.onPrimary;
+
+  /// Foreground for content drawn over a dark scrim, a photo, or a coloured
+  /// badge that isn't [AppTheme.primaryColor] — a carousel indicator dot, an
+  /// icon on a semi-transparent overlay, text on a status badge.
+  ///
+  /// Deliberately NOT derived from [onPrimary]. It reads as the same white in
+  /// both themes today only because `AppTheme` happens to set
+  /// `onPrimary: AppColors.white` in both `ColorScheme.light()` and
+  /// `ColorScheme.dark()` (`app_theme.dart:369,496`). Aliasing `onPrimary`
+  /// here would make these sites silently go invisible the day someone
+  /// rebrands `primaryColor` and its `onPrimary` foreground along with it —
+  /// a change the lint test cannot see, because by then these are token
+  /// references, not literals. This accessor exists so that rebrand can
+  /// never touch overlay chrome that was never on a primary surface to begin
+  /// with.
+  Color get onOverlay => AppColors.white;
 }

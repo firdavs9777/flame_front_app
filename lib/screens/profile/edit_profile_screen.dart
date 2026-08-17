@@ -245,7 +245,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
               child: Icon(
                 Icons.more_vert,
-                color: context.onPrimary,
+                color: context.onOverlay,
                 size: 16,
               ),
             ),
