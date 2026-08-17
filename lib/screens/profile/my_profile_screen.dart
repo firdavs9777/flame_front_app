@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
@@ -117,12 +118,26 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  '${user.name}, ${user.age}',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${user.name}, ${user.age}',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (user.isVerified) ...[
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.verified,
+                        key: const Key('verified_badge'),
+                        color: AppTheme.primaryColor,
+                        size: 22,
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -132,6 +147,39 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     color: context.secondaryText,
                   ),
                 ),
+                if (_isPremiumActive(user)) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    key: const Key('premium_badge'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.workspace_premium,
+                          color: context.onPrimary,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Premium',
+                          style: TextStyle(
+                            color: context.onPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 30),
 
                 // Stats
@@ -229,6 +277,19 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
         },
       ),
     );
+  }
+
+  // Mirrors swipe_provider.dart's _canUndo() gating rule: premium is active
+  // only when isPremium is true AND premiumExpiresAt is null or in the
+  // future. A lapsed subscription rendering as active is the one failure
+  // here that costs real money to get wrong.
+  bool _isPremiumActive(User user) {
+    if (!user.isPremium) return false;
+    if (user.premiumExpiresAt != null &&
+        user.premiumExpiresAt!.isBefore(DateTime.now())) {
+      return false;
+    }
+    return true;
   }
 
   Widget _buildStat(String label, String value) {
