@@ -12,6 +12,7 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/screens/chat/chat_attachments.dart';
+import 'package:flame/screens/chat/chat_rows.dart';
 import 'package:flame/screens/chat/voice_recording.dart';
 import 'package:flame/screens/chat/widgets/widgets.dart';
 
@@ -1007,10 +1008,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       return _buildEmptyChat();
     }
 
+    // Rows, not raw messages: day separators are list items, which is what
+    // makes "don't group a run across midnight" expressible at all.
+    final rows = buildChatRows(_messages, now: DateTime.now());
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount: _messages.length + (_isLoadingMessages ? 1 : 0),
+      itemCount: rows.length + (_isLoadingMessages ? 1 : 0),
       itemBuilder: (context, index) {
         if (_isLoadingMessages && index == 0) {
           return const Padding(
@@ -1025,15 +1030,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           );
         }
 
-        final messageIndex = _isLoadingMessages ? index - 1 : index;
-        final message = _messages[messageIndex];
-        final isMe = message.isSentBy(currentUserId);
+        final row = rows[_isLoadingMessages ? index - 1 : index];
 
-        return MessageBubble(
-          message: message,
-          isMe: isMe,
-          onLongPress: () => _onMessageLongPress(message),
-        );
+        return switch (row) {
+          DateSeparatorRow(:final day) => _DateSeparatorChip(day: day),
+          MessageRow(:final message, :final isFirstInGroup, :final isLastInGroup) =>
+            MessageBubble(
+              message: message,
+              isMe: message.isSentBy(currentUserId),
+              isFirstInGroup: isFirstInGroup,
+              isLastInGroup: isLastInGroup,
+              onLongPress: () => _onMessageLongPress(message),
+            ),
+        };
       },
     );
   }
@@ -1127,6 +1136,34 @@ class _MessageActionsSheet extends StatelessWidget {
             ),
           const SizedBox(height: 8),
         ],
+      ),
+    );
+  }
+}
+
+/// A day boundary in the conversation.
+class _DateSeparatorChip extends StatelessWidget {
+  final DateTime day;
+
+  const _DateSeparatorChip({required this.day});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            chatDayLabel(day, DateTime.now()),
+            style: theme.textTheme.labelSmall,
+          ),
+        ),
       ),
     );
   }

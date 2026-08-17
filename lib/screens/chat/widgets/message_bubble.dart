@@ -16,6 +16,15 @@ class MessageBubble extends StatelessWidget {
   final void Function(String emoji)? onReact;
   final VoidCallback? onReply;
 
+  /// First of a run from one sender. Defaults true so a caller that does not
+  /// group gets the pre-grouping layout unchanged.
+  final bool isFirstInGroup;
+
+  /// Last of a run. Only the last bubble carries the timestamp and delivery
+  /// tick — repeating them on every message in a run is noise, since they are
+  /// all within a few minutes of each other by definition.
+  final bool isLastInGroup;
+
   const MessageBubble({
     super.key,
     required this.message,
@@ -23,6 +32,8 @@ class MessageBubble extends StatelessWidget {
     this.onLongPress,
     this.onReact,
     this.onReply,
+    this.isFirstInGroup = true,
+    this.isLastInGroup = true,
   });
 
   @override
@@ -33,7 +44,9 @@ class MessageBubble extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      // Tight inside a run, roomy between runs: the gap is what makes a group
+      // read as one utterance rather than several.
+      padding: EdgeInsets.only(bottom: isLastInGroup ? 12 : 2),
       child: Column(
         crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
@@ -165,7 +178,7 @@ class MessageBubble extends StatelessWidget {
         children: [
           _buildContent(context),
           const SizedBox(height: 4),
-          _buildMeta(context),
+          if (isLastInGroup) _buildMeta(context),
         ],
       ),
     );
