@@ -77,10 +77,12 @@ class ConversationsNotifier
     String conversationId,
     String content, {
     String? replyToId,
+    MessageType type = MessageType.text,
   }) async {
     final result = await _chatService.sendMessage(
       conversationId,
       content,
+      type: type,
       replyToId: replyToId,
     );
 

@@ -89,6 +89,13 @@ class ChatService {
     if (replyToId != null) {
       body['reply_to'] = replyToId;
     }
+    // The `type` parameter was accepted and silently dropped before this. Only
+    // sticker is sent: the route restricts message_type to text|sticker, and
+    // the media kinds have their own upload endpoints — naming one here would
+    // be a message with no file behind it.
+    if (type == MessageType.sticker) {
+      body['message_type'] = 'sticker';
+    }
 
     final response = await _apiClient.post(
       '/conversations/$conversationId/messages',

@@ -162,10 +162,18 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildBubble(BuildContext context) {
+    // A sticker gets no pill. A big emoji inside a coloured bubble reads as a
+    // typo rather than a sticker, which is how every chat app renders them.
+    final bare = message.type == MessageType.sticker;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: bare
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: isMe ? AppTheme.primaryColor : Colors.grey[200],
+        color: bare
+            ? Colors.transparent
+            : (isMe ? AppTheme.primaryColor : Colors.grey[200]),
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(20),
           topRight: const Radius.circular(20),
@@ -309,18 +317,14 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
+  /// A sticker is an emoji carried in the message text.
+  ///
+  /// This used to be `Image.network(message.content)` — the pack-and-artwork
+  /// model Flame's inherited sticker code assumed, which no backend has ever
+  /// supported. An emoji is not a URL, so every sticker rendered as a
+  /// broken-image icon.
   Widget _buildStickerContent() {
-    return Image.network(
-      message.content,
-      width: 120,
-      height: 120,
-      fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) => const SizedBox(
-        width: 120,
-        height: 120,
-        child: Icon(Icons.broken_image, size: 40),
-      ),
-    );
+    return Text(message.content, style: const TextStyle(fontSize: 48));
   }
 
   Widget _buildGifContent() {

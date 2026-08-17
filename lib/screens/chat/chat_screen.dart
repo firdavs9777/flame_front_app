@@ -13,6 +13,7 @@ import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/screens/chat/chat_attachments.dart';
 import 'package:flame/screens/chat/chat_rows.dart';
+import 'package:flame/screens/chat/widgets/sticker_panel.dart';
 import 'package:flame/services/chat_service.dart' show PinnedMessage;
 import 'package:flame/screens/chat/voice_recording.dart';
 import 'package:flame/screens/chat/widgets/widgets.dart';
@@ -560,6 +561,53 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  // ==================== Stickers ====================
+
+  /// Opens the sticker panel and sends whatever is tapped.
+  ///
+  /// A sticker is an emoji in the message text, so this is the ordinary send
+  /// path with a type — no upload, no separate endpoint.
+  void _openStickerPanel() {
+    if (_isSending) return;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => StickerPanel(
+        onPick: (emoji) {
+          Navigator.pop(sheetContext);
+          _sendSticker(emoji);
+        },
+      ),
+    );
+  }
+
+  Future<void> _sendSticker(String emoji) async {
+    final sentReplyingTo = _replyingTo;
+
+    setState(() {
+      _isSending = true;
+      _replyingTo = null;
+    });
+
+    final error = await ref.read(conversationsProvider.notifier).sendMessage(
+          widget.conversation.id,
+          emoji,
+          type: MessageType.sticker,
+          replyToId: sentReplyingTo?.id,
+        );
+
+    if (!mounted) return;
+    setState(() => _isSending = false);
+
+    if (error == null) {
+      await _refreshMessages();
+      _scrollToBottom(animated: true);
+    } else {
+      setState(() => _replyingTo = sentReplyingTo);
+      _showError(error);
+    }
+  }
+
   // ==================== Pin & mute ====================
 
   Future<void> _loadPinned() async {
@@ -1003,6 +1051,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             replyingTo: _replyingTo,
             onSend: _sendMessage,
             onAttach: _openAttachmentSheet,
+            onSticker: _openStickerPanel,
             onStartRecording: _startRecording,
             isRecording: _recorder != null,
             recordingElapsed: _recordingElapsed,

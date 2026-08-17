@@ -25,6 +25,9 @@ class ChatInput extends StatelessWidget {
   /// Opens the attachment sheet. Null hides the affordance entirely.
   final VoidCallback? onAttach;
 
+  /// Opens the sticker panel. Null hides the affordance.
+  final VoidCallback? onSticker;
+
   /// Begins a voice recording. Null hides the mic, so the send button simply
   /// stays put — a composer that cannot record must not show a mic.
   final VoidCallback? onStartRecording;
@@ -45,6 +48,7 @@ class ChatInput extends StatelessWidget {
     this.onCancelReply,
     this.onChanged,
     this.onAttach,
+    this.onSticker,
     this.onStartRecording,
     this.isRecording = false,
     this.recordingElapsed = Duration.zero,
@@ -131,6 +135,7 @@ class ChatInput extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (onAttach != null) _buildAttachButton(),
+          if (onSticker != null) _buildStickerButton(),
           // Text field
           Expanded(
             child: Container(
@@ -233,6 +238,15 @@ class ChatInput extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStickerButton() {
+    return IconButton(
+      onPressed: isSending ? null : onSticker,
+      icon: const Icon(Icons.emoji_emotions_outlined),
+      color: AppTheme.primaryColor,
+      tooltip: 'Send a sticker',
     );
   }
 
