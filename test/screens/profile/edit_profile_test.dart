@@ -319,10 +319,9 @@ void main() {
       },
     );
 
-    // The route's schema is `max_distance: Field(ge=1, le=500)`
-    // (flame_backend app/community/schemas.py:100). Only the floor was
-    // effectively enforced, and it said "Enter a valid distance" without
-    // saying which end was wrong.
+    // The route's schema is `max_distance: z.number().min(0).max(500).optional()`
+    // (flame/routes/users.js:39). The ceiling was not enforced at all, so 5000
+    // went to the server and came back as a bare "Could not save".
     testWidgets(
       'a max distance above 500 is rejected before any request',
       (tester) async {
@@ -387,14 +386,20 @@ void main() {
       },
     );
 
+    // Zero is what the route's `min(0)` accepts, so the client must accept it
+    // too. A client stricter than its server is the same two-sides-disagree
+    // divergence as a client looser than its server — it just fails by
+    // refusing work the server would have done.
     testWidgets(
-      'a max distance below the floor names the floor',
+      'a max distance of zero is allowed, because the route allows it',
       (tester) async {
         var calls = 0;
+        double? sentDistance;
         await tester.pumpWidget(_host(
           _user(),
           savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
             calls++;
+            sentDistance = maxDistance;
             return true;
           },
         ));
@@ -410,8 +415,36 @@ void main() {
         await tester.tap(find.byKey(const Key('preferences_save_button')));
         await tester.pump();
 
+        expect(calls, 1);
+        expect(sentDistance, 0);
+      },
+    );
+
+    testWidgets(
+      'a negative max distance is rejected before any request',
+      (tester) async {
+        var calls = 0;
+        await tester.pumpWidget(_host(
+          _user(),
+          savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
+            calls++;
+            return true;
+          },
+        ));
+
+        await tester.enterText(
+          find.byKey(const Key('preferences_max_distance_field')),
+          '-5',
+        );
+        await tester.ensureVisible(
+          find.byKey(const Key('preferences_save_button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('preferences_save_button')));
+        await tester.pump();
+
         expect(calls, 0);
-        expect(find.text('Minimum distance is 1 km'), findsOneWidget);
+        expect(find.text('Distance cannot be negative'), findsOneWidget);
       },
     );
   });

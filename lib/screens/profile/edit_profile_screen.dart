@@ -258,15 +258,14 @@ Widget _fieldLabel(BuildContext context, String label) {
 /// section is independent by construction.
 ///
 /// It offers no reordering. An earlier "Set as main photo" item called
-/// `CurrentUserNotifier.setMainPhotoAt`, and `PATCH /users/me/photos/reorder`
-/// does exist and does persist — but its response serialises each photo as
-/// `{id, order, is_primary}` with no `url`, while `Photo.fromJson` defaults a
-/// missing url to `''`. So the tap reported "Main photo updated" and then
-/// blanked the url of every photo in local state, emptying the grid until the
-/// next `loadUser()`. Removed rather than papered over: making it work means
-/// either the backend including `url` in that payload, or `setMainPhotoAt`
-/// reordering the lists it already holds instead of trusting the response.
-/// Both are a change to the contract, not to this widget.
+/// `CurrentUserNotifier.setMainPhotoAt` → `UserService.reorderPhotos` →
+/// `PATCH /users/me/photos/reorder`, and **that route does not exist** — the
+/// string `reorder` appears nowhere in the Flame backend. Every tap 404'd and
+/// showed "Could not update main photo." Removed rather than left to fail.
+///
+/// `setMainPhotoAt` and `UserService.reorderPhotos` are deliberately kept, so
+/// adding the route is all a future change needs. They have no caller outside
+/// tests today.
 class _PhotosSection extends ConsumerStatefulWidget {
   final User user;
 
@@ -912,24 +911,27 @@ class _PreferencesSectionState extends State<_PreferencesSection> {
             controller: _maxDistanceController,
             keyboardType: TextInputType.number,
             decoration: _fieldDecoration(context, 'Maximum distance'),
-            // Bounds taken from the route's own schema, which is
-            // `max_distance: Optional[int] = Field(ge=1, le=500)`
-            // (flame_backend app/community/schemas.py:100). The ceiling was
-            // not checked at all, so 5000 went out and came back as a bare
-            // "Could not save". The floor was already effectively right; it
-            // now names the bound instead of saying "valid".
+            // Bounds copied from the route's own schema — Flame's backend is
+            // Node/zod, and `flame/routes/users.js:39` reads
+            // `max_distance: z.number().min(0).max(500).optional()`.
             //
-            // NOTE: that schema types the field `int`, so a fractional value
-            // like 24.6 is a 422 even though this field accepts one and Task 6
-            // deliberately stopped rounding it. Not changed here — see the
-            // report; it is a contract question, not a widget question.
+            // So: no floor above zero, and NOT an int — a fractional value
+            // like 24.6 is accepted, which is what lets Task 6's decision to
+            // stop rounding actually hold end to end. The ceiling was
+            // previously unchecked, so 5000 went out and came back as a bare
+            // "Could not save".
+            //
+            // Matching the server exactly is deliberate. A client that
+            // rejects what the server accepts is the same two-sides-disagree
+            // divergence this whole screen's review kept turning up, just
+            // pointing the other way.
             validator: (value) {
               final distance = double.tryParse(value ?? '');
               if (distance == null) {
                 return 'Enter a distance in kilometres';
               }
-              if (distance < 1) {
-                return 'Minimum distance is 1 km';
+              if (distance < 0) {
+                return 'Distance cannot be negative';
               }
               if (distance > 500) {
                 return 'Maximum distance is 500 km';
