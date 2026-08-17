@@ -525,7 +525,7 @@ git commit -m "feat(flame): add the /translate route the shipped app already cal
 - Test: `flame/__tests__/conversationFilter.test.js`
 
 **Interfaces:**
-- Produces: `chatService.conversationFilterFor(userId, { archived = false })` → a Mongoose filter object
+- Produces: `chatService.conversationFilterFor(userId, { archived })` → a Mongoose filter object. `archived` is `false` (default list), `true` (archived list), or `'any'` (both — used by search).
 
 **This task changes no behaviour.** It is a pure extraction, and it exists because the next two tasks must not copy this logic. When the media send path copied the text path's guards last phase, the two disagreed inside a single commit and it cost a review round. Here the copy that drifts would be the one enforcing blocks.
 
@@ -545,7 +545,9 @@ Create `flame/__tests__/conversationFilter.test.js` covering, as real assertions
 // 5. { archived: true } inverts the archive condition to
 //    { 'archivedBy.user': userId } rather than dropping it — otherwise the
 //    archived list would show everything.
-// 6. Feeding the filter to Conversation.find returns exactly the conversations
+// 6. { archived: 'any' } omits the archivedBy condition entirely, while still
+//    applying the block and ended-match exclusions. Search relies on this.
+// 7. Feeding the filter to Conversation.find returns exactly the conversations
 //    listConversations returns for the same user. This is the assertion that
 //    proves the extraction changed nothing.
 ```
@@ -568,8 +570,14 @@ In `flame/services/chatService.js`, add above `listConversations`:
  * gets audited — which matters more here than anywhere else in the codebase,
  * because this is what keeps blocked and unmatched people out of every list.
  *
- * `archived` selects which side of the archive line to return; it inverts the
- * condition rather than dropping it, so the archived list is not "everything".
+ * `archived` selects which side of the archive line to return: false for the
+ * default list, true for the archived one, and 'any' to drop the condition
+ * entirely. It INVERTS rather than drops for the true case, so the archived
+ * list is not "everything".
+ *
+ * 'any' exists for search, which spans both — a conversation the caller
+ * archived is still theirs to search. Without it search would call this twice
+ * and run the block and ended-match lookups twice for one query.
  */
 async function conversationFilterFor(userId, { archived = false } = {}) {
   const filter = { participants: userId };
@@ -593,7 +601,9 @@ async function conversationFilterFor(userId, { archived = false } = {}) {
 
   // Archive is per-user, so it filters on this conversation's own array rather
   // than on the participant ids the block/ended-match exclusions use above.
-  filter['archivedBy.user'] = archived ? userId : { $ne: userId };
+  if (archived !== 'any') {
+    filter['archivedBy.user'] = archived ? userId : { $ne: userId };
+  }
 
   return filter;
 }
@@ -865,24 +875,23 @@ async function search(userId, { q, limit = 20, offset = 0 }) {
   const take = Math.min(Number(limit) || 20, MAX_LIMIT);
   const skip = Math.max(Number(offset) || 0, 0);
 
-  // Both sides: a conversation the caller archived is still theirs to search.
-  const [visible, archived] = await Promise.all([
-    _chatService().conversationFilterFor(userId, { archived: false }),
-    _chatService().conversationFilterFor(userId, { archived: true }),
-  ]);
-  const convs = await Conversation.find({ $or: [visible, archived] }).select('_id');
+  // 'any' spans both sides of the archive line — a conversation the caller
+  // archived is still theirs to search — in ONE call. Calling this twice would
+  // run the block and ended-match lookups twice for a single query.
+  const filter = await _chatService().conversationFilterFor(userId, { archived: 'any' });
+  const convs = await Conversation.find(filter).select('_id');
   const ids = convs.map((c) => c._id.toString());
   if (ids.length === 0) return { messages: [], total: 0 };
 
-  const filter = {
+  const messageFilter = {
     conversationId: { $in: ids },
     isDeleted: false,
     deletedFor: { $ne: userId },
     $text: { $search: term },
   };
 
-  const total = await Message.countDocuments(filter);
-  const messages = await Message.find(filter)
+  const total = await Message.countDocuments(messageFilter);
+  const messages = await Message.find(messageFilter)
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(take);
@@ -1001,8 +1010,9 @@ Create `APP test/services/chat_archive_search_test.dart`. Follow the pattern in 
 // 2. unarchiveConversation issues a DELETE to the same path — NOT a POST with a
 //    flag. The mute pair got this wrong in a shipped client and every "unmute"
 //    silenced the conversation permanently.
-// 3. searchMessages issues a GET to '/messages/search' with q, limit and offset
-//    as query parameters.
+// 3. searchMessages issues a GET to '/messages/search' passing q, limit and
+//    offset through ApiClient's queryParams — NOT concatenated into the path,
+//    which would double-encode a query containing a space or an &.
 // 4. searchMessages parses data['messages'] into Message objects and returns
 //    them; a missing 'messages' key yields an empty list rather than throwing.
 // 5. A failed response surfaces as ServiceResult.failure with the server's
@@ -1040,8 +1050,15 @@ In `APP lib/services/chat_service.dart`:
     int limit = 20,
     int offset = 0,
   }) async {
+    // queryParams, not string concatenation: ApiClient.get already encodes,
+    // and a hand-built string double-encodes anything with a space or an &.
     final response = await _apiClient.get(
-      '/messages/search?q=${Uri.encodeQueryComponent(query)}&limit=$limit&offset=$offset',
+      '/messages/search',
+      queryParams: {
+        'q': query,
+        'limit': '$limit',
+        'offset': '$offset',
+      },
     );
 
     if (response.success && response.data != null) {
