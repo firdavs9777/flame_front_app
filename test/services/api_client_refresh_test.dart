@@ -97,4 +97,82 @@ void main() {
 
     expect(called, isFalse);
   });
+
+  // The bug this file missed for as long as it existed: the fake above answers
+  // in snake_case, which is what _doRefresh expected — not what the backend
+  // sends. Every real refresh failed, and the app reads a failed refresh as
+  // auth-lost, so the user landed on the welcome screen once the 15-minute
+  // access token expired.
+  test('refresh survives the camelCase response the backend actually sends', () async {
+    final fake = _FakeClient([
+      http.Response('{}', 401),
+      // The real shape: { success: true, data: { accessToken, refreshToken } }.
+      http.Response(
+        jsonEncode({
+          'success': true,
+          'data': {'accessToken': 'new', 'refreshToken': 'r2'},
+        }),
+        200,
+      ),
+      http.Response('{"ok":true}', 200),
+    ]);
+    final client = ApiClient.testInstance(httpClient: fake);
+    await client.init();
+
+    final resp = await client.get('/protected');
+
+    expect(resp.success, true, reason: 'a camelCase refresh must not read as auth-lost');
+    expect(client.accessToken, 'new');
+  });
+
+  test('refresh sends the key the backend requires', () async {
+    final fake = _FakeClient([
+      http.Response('{}', 401),
+      http.Response(
+        jsonEncode({
+          'success': true,
+          'data': {'accessToken': 'new', 'refreshToken': 'r2'},
+        }),
+        200,
+      ),
+      http.Response('{"ok":true}', 200),
+    ]);
+    final client = ApiClient.testInstance(httpClient: fake);
+    await client.init();
+
+    await client.get('/protected');
+
+    final refreshCall = fake.calls.firstWhere(
+      (c) => c.url.path.endsWith('/auth/refresh'),
+    ) as http.Request;
+    final body = jsonDecode(refreshCall.body) as Map<String, dynamic>;
+
+    // The route's zod schema requires refreshToken. Sending only refresh_token
+    // was 422'd before reaching the service.
+    expect(body['refreshToken'], 'r');
+  });
+
+  test('a still-snake_case response keeps working', () async {
+    // The backend now answers in both casings, and older deployments answer in
+    // neither reliably — so the client must not become strict in the other
+    // direction while rolling out.
+    final fake = _FakeClient([
+      http.Response('{}', 401),
+      http.Response(
+        jsonEncode({
+          'success': true,
+          'data': {'access_token': 'new', 'refresh_token': 'r2'},
+        }),
+        200,
+      ),
+      http.Response('{"ok":true}', 200),
+    ]);
+    final client = ApiClient.testInstance(httpClient: fake);
+    await client.init();
+
+    final resp = await client.get('/protected');
+
+    expect(resp.success, true);
+    expect(client.accessToken, 'new');
+  });
 }

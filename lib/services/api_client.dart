@@ -425,15 +425,33 @@ class ApiClient {
       final resp = await _httpClient.post(
         Uri.parse('$baseUrl/auth/refresh'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refresh_token': _refreshToken}),
+        // refreshToken, not refresh_token. The route's zod schema requires the
+        // camelCase key, so the snake_case body this used to send was 422'd
+        // before reaching the service — and a non-200 refresh reads as
+        // auth-lost, which is why sessions ended on the welcome screen once the
+        // 15-minute access token expired. Both keys go out so a server that
+        // only accepts the older shape still works during a rollout.
+        body: jsonEncode({
+          'refreshToken': _refreshToken,
+          'refresh_token': _refreshToken,
+        }),
       );
       if (resp.statusCode != 200) return false;
       final data = jsonDecode(resp.body);
       final tokenData = data['data'] ?? data;
-      final newAccessToken = tokenData['access_token'] as String;
+
+      // Read either casing, the way auth_service.dart has always done for
+      // login. This method was the one place that assumed snake_case, and the
+      // backend answers camelCase — so even a accepted request failed here, on
+      // a null cast inside the catch below, which returns false and logs the
+      // user out.
+      final newAccessToken =
+          (tokenData['accessToken'] ?? tokenData['access_token']) as String?;
+      if (newAccessToken == null) return false;
+
       await saveTokens(
         accessToken: newAccessToken,
-        refreshToken: tokenData['refresh_token'],
+        refreshToken: tokenData['refreshToken'] ?? tokenData['refresh_token'],
       );
       // After the new token is stored, so a listener that reads back
       // `accessToken` sees the same value it was handed. Guarded because a
