@@ -27,18 +27,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kThemeModeKey, mode.name);
   }
-
-  void toggleShowOnlineStatus() {
-    state = state.copyWith(showOnlineStatus: !state.showOnlineStatus);
-  }
-
-  void toggleShowDistance() {
-    state = state.copyWith(showDistance: !state.showDistance);
-  }
-
-  void setDiscoveryEnabled(bool enabled) {
-    state = state.copyWith(discoveryEnabled: enabled);
-  }
 }
 
 ThemeMode _themeModeFromString(String? value) {
@@ -53,30 +41,30 @@ ThemeMode _themeModeFromString(String? value) {
   }
 }
 
+/// Device-local app settings.
+///
+/// Only [themeMode] lives here, and deliberately: it is the one setting with
+/// no server representation and no server consequence.
+///
+/// This class used to also carry `showOnlineStatus`, `showDistance` and
+/// `discoveryEnabled`. All three were in-memory only — `setThemeMode` is the
+/// sole persisting method — so they survived neither a restart nor a request:
+///
+///  * `showOnlineStatus` had a real server-backed twin in Edit Profile →
+///    Preferences. Two controls, one setting, disagreeing. Both now go through
+///    `CurrentUserNotifier.updatePreferences`.
+///  * `showDistance` and `discoveryEnabled` were read only by the switch that
+///    set them — dead controls. `showDistance` must not return as a
+///    server-backed toggle either: discovery reports distance as 0, so it
+///    would govern a number that always reads zero.
+///
+/// Anything with a server consequence belongs on `User.preferences`, not here.
 class AppSettings {
   final ThemeMode themeMode;
-  final bool showOnlineStatus;
-  final bool showDistance;
-  final bool discoveryEnabled;
 
-  const AppSettings({
-    this.themeMode = ThemeMode.system,
-    this.showOnlineStatus = true,
-    this.showDistance = true,
-    this.discoveryEnabled = true,
-  });
+  const AppSettings({this.themeMode = ThemeMode.system});
 
-  AppSettings copyWith({
-    ThemeMode? themeMode,
-    bool? showOnlineStatus,
-    bool? showDistance,
-    bool? discoveryEnabled,
-  }) {
-    return AppSettings(
-      themeMode: themeMode ?? this.themeMode,
-      showOnlineStatus: showOnlineStatus ?? this.showOnlineStatus,
-      showDistance: showDistance ?? this.showDistance,
-      discoveryEnabled: discoveryEnabled ?? this.discoveryEnabled,
-    );
+  AppSettings copyWith({ThemeMode? themeMode}) {
+    return AppSettings(themeMode: themeMode ?? this.themeMode);
   }
 }

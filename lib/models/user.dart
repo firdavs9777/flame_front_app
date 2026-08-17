@@ -64,6 +64,23 @@ class User {
     this.preferredLanguage,
   });
 
+  /// Whether premium is active right now: `isPremium` is true AND
+  /// `premiumExpiresAt` is null (no expiry) or still in the future.
+  ///
+  /// This rule is money-relevant — a lapsed subscription reading as active
+  /// is the one failure worth getting wrong here — and it had already
+  /// drifted into two separate call sites (a swipe-undo gate and the
+  /// profile header) each re-deriving the same two fields. It lives on the
+  /// model, next to the fields it reads, so every caller asks this one
+  /// question instead of writing its own copy that can quietly disagree.
+  bool get isPremiumActive {
+    if (!isPremium) return false;
+    if (premiumExpiresAt != null && premiumExpiresAt!.isBefore(DateTime.now())) {
+      return false;
+    }
+    return true;
+  }
+
   factory User.fromJson(Map<String, dynamic> json) {
     // Parse photos into aligned URL + id lists. Entries can be bare URL strings
     // or objects {url, id}; entries without a usable URL are dropped from both.
@@ -139,10 +156,17 @@ class User {
       commonInterests: json['common_interests'] != null
           ? List<String>.from(json['common_interests'])
           : null,
-      isPremium: json['is_premium'] ?? false,
-      premiumExpiresAt: json['premium_expires_at'] != null
-          ? DateTime.parse(json['premium_expires_at'])
-          : null,
+      // Accept both conventions, like every neighbouring field. These two
+      // were the only pair here without a camelCase fallback, so an
+      // entitlement delivered as `isPremium` parsed to false and a paying
+      // user read as not premium — silently, since `?? false` cannot tell
+      // "absent" from "not premium".
+      isPremium: json['is_premium'] ?? json['isPremium'] ?? false,
+      premiumExpiresAt:
+          (json['premium_expires_at'] ?? json['premiumExpiresAt']) != null
+              ? DateTime.parse(
+                  json['premium_expires_at'] ?? json['premiumExpiresAt'])
+              : null,
       superLikesRemaining: json['super_likes_remaining'] ?? 3,
       isProfileComplete: json['is_profile_complete'] as bool?,
       preferredLanguage: json['preferred_language'] as String?,

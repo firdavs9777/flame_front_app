@@ -365,10 +365,23 @@ class AppTheme {
           secondaryContainer: AppColors.secondaryLight,
           tertiary: AppColors.accent,
           surface: AppColors.surfaceLight,
+          // Both of these are read by AppTokens (`context.fill`,
+          // `context.secondaryText`) and MUST be passed explicitly: the SDK
+          // getters are `_surfaceContainerHighest ?? surface` and
+          // `_onSurfaceVariant ?? onSurface`, so omitting them does not
+          // produce a derived shade — it silently collapses each token onto
+          // the one it is supposed to sit on. `fill` in particular is the only
+          // thing delineating a text field, because `inputDecorationTheme`
+          // below sets `enabledBorder: BorderSide.none`. The values match that
+          // same `inputDecorationTheme.fillColor` / `AppTheme.textSecondary`
+          // so the tokens agree with the widget themes rather than inventing a
+          // second palette. Pinned by test/theme/app_tokens_test.dart.
+          surfaceContainerHighest: AppColors.gray100,
           error: AppColors.error,
           onPrimary: AppColors.white,
           onSecondary: AppColors.gray900,
           onSurface: AppColors.gray900,
+          onSurfaceVariant: AppColors.gray600,
           onError: AppColors.white,
           outline: AppColors.gray300,
           outlineVariant: AppColors.gray200,
@@ -492,10 +505,15 @@ class AppTheme {
           secondaryContainer: AppColors.secondaryDark,
           tertiary: AppColors.accent,
           surface: AppColors.surfaceDark,
+          // See the light scheme above: these two are not optional. Values
+          // match this theme's own `inputDecorationTheme.fillColor` (gray800)
+          // and `labelStyle` (gray400).
+          surfaceContainerHighest: AppColors.gray800,
           error: AppColors.error,
           onPrimary: AppColors.white,
           onSecondary: AppColors.gray900,
           onSurface: AppColors.gray100,
+          onSurfaceVariant: AppColors.gray400,
           onError: AppColors.white,
           outline: AppColors.gray700,
           outlineVariant: AppColors.gray800,

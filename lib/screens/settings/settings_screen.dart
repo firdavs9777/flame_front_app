@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/screens/profile/edit_profile_screen.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/settings/language_screen.dart';
@@ -27,8 +28,9 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         children: [
           const SizedBox(height: 20),
-          _buildSectionHeader(context.l10n.settingsAccount),
+          _buildSectionHeader(context, context.l10n.settingsAccount),
           _buildListTile(
+            context: context,
             icon: Icons.person_outline,
             title: 'Edit Profile',
             onTap: () {
@@ -39,6 +41,7 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           _buildListTile(
+            context: context,
             icon: Icons.email_outlined,
             title: 'Email',
             subtitle: user?.email ?? 'Not set',
@@ -50,6 +53,7 @@ class SettingsScreen extends ConsumerWidget {
           // gated off with the same flag as forgot-password until it ships.
           if (EnvConfig.current.forgotPasswordEnabled)
             _buildListTile(
+              context: context,
               icon: Icons.lock_outline,
               title: 'Change Password',
               onTap: () {
@@ -57,8 +61,9 @@ class SettingsScreen extends ConsumerWidget {
               },
             ),
           const SizedBox(height: 20),
-          _buildSectionHeader('Privacy & Safety'),
+          _buildSectionHeader(context, 'Privacy & Safety'),
           _buildListTile(
+            context: context,
             icon: Icons.block,
             title: 'Blocked Users',
             onTap: () {
@@ -68,42 +73,32 @@ class SettingsScreen extends ConsumerWidget {
               );
             },
           ),
-          const SizedBox(height: 20),
-          _buildSectionHeader('Discovery'),
+          // One control, one path. This switch and the one in Edit Profile →
+          // Preferences now both read the stored preference off the current
+          // user and both write through `updatePreferences`, so they cannot
+          // disagree. It previously pointed at `settingsProvider`, which
+          // mutated in-memory state and issued no request at all.
+          //
+          // Disabled rather than hidden while the user is loading: hiding it
+          // would reflow the list, and a switch that is visibly inert is
+          // honest about not knowing the value yet.
           _buildSwitchTile(
-            icon: Icons.explore_outlined,
-            title: 'Discovery',
-            subtitle: 'Show me in discovery',
-            value: settings.discoveryEnabled,
-            onChanged: (_) {
-              ref
-                  .read(settingsProvider.notifier)
-                  .setDiscoveryEnabled(!settings.discoveryEnabled);
-            },
-          ),
-          _buildSwitchTile(
-            icon: Icons.location_on_outlined,
-            title: 'Show Distance',
-            subtitle: 'Show distance on profile',
-            value: settings.showDistance,
-            onChanged: (_) {
-              ref.read(settingsProvider.notifier).toggleShowDistance();
-            },
-          ),
-          _buildSwitchTile(
+            key: const Key('settings_show_online_switch'),
+            context: context,
             icon: Icons.circle_outlined,
             title: 'Show Online Status',
             subtitle: 'Let others know when you\'re online',
-            value: settings.showOnlineStatus,
-            onChanged: (_) {
-              ref.read(settingsProvider.notifier).toggleShowOnlineStatus();
-            },
+            value: user?.showOnlineStatus ?? true,
+            onChanged: user == null
+                ? null
+                : (value) => _setShowOnlineStatus(context, ref, value),
           ),
           const SizedBox(height: 20),
 
           // Notifications section
-          _buildSectionHeader(context.l10n.settingsNotifications),
+          _buildSectionHeader(context, context.l10n.settingsNotifications),
           _buildListTile(
+            context: context,
             icon: Icons.notifications_outlined,
             title: 'Notifications',
             subtitle: 'Manage what you get notified about',
@@ -139,7 +134,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 20),
 
           // Appearance section — showcase: kit AppCard + localized theme selector
-          _buildSectionHeader(context.l10n.settingsAppearance),
+          _buildSectionHeader(context, context.l10n.settingsAppearance),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: AppCard(
@@ -195,18 +190,21 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 20),
 
           // Legal section
-          _buildSectionHeader('Legal'),
+          _buildSectionHeader(context, 'Legal'),
           _buildListTile(
+            context: context,
             icon: Icons.description_outlined,
             title: 'Terms of Service',
             onTap: () => showLegalDocumentSheet(context, LegalDoc.terms),
           ),
           _buildListTile(
+            context: context,
             icon: Icons.privacy_tip_outlined,
             title: 'Privacy Policy',
             onTap: () => showLegalDocumentSheet(context, LegalDoc.privacy),
           ),
           _buildListTile(
+            context: context,
             icon: Icons.gavel_outlined,
             title: 'Licenses',
             onTap: () => showLicensePage(
@@ -219,8 +217,9 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 20),
 
           // Danger zone
-          _buildSectionHeader('Account Actions'),
+          _buildSectionHeader(context, 'Account Actions'),
           _buildListTile(
+            context: context,
             icon: Icons.logout,
             title: context.l10n.settingsLogout,
             titleColor: AppTheme.primaryColor,
@@ -229,6 +228,7 @@ class SettingsScreen extends ConsumerWidget {
             },
           ),
           _buildListTile(
+            context: context,
             icon: Icons.delete_outline,
             title: context.l10n.settingsDeleteAccount,
             titleColor: AppTheme.errorColor,
@@ -255,7 +255,7 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Flame v1.0.0',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                  style: TextStyle(color: context.secondaryText, fontSize: 14),
                 ),
               ],
             ),
@@ -274,7 +274,7 @@ class SettingsScreen extends ConsumerWidget {
     };
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Text(
@@ -282,7 +282,7 @@ class SettingsScreen extends ConsumerWidget {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: Colors.grey[600],
+          color: context.secondaryText,
           letterSpacing: 1,
         ),
       ),
@@ -290,6 +290,7 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Widget _buildListTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     String? subtitle,
@@ -297,7 +298,7 @@ class SettingsScreen extends ConsumerWidget {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, color: titleColor ?? Colors.grey[700]),
+      leading: Icon(icon, color: titleColor ?? context.secondaryText),
       title: Text(
         title,
         style: TextStyle(
@@ -311,15 +312,38 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  /// Writes "show online status" through the same server-backed path the Edit
+  /// Profile control uses. On failure the notifier leaves state alone, so the
+  /// switch snaps back on its own — the SnackBar is there so that snap-back
+  /// reads as a failed save rather than an unresponsive control.
+  Future<void> _setShowOnlineStatus(
+    BuildContext context,
+    WidgetRef ref,
+    bool value,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await ref
+        .read(currentUserProvider.notifier)
+        .updatePreferences(showOnlineStatus: value);
+    if (!ok) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not save — try again')),
+      );
+    }
+  }
+
   Widget _buildSwitchTile({
+    Key? key,
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     required bool value,
-    required ValueChanged<bool> onChanged,
+    required ValueChanged<bool>? onChanged,
   }) {
     return SwitchListTile(
-      secondary: Icon(icon, color: Colors.grey[700]),
+      key: key,
+      secondary: Icon(icon, color: context.secondaryText),
       title: Text(title),
       subtitle: Text(subtitle),
       value: value,

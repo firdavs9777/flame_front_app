@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/screens/profile/edit_profile_screen.dart';
+import 'package:flame/core/format/distance_format.dart';
 
 class MyProfileScreen extends ConsumerStatefulWidget {
   const MyProfileScreen({super.key});
@@ -54,9 +56,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 60, color: Colors.grey[400]),
+              Icon(Icons.error_outline, size: 60, color: context.secondaryText),
               const SizedBox(height: 16),
-              Text('Failed to load profile', style: TextStyle(color: Colors.grey[600])),
+              Text('Failed to load profile', style: TextStyle(color: context.secondaryText)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
@@ -103,11 +105,11 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                           decoration: BoxDecoration(
                             color: AppTheme.primaryColor,
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+                            border: Border.all(color: context.surface, width: 2),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.camera_alt,
-                            color: Colors.white,
+                            color: context.onPrimary,
                             size: 20,
                           ),
                         ),
@@ -116,21 +118,68 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  '${user.name}, ${user.age}',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '${user.name}, ${user.age}',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (user.isVerified) ...[
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.verified,
+                        key: const Key('verified_badge'),
+                        color: AppTheme.primaryColor,
+                        size: 22,
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   user.location,
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey[600],
+                    color: context.secondaryText,
                   ),
                 ),
+                if (user.isPremiumActive) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    key: const Key('premium_badge'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.workspace_premium,
+                          color: context.onPrimary,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Premium',
+                          style: TextStyle(
+                            color: context.onPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 30),
 
                 // Stats
@@ -173,7 +222,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: context.fill,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -216,7 +265,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                       ),
                       _buildPreferenceRow(
                         'Max Distance',
-                        '${user.maxDistancePreference.toInt()} km',
+                        // Same formatter the editor seeds its field from, so
+                        // a stored 24.6 does not read "24 km" here and "24.6"
+                        // one tap away.
+                        '${formatDistance(user.maxDistancePreference)} km',
                       ),
                     ],
                   ),
@@ -246,7 +298,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           label,
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: context.secondaryText,
           ),
         ),
       ],
@@ -276,9 +328,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
       child: SmartImage(
         imageSource: photoUrl,
         fit: BoxFit.cover,
-        placeholder: Container(color: Colors.grey[300]),
+        placeholder: Container(color: context.fill),
         errorWidget: Container(
-          color: Colors.grey[300],
+          color: context.fill,
           child: const Icon(Icons.error),
         ),
       ),
@@ -290,10 +342,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
       onTap: () => _showPhotoOptions(context),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey[200],
+          color: context.fill,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Colors.grey[400]!,
+            color: context.divider,
             width: 2,
             style: BorderStyle.solid,
           ),
@@ -301,7 +353,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
         child: Icon(
           Icons.add,
           size: 40,
-          color: Colors.grey[500],
+          color: context.secondaryText,
         ),
       ),
     );
@@ -386,7 +438,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[700],
+              color: context.secondaryText,
             ),
           ),
           Text(
