@@ -13,12 +13,16 @@ class ChatService {
   Future<ServiceResult<ConversationsResult>> getConversations({
     int limit = 20,
     int offset = 0,
+    bool archived = false,
   }) async {
     final response = await _apiClient.get(
       '/conversations',
       queryParams: {
         'limit': limit.toString(),
         'offset': offset.toString(),
+        // One endpoint serves both sides of the archive line, so the archived
+        // list cannot drift from the default one's exclusions.
+        'archived': archived.toString(),
       },
     );
 
@@ -96,6 +100,55 @@ class ChatService {
     }
 
     return ServiceResult.failure(response.error ?? 'Failed to send message');
+  }
+
+  /// Archives a conversation for the current user only. The other participant
+  /// still sees it in their list.
+  Future<ServiceResult<void>> archiveConversation(String conversationId) async {
+    final response = await _apiClient.post('/conversations/$conversationId/archive');
+    if (response.success) return ServiceResult.success(null);
+    return ServiceResult.failure(response.error ?? 'Failed to archive');
+  }
+
+  /// Unarchives.
+  ///
+  /// A DELETE, not a POST carrying a flag. The mute pair shipped with that
+  /// mistake — the app POSTed `{duration_hours: 0}` to `/mute` as its "unmute",
+  /// which silenced the conversation permanently and reported success.
+  Future<ServiceResult<void>> unarchiveConversation(String conversationId) async {
+    final response = await _apiClient.delete('/conversations/$conversationId/archive');
+    if (response.success) return ServiceResult.success(null);
+    return ServiceResult.failure(response.error ?? 'Failed to unarchive');
+  }
+
+  /// Searches every conversation the user can still open.
+  ///
+  /// The backend scopes this to conversations the caller may see, so a blocked
+  /// or unmatched partner's messages never come back — that rule lives there,
+  /// not here.
+  Future<ServiceResult<List<Message>>> searchMessages({
+    required String query,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    // queryParams, not string concatenation: ApiClient encodes these, and a
+    // hand-built path would truncate a query at its first ampersand.
+    final response = await _apiClient.get(
+      '/messages/search',
+      queryParams: {
+        'q': query,
+        'limit': limit.toString(),
+        'offset': offset.toString(),
+      },
+    );
+
+    if (response.success && response.data != null) {
+      final raw = response.data['messages'] as List? ?? [];
+      return ServiceResult.success(
+        raw.map((m) => Message.fromJson(m as Map<String, dynamic>)).toList(),
+      );
+    }
+    return ServiceResult.failure(response.error ?? 'Search failed');
   }
 
   // Send an image message
