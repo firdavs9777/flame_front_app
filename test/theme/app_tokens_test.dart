@@ -14,6 +14,7 @@ import 'package:flame/theme/app_theme.dart';
 // token references, not literals. This test pins onOverlay to a value that
 // does not move when onPrimary does.
 void main() {
+  _chatTokenResolution();
   Future<Map<String, Color>> readTokens(
     WidgetTester tester,
     ThemeData theme,
@@ -130,4 +131,28 @@ void main() {
       expect(overlayUnderCustomLight, AppColors.white);
     },
   );
+}
+
+// Appended by the chat sweep. The literal-banning gate cannot see a token that
+// resolves to the wrong colour — which is exactly how `context.fill` shipped
+// equal to `context.surface` and made six edit-profile fields invisible. These
+// pin the inequalities the chat surface now depends on.
+void _chatTokenResolution() {
+  test('chat tokens resolve to distinguishable colours in both themes', () {
+    for (final theme in [AppTheme.lightTheme, AppTheme.darkTheme]) {
+      final scheme = theme.colorScheme;
+      final label = theme.brightness.name;
+
+      expect(scheme.surfaceContainerHighest, isNot(scheme.surface),
+          reason: 'an incoming bubble sits on the page: fill must differ from '
+              'surface ($label)');
+      expect(scheme.onSurfaceVariant, isNot(scheme.onSurface),
+          reason: 'a timestamp must read as quieter than the message ($label)');
+      expect(theme.dividerTheme.color, isNot(scheme.surfaceContainerHighest),
+          reason: 'a reply-quote rule is drawn on a fill, so a divider equal to '
+              'fill is invisible ($label)');
+      expect(scheme.onPrimary, isNot(AppColors.readReceipt),
+          reason: 'a read tick must be tellable from a delivered one ($label)');
+    }
+  });
 }

@@ -9,8 +9,12 @@ void main() {
     final offenders = <String>[];
     // Colors.transparent and Colors.red are intentional: one is not a colour,
     // and destructive actions are red in both themes by convention.
+    // Widened to match the gate's own name. The original list banned
+    // white|black|grey and their shades and nothing else, so Colors.blue and
+    // Colors.amber passed a test called 'no hardcoded colours'.
     final banned = RegExp(
-      r'Colors\.(white|black|grey|black87|white70|white60|white54)',
+      r'Colors\.(white|black|grey|gray|blue|amber|green|orange|purple|pink'
+      r'|teal|cyan|indigo|lime|brown|yellow)(\d{2,3})?\b',
     );
 
     for (final dir in ['lib/screens/profile', 'lib/screens/settings']) {

@@ -41,6 +41,28 @@ class AppColors {
 
   // Neutrals
   static const Color black = Color(0xFF000000);
+
+  // Attachment-tile accents. Decoration, not semantics: they identify the photo
+  // and video actions and are the same in both themes, so they live here rather
+  // than pretending to be ColorScheme roles.
+  static const Color attachmentPhoto = Color(0xFF9C27B0);
+  static const Color attachmentVideo = Color(0xFFE91E63);
+
+  /// The double-tick once a message has been read. Drawn on the primary-coloured
+  /// outgoing bubble in both themes, so it is a fixed accent rather than a
+  /// ColorScheme role — and deliberately not onPrimary, because 'read' has to be
+  /// distinguishable from 'delivered' at a glance.
+  static const Color readReceipt = Color(0xFF90CAF9);
+
+  /// The super-like action's accent. A fixed swipe-affordance colour in both
+  /// themes, like [attachmentPhoto].
+  ///
+  /// Named here because the widened theme gate surfaced it — though the control
+  /// it paints is one the profile follow-ups already recorded as dead
+  /// (`profile_detail_screen.dart`: onTap pops the sheet and the body is
+  /// `// Handle super like`). Its colour is the least of its problems; that
+  /// belongs to the swipe surface, not to this sweep.
+  static const Color superLike = Color(0xFF2196F3);
   static const Color gray900 = Color(0xFF2C3E50);
   static const Color gray800 = Color(0xFF34495E);
   static const Color gray700 = Color(0xFF5D6D7E);
@@ -588,7 +610,12 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: AppRadius.borderRound),
         ),
-        dividerTheme: const DividerThemeData(color: AppColors.gray800, thickness: 1, space: 1),
+        // gray700, not gray800: gray800 is also this theme's
+        // surfaceContainerHighest, so a divider drawn on a filled panel — a
+        // reply quote, an inset row — was invisible in dark mode. Pinned by
+        // test/theme/app_tokens_test.dart, which the literal-banning lint gate
+        // could never have caught.
+        dividerTheme: const DividerThemeData(color: AppColors.gray700, thickness: 1, space: 1),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: AppColors.surfaceDark,
           selectedItemColor: AppColors.primary,

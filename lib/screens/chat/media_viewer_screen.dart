@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flame/theme/app_tokens.dart';
 
 /// Full-screen, zoomable view of a chat image.
 ///
@@ -27,16 +28,23 @@ class MediaViewerScreen extends StatelessWidget {
       imageUrl: url,
       fit: BoxFit.contain,
       // contain, not cover: the whole point of opening it is to see all of it.
-      placeholder: (_, __) => const Center(
-        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+      placeholder: (_, __) => Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: context.onOverlay.withValues(alpha: 0.54),
+        ),
       ),
-      errorWidget: (_, __, ___) => const Center(
-        child: Icon(Icons.broken_image_outlined, color: Colors.white38, size: 64),
+      errorWidget: (_, __, ___) => Center(
+        child: Icon(
+          Icons.broken_image_outlined,
+          color: context.onOverlay.withValues(alpha: 0.38),
+          size: 64,
+        ),
       ),
     );
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: context.viewerScrim,
       body: Stack(
         children: [
           Positioned.fill(
@@ -57,7 +65,7 @@ class MediaViewerScreen extends StatelessWidget {
             left: 0,
             child: SafeArea(
               child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
+                icon: Icon(Icons.close, color: context.onOverlay),
                 onPressed: () => Navigator.of(context).pop(),
                 tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
               ),

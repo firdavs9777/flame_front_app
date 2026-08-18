@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flame/screens/chat/voice_recording.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/theme/app_tokens.dart';
 
 /// The chat composer: text, replies, and photo/video attachments.
 ///
@@ -60,10 +61,10 @@ class ChatInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: context.viewerScrim.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -85,7 +86,7 @@ class ChatInput extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: context.fill,
         border: Border(
           left: BorderSide(color: AppTheme.primaryColor, width: 4),
         ),
@@ -111,7 +112,7 @@ class ChatInput extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey[600],
+                    color: context.secondaryText,
                   ),
                 ),
               ],
@@ -145,13 +146,13 @@ class ChatInput extends StatelessWidget {
                 maxLines: null,
                 decoration: InputDecoration(
                   hintText: 'Type a message...',
-                  hintStyle: TextStyle(color: Colors.grey[400]),
+                  hintStyle: TextStyle(color: context.secondaryText),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: Colors.grey[100],
+                  fillColor: context.fill,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 10,
@@ -171,8 +172,8 @@ class ChatInput extends StatelessWidget {
             valueListenable: controller,
             builder: (context, value, _) {
               final hasText = value.text.trim().isNotEmpty;
-              if (!hasText && onStartRecording != null) return _buildMicButton();
-              return _buildSendButton();
+              if (!hasText && onStartRecording != null) return _buildMicButton(context);
+              return _buildSendButton(context);
             },
           ),
         ],
@@ -180,16 +181,16 @@ class ChatInput extends StatelessWidget {
     );
   }
 
-  Widget _buildMicButton() {
+  Widget _buildMicButton(BuildContext context) {
     return GestureDetector(
       onTap: isSending ? null : onStartRecording,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSending ? Colors.grey : AppTheme.primaryColor,
+          color: isSending ? context.secondaryText : AppTheme.primaryColor,
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.mic, color: Colors.white, size: 20),
+        child: Icon(Icons.mic, color: context.onPrimary, size: 20),
       ),
     );
   }
@@ -233,7 +234,7 @@ class ChatInput extends StatelessWidget {
                 color: AppTheme.primaryColor,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.send, color: Colors.white, size: 20),
+              child: Icon(Icons.send, color: context.onPrimary, size: 20),
             ),
           ),
         ],
@@ -262,28 +263,28 @@ class ChatInput extends StatelessWidget {
     );
   }
 
-  Widget _buildSendButton() {
+  Widget _buildSendButton(BuildContext context) {
     return GestureDetector(
       onTap: isSending ? null : onSend,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSending ? Colors.grey : AppTheme.primaryColor,
+          color: isSending ? context.secondaryText : AppTheme.primaryColor,
           shape: BoxShape.circle,
         ),
         child: isSending
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Colors.white,
+                  color: context.onPrimary,
                 ),
               )
-            : const Icon(
+            : Icon(
                 Icons.send,
-                color: Colors.white,
+                color: context.onPrimary,
                 size: 20,
               ),
       ),

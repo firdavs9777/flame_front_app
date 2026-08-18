@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/voice_playback_provider.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/theme/app_tokens.dart';
 
 /// Inline player for a `voice`/`audio` chat message. Play/pause, a progress
 /// bar driven by real playback position, and an elapsed/total time label.
@@ -30,8 +31,11 @@ class VoiceMessagePlayer extends ConsumerWidget {
     final playing = isActive && playback.playing;
     final processing = isActive && playback.processing;
 
-    final foreground = isMe ? Colors.white : AppTheme.primaryColor;
-    final track = isMe ? Colors.white.withValues(alpha: 0.3) : Colors.grey[300]!;
+    // isMe bubbles are primary-coloured, so their foreground is onPrimary.
+    final foreground = isMe ? context.onPrimary : AppTheme.primaryColor;
+    final track = isMe
+        ? context.onPrimary.withValues(alpha: 0.3)
+        : context.divider;
 
     final totalSeconds = isActive && playback.duration.inSeconds > 0
         ? playback.duration.inSeconds
@@ -57,7 +61,7 @@ class VoiceMessagePlayer extends ConsumerWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isMe
-                    ? Colors.white.withValues(alpha: 0.2)
+                    ? context.onPrimary.withValues(alpha: 0.2)
                     : AppTheme.primaryColor.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
@@ -96,7 +100,9 @@ class VoiceMessagePlayer extends ConsumerWidget {
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isMe ? Colors.white70 : Colors.grey[600],
+                    color: isMe
+                    ? context.onPrimary.withValues(alpha: 0.7)
+                    : context.secondaryText,
                   ),
                 ),
               ],

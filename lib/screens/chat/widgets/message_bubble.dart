@@ -8,6 +8,7 @@ import 'package:flame/screens/chat/widgets/voice_message_player.dart';
 import 'package:flame/providers/translation_provider.dart';
 import 'package:flame/core/i18n/locale_provider.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/theme/app_tokens.dart';
 
 class MessageBubble extends StatelessWidget {
   final Message message;
@@ -95,18 +96,18 @@ class MessageBubble extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: context.fill,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.block, size: 16, color: Colors.grey[500]),
+                Icon(Icons.block, size: 16, color: context.secondaryText),
                 const SizedBox(width: 8),
                 Text(
                   'This message was deleted',
                   style: TextStyle(
-                    color: Colors.grey[500],
+                    color: context.secondaryText,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -126,11 +127,11 @@ class MessageBubble extends StatelessWidget {
       decoration: BoxDecoration(
         color: isMe
             ? AppTheme.primaryColor.withValues(alpha: 0.3)
-            : Colors.grey[300],
+            : context.divider,
         borderRadius: BorderRadius.circular(12),
         border: Border(
           left: BorderSide(
-            color: isMe ? Colors.white : AppTheme.primaryColor,
+            color: isMe ? context.onPrimary : AppTheme.primaryColor,
             width: 3,
           ),
         ),
@@ -143,7 +144,7 @@ class MessageBubble extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: isMe ? Colors.white : AppTheme.primaryColor,
+              color: isMe ? context.onPrimary : AppTheme.primaryColor,
             ),
           ),
           const SizedBox(height: 2),
@@ -153,7 +154,9 @@ class MessageBubble extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 12,
-              color: isMe ? Colors.white70 : Colors.grey[600],
+              color: isMe
+                ? context.onPrimary.withValues(alpha: 0.7)
+                : context.secondaryText,
             ),
           ),
         ],
@@ -173,7 +176,7 @@ class MessageBubble extends StatelessWidget {
       decoration: BoxDecoration(
         color: bare
             ? Colors.transparent
-            : (isMe ? AppTheme.primaryColor : Colors.grey[200]),
+            : (isMe ? AppTheme.primaryColor : context.fill),
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(20),
           topRight: const Radius.circular(20),
@@ -197,24 +200,24 @@ class MessageBubble extends StatelessWidget {
       case MessageType.image:
         return _buildImageContent(context);
       case MessageType.video:
-        return _buildVideoContent();
+        return _buildVideoContent(context);
       case MessageType.voice:
       case MessageType.audio:
         return _buildAudioContent();
       case MessageType.sticker:
         return _buildStickerContent();
       case MessageType.gif:
-        return _buildGifContent();
+        return _buildGifContent(context);
       default:
-        return _buildTextContent();
+        return _buildTextContent(context);
     }
   }
 
-  Widget _buildTextContent() {
+  Widget _buildTextContent(BuildContext context) {
     final text = Text(
       message.content,
       style: TextStyle(
-        color: isMe ? Colors.white : Colors.black87,
+        color: isMe ? context.onPrimary : context.onSurface,
         fontSize: 15,
       ),
     );
@@ -253,7 +256,7 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildVideoContent() {
+  Widget _buildVideoContent(BuildContext context) {
     final thumbnailUrl = message.mediaInfo?.thumbnailUrl;
     return Stack(
       alignment: Alignment.center,
@@ -269,22 +272,22 @@ class MessageBubble extends StatelessWidget {
                   errorBuilder: (_, __, ___) => Container(
                     width: 200,
                     height: 150,
-                    color: Colors.grey[800],
+                    color: context.fill,
                   ),
                 )
               : Container(
                   width: 200,
                   height: 150,
-                  color: Colors.grey[800],
+                  color: context.fill,
                 ),
         ),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.5),
+            color: context.viewerScrim.withValues(alpha: 0.5),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.play_arrow, color: Colors.white, size: 32),
+          child: Icon(Icons.play_arrow, color: context.onOverlay, size: 32),
         ),
         if (message.mediaInfo?.duration != null)
           Positioned(
@@ -293,12 +296,12 @@ class MessageBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.7),
+                color: context.viewerScrim.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 _formatDuration(message.mediaInfo!.duration!),
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+                style: TextStyle(color: context.onOverlay, fontSize: 12),
               ),
             ),
           ),
@@ -327,7 +330,7 @@ class MessageBubble extends StatelessWidget {
     return Text(message.content, style: const TextStyle(fontSize: 48));
   }
 
-  Widget _buildGifContent() {
+  Widget _buildGifContent(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: Image.network(
@@ -337,7 +340,7 @@ class MessageBubble extends StatelessWidget {
         errorBuilder: (_, __, ___) => Container(
           width: 200,
           height: 150,
-          color: Colors.grey[300],
+          color: context.divider,
           child: const Icon(Icons.gif),
         ),
       ),
@@ -352,7 +355,9 @@ class MessageBubble extends StatelessWidget {
           Text(
             'edited',
             style: TextStyle(
-              color: isMe ? Colors.white60 : Colors.grey[400],
+              color: isMe
+                ? context.onPrimary.withValues(alpha: 0.6)
+                : context.secondaryText,
               fontSize: 10,
               fontStyle: FontStyle.italic,
             ),
@@ -362,38 +367,40 @@ class MessageBubble extends StatelessWidget {
         Text(
           message.timeText,
           style: TextStyle(
-            color: isMe ? Colors.white70 : Colors.grey[500],
+            color: isMe
+                ? context.onPrimary.withValues(alpha: 0.7)
+                : context.secondaryText,
             fontSize: 11,
           ),
         ),
         if (isMe) ...[
           const SizedBox(width: 4),
-          _buildStatusIcon(),
+          _buildStatusIcon(context),
         ],
       ],
     );
   }
 
-  Widget _buildStatusIcon() {
+  Widget _buildStatusIcon(BuildContext context) {
     IconData icon;
     Color color;
 
     switch (message.status) {
       case MessageStatus.sending:
         icon = Icons.access_time;
-        color = Colors.white54;
+        color = context.onPrimary.withValues(alpha: 0.54);
         break;
       case MessageStatus.sent:
         icon = Icons.done;
-        color = Colors.white70;
+        color = context.onPrimary.withValues(alpha: 0.7);
         break;
       case MessageStatus.delivered:
         icon = Icons.done_all;
-        color = Colors.white70;
+        color = context.onPrimary.withValues(alpha: 0.7);
         break;
       case MessageStatus.read:
         icon = Icons.done_all;
-        color = Colors.blue.shade200;
+        color = AppColors.readReceipt;
         break;
       case MessageStatus.failed:
         icon = Icons.error_outline;
@@ -417,7 +424,7 @@ class MessageBubble extends StatelessWidget {
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: context.fill,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -500,7 +507,7 @@ class _TranslateSection extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
-                    color: Colors.grey[600],
+                    color: context.secondaryText,
                   ),
                 ),
               ],
@@ -511,7 +518,7 @@ class _TranslateSection extends ConsumerWidget {
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               entry!.text!,
-              style: const TextStyle(fontSize: 15, color: Colors.black87),
+              style: TextStyle(fontSize: 15, color: context.onSurface),
             ),
           ),
         if (status == TranslationStatus.error)
@@ -522,7 +529,7 @@ class _TranslateSection extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontStyle: FontStyle.italic,
-                color: Colors.grey[500],
+                color: context.secondaryText,
               ),
             ),
           ),
@@ -569,12 +576,12 @@ class _MediaThumbnail extends StatelessWidget {
       memCacheWidth: (_maxWidth * dpr).round(),
       placeholder: (_, __) => Container(
         height: 160,
-        color: Colors.grey[300],
+        color: context.divider,
         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       ),
       errorWidget: (_, __, ___) => Container(
         height: 160,
-        color: Colors.grey[300],
+        color: context.divider,
         child: const Icon(Icons.broken_image_outlined),
       ),
     );

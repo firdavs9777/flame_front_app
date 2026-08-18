@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flame/widgets/smart_image.dart';
+import 'package:flame/theme/app_tokens.dart';
 
 class TypingIndicator extends StatelessWidget {
   final String userPhotoUrl;
@@ -24,7 +25,7 @@ class TypingIndicator extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: context.fill,
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Row(
@@ -91,7 +92,8 @@ class _TypingDotState extends State<TypingDot> with SingleTickerProviderStateMix
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            color: Colors.grey[500]!.withValues(alpha: 0.5 + _animation.value * 0.5),
+            color: context.secondaryText
+                .withValues(alpha: 0.5 + _animation.value * 0.5),
             shape: BoxShape.circle,
           ),
         );
@@ -123,7 +125,7 @@ class RecordingVoiceIndicator extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: context.fill,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -135,7 +137,7 @@ class RecordingVoiceIndicator extends StatelessWidget {
                   'Recording voice...',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: context.secondaryText,
                   ),
                 ),
               ],

@@ -53,4 +53,12 @@ extension AppTokens on BuildContext {
   /// never touch overlay chrome that was never on a primary surface to begin
   /// with.
   Color get onOverlay => AppColors.white;
+
+  /// The ground behind full-screen media, and the scrim over a video thumbnail.
+  ///
+  /// Deliberately the same in both themes: a photo viewer is black because black
+  /// is what does not compete with the photo, not because the app is in dark
+  /// mode. A token rather than a literal so the intent is recorded and the lint
+  /// gate does not read it as an oversight.
+  Color get viewerScrim => AppColors.black;
 }

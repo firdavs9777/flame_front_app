@@ -255,7 +255,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               ),
               _buildActionButton(
                 icon: Icons.star,
-                color: Colors.blue,
+                color: AppColors.superLike,
                 onTap: () {
                   Navigator.pop(context);
                   // Handle super like
