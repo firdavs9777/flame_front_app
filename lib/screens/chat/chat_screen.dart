@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/config/env.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/providers/realtime_provider.dart';
@@ -1181,7 +1182,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     // Rows, not raw messages: day separators are list items, which is what
     // makes "don't group a run across midnight" expressible at all.
-    final rows = buildChatRows(_messages, now: DateTime.now());
+    final rows = buildChatRows(_messages);
 
     return ListView.builder(
       controller: _scrollController,
@@ -1343,7 +1344,7 @@ class _DateSeparatorChip extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            chatDayLabel(day, DateTime.now()),
+            chatDayLabel(day, DateTime.now(), context.l10n),
             style: theme.textTheme.labelSmall,
           ),
         ),

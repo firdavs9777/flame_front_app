@@ -61,12 +61,10 @@
   "errorAuthLost": "您的会话已结束，请重新登录。",
   "errorNoInternet": "无网络连接。",
   "errorGeneric": "出错了，请重试。",
-
   "chatTranslate": "翻译",
   "chatHideTranslation": "隐藏翻译",
   "chatTranslating": "翻译中…",
   "chatTranslationUnavailable": "无法翻译",
-
   "storyYourStory": "你的故事",
   "storyAdd": "添加故事",
   "storyCaptionHint": "添加文字说明…",
@@ -76,10 +74,13 @@
   "storyUploadFailed": "无法发布你的故事，请重试。",
   "storyPickCamera": "相机",
   "storyPickGallery": "相册",
-
   "registerAgreePrefix": "我同意",
   "registerTermsOfService": "服务条款",
   "registerAgreeConjunction": "和",
   "registerPrivacyPolicy": "隐私政策",
-  "legalClose": "关闭"
+  "legalClose": "关闭",
+  "chatDayToday": "今天",
+  "chatDayYesterday": "昨天",
+  "chatTyping": "正在输入…",
+  "retry": "重试"
 }

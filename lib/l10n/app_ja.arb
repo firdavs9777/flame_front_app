@@ -61,12 +61,10 @@
   "errorAuthLost": "セッションが終了しました。もう一度ログインしてください。",
   "errorNoInternet": "インターネット接続がありません。",
   "errorGeneric": "問題が発生しました。もう一度お試しください。",
-
   "chatTranslate": "翻訳",
   "chatHideTranslation": "翻訳を非表示",
   "chatTranslating": "翻訳中…",
   "chatTranslationUnavailable": "翻訳できません",
-
   "storyYourStory": "あなたのストーリー",
   "storyAdd": "ストーリーを追加",
   "storyCaptionHint": "キャプションを追加…",
@@ -76,10 +74,13 @@
   "storyUploadFailed": "ストーリーを投稿できませんでした。もう一度お試しください。",
   "storyPickCamera": "カメラ",
   "storyPickGallery": "ギャラリー",
-
   "registerAgreePrefix": "以下に同意します: ",
   "registerTermsOfService": "利用規約",
   "registerAgreeConjunction": "と",
   "registerPrivacyPolicy": "プライバシーポリシー",
-  "legalClose": "閉じる"
+  "legalClose": "閉じる",
+  "chatDayToday": "今日",
+  "chatDayYesterday": "昨日",
+  "chatTyping": "入力中…",
+  "retry": "再試行"
 }

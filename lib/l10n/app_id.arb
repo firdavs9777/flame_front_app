@@ -61,12 +61,10 @@
   "errorAuthLost": "Sesimu telah berakhir. Silakan masuk lagi.",
   "errorNoInternet": "Tidak ada koneksi internet.",
   "errorGeneric": "Terjadi kesalahan. Silakan coba lagi.",
-
   "chatTranslate": "Terjemahkan",
   "chatHideTranslation": "Sembunyikan terjemahan",
   "chatTranslating": "Menerjemahkan…",
   "chatTranslationUnavailable": "Terjemahan tidak tersedia",
-
   "storyYourStory": "Ceritamu",
   "storyAdd": "Tambah cerita",
   "storyCaptionHint": "Tambahkan keterangan…",
@@ -76,10 +74,13 @@
   "storyUploadFailed": "Tidak dapat memposting ceritamu. Silakan coba lagi.",
   "storyPickCamera": "Kamera",
   "storyPickGallery": "Galeri",
-
   "registerAgreePrefix": "Saya menyetujui ",
   "registerTermsOfService": "Ketentuan Layanan",
   "registerAgreeConjunction": " dan ",
   "registerPrivacyPolicy": "Kebijakan Privasi",
-  "legalClose": "Tutup"
+  "legalClose": "Tutup",
+  "chatDayToday": "Hari ini",
+  "chatDayYesterday": "Kemarin",
+  "chatTyping": "sedang menulis…",
+  "retry": "Coba lagi"
 }

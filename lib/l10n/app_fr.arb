@@ -61,12 +61,10 @@
   "errorAuthLost": "Your session has ended. Please sign in again.",
   "errorNoInternet": "No internet connection.",
   "errorGeneric": "Something went wrong. Please try again.",
-
   "chatTranslate": "Traduire",
   "chatHideTranslation": "Masquer la traduction",
   "chatTranslating": "Traduction en cours…",
   "chatTranslationUnavailable": "Traduction indisponible",
-
   "storyYourStory": "Votre story",
   "storyAdd": "Ajouter une story",
   "storyCaptionHint": "Ajouter une légende…",
@@ -76,10 +74,13 @@
   "storyUploadFailed": "Impossible de publier votre story. Veuillez réessayer.",
   "storyPickCamera": "Appareil photo",
   "storyPickGallery": "Galerie",
-
   "registerAgreePrefix": "J'accepte les ",
   "registerTermsOfService": "Conditions d'utilisation",
   "registerAgreeConjunction": " et la ",
   "registerPrivacyPolicy": "Politique de confidentialité",
-  "legalClose": "Fermer"
+  "legalClose": "Fermer",
+  "chatDayToday": "Aujourd'hui",
+  "chatDayYesterday": "Hier",
+  "chatTyping": "en train d’écrire…",
+  "retry": "Réessayer"
 }

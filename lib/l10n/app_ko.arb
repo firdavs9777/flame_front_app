@@ -61,12 +61,10 @@
   "errorAuthLost": "세션이 종료되었습니다. 다시 로그인해 주세요.",
   "errorNoInternet": "인터넷 연결이 없습니다.",
   "errorGeneric": "문제가 발생했습니다. 다시 시도해 주세요.",
-
   "chatTranslate": "번역",
   "chatHideTranslation": "번역 숨기기",
   "chatTranslating": "번역 중…",
   "chatTranslationUnavailable": "번역할 수 없습니다",
-
   "storyYourStory": "내 스토리",
   "storyAdd": "스토리 추가",
   "storyCaptionHint": "캡션 추가…",
@@ -76,10 +74,13 @@
   "storyUploadFailed": "스토리를 게시하지 못했습니다. 다시 시도해 주세요.",
   "storyPickCamera": "카메라",
   "storyPickGallery": "갤러리",
-
   "registerAgreePrefix": "다음에 동의합니다: ",
   "registerTermsOfService": "이용약관",
   "registerAgreeConjunction": " 및 ",
   "registerPrivacyPolicy": "개인정보 처리방침",
-  "legalClose": "닫기"
+  "legalClose": "닫기",
+  "chatDayToday": "오늘",
+  "chatDayYesterday": "어제",
+  "chatTyping": "입력 중…",
+  "retry": "다시 시도"
 }

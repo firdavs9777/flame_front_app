@@ -61,12 +61,10 @@
   "errorAuthLost": "Your session has ended. Please sign in again.",
   "errorNoInternet": "No internet connection.",
   "errorGeneric": "Something went wrong. Please try again.",
-
   "chatTranslate": "Перевести",
   "chatHideTranslation": "Скрыть перевод",
   "chatTranslating": "Перевод…",
   "chatTranslationUnavailable": "Перевод недоступен",
-
   "storyYourStory": "Ваша история",
   "storyAdd": "Добавить историю",
   "storyCaptionHint": "Добавьте подпись…",
@@ -76,10 +74,13 @@
   "storyUploadFailed": "Не удалось опубликовать историю. Попробуйте ещё раз.",
   "storyPickCamera": "Камера",
   "storyPickGallery": "Галерея",
-
   "registerAgreePrefix": "Я принимаю ",
   "registerTermsOfService": "Условия использования",
   "registerAgreeConjunction": " и ",
   "registerPrivacyPolicy": "Политику конфиденциальности",
-  "legalClose": "Закрыть"
+  "legalClose": "Закрыть",
+  "chatDayToday": "Сегодня",
+  "chatDayYesterday": "Вчера",
+  "chatTyping": "печатает…",
+  "retry": "Повторить"
 }

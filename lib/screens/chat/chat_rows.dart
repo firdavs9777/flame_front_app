@@ -1,3 +1,6 @@
+import 'package:intl/intl.dart';
+
+import 'package:flame/l10n/gen/app_localizations.dart';
 import 'package:flame/models/models.dart';
 
 /// One entry in the rendered conversation: either a day separator or a message.
@@ -50,12 +53,15 @@ bool _continues(Message a, Message b) {
 /// Turns messages, oldest first, into rows with day separators and grouping.
 ///
 /// Pure, and deliberately so: every hard case here is a calendar case —
-/// midnight, a day boundary landing inside a run, "Today" versus a date — and
-/// none of them needs a rendered widget to pin down.
+/// midnight, a day boundary landing inside a run — and none of them needs a
+/// rendered widget to pin down.
 ///
-/// [now] is injected rather than read from the clock so the label tests are not
-/// hostage to the day they run on.
-List<ChatRow> buildChatRows(List<Message> messages, {required DateTime now}) {
+/// Takes no clock. It used to accept a `now` it never read anywhere in its body:
+/// the only clock-dependent decision is a separator's *label*, which
+/// [chatDayLabel] makes at render time. Being a pure function of an immutable
+/// list is what lets `MessageThreadState` memoize the result instead of
+/// rebuilding every separator on every rebuild.
+List<ChatRow> buildChatRows(List<Message> messages) {
   if (messages.isEmpty) return const [];
 
   final rows = <ChatRow>[];
@@ -83,22 +89,28 @@ List<ChatRow> buildChatRows(List<Message> messages, {required DateTime now}) {
   return rows;
 }
 
-/// The label for a separator: `Today`, `Yesterday`, or a date.
+/// The label for a separator: today, yesterday, or a formatted date.
 ///
 /// Compared by calendar day, not elapsed hours — at 00:30, something from 23:00
-/// last night is "Yesterday" even though barely ninety minutes have passed.
-String chatDayLabel(DateTime day, DateTime now) {
+/// last night is "yesterday" even though barely ninety minutes have passed.
+///
+/// Called at render time rather than baked into the row, which is what lets a
+/// session left open across midnight relabel itself.
+///
+/// [l10n] rather than hardcoded English: this shipped `Today` / `Yesterday` /
+/// `Jan`…`Dec` in an app with thirteen locales and a working ARB pipeline. The
+/// month name comes from [DateFormat] so it follows the active locale's own
+/// conventions instead of a hand-written table.
+String chatDayLabel(DateTime day, DateTime now, AppLocalizations l10n) {
   final today = DateTime(now.year, now.month, now.day);
   final that = DateTime(day.year, day.month, day.day);
   final diff = today.difference(that).inDays;
 
-  if (diff == 0) return 'Today';
-  if (diff == 1) return 'Yesterday';
+  if (diff == 0) return l10n.chatDayToday;
+  if (diff == 1) return l10n.chatDayYesterday;
 
-  const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
-  final label = '${months[that.month - 1]} ${that.day}';
-  return that.year == today.year ? label : '$label, ${that.year}';
+  final locale = Intl.getCurrentLocale();
+  return that.year == today.year
+      ? DateFormat.MMMd(locale).format(that)
+      : DateFormat.yMMMd(locale).format(that);
 }
