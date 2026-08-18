@@ -8,6 +8,21 @@ import 'package:flame/core/i18n/error_strings_for.dart';
 
 final chatServiceProvider = Provider<ChatService>((ref) => ChatService());
 
+/// The outcome of a send: exactly one of [message] or [error] is non-null.
+///
+/// The five send paths used to return `String?` — null for success — and drop the
+/// message the server had just returned. ChatScreen then awaited a full
+/// newest-page refetch to get it back, one wasted round trip per message sent.
+class SendResult {
+  final Message? message;
+  final String? error;
+
+  const SendResult.sent(Message this.message) : error = null;
+  const SendResult.failed(String this.error) : message = null;
+
+  bool get ok => message != null;
+}
+
 // Conversations provider with async loading from API
 final conversationsProvider =
     StateNotifierProvider<
@@ -73,7 +88,7 @@ class ConversationsNotifier
   // The error string is what should be shown to the user — for 429 it's the
   // friendly "slow down" message set by ApiClient; for other failures it's
   // the backend's message or a sensible fallback.
-  Future<String?> sendMessage(
+  Future<SendResult> sendMessage(
     String conversationId,
     String content, {
     String? replyToId,
@@ -88,12 +103,12 @@ class ConversationsNotifier
 
     if (result.success && result.data != null) {
       _recordOutgoing(conversationId, result.data!);
-      return null;
+      return SendResult.sent(result.data!);
     }
-    return ErrorStringsFor.fromString(result.error);
+    return SendResult.failed(ErrorStringsFor.fromString(result.error));
   }
 
-  Future<String?> sendImageMessage(
+  Future<SendResult> sendImageMessage(
     String conversationId,
     File image, {
     String? replyToId,
@@ -106,12 +121,12 @@ class ConversationsNotifier
 
     if (result.success && result.data != null) {
       _recordOutgoing(conversationId, result.data!);
-      return null;
+      return SendResult.sent(result.data!);
     }
-    return ErrorStringsFor.fromString(result.error);
+    return SendResult.failed(ErrorStringsFor.fromString(result.error));
   }
 
-  Future<String?> sendVideoMessage(
+  Future<SendResult> sendVideoMessage(
     String conversationId,
     File video, {
     int? duration,
@@ -126,12 +141,12 @@ class ConversationsNotifier
 
     if (result.success && result.data != null) {
       _recordOutgoing(conversationId, result.data!);
-      return null;
+      return SendResult.sent(result.data!);
     }
-    return ErrorStringsFor.fromString(result.error);
+    return SendResult.failed(ErrorStringsFor.fromString(result.error));
   }
 
-  Future<String?> sendVoiceMessage(
+  Future<SendResult> sendVoiceMessage(
     String conversationId,
     File voice, {
     int? duration,
@@ -146,12 +161,12 @@ class ConversationsNotifier
 
     if (result.success && result.data != null) {
       _recordOutgoing(conversationId, result.data!);
-      return null;
+      return SendResult.sent(result.data!);
     }
-    return ErrorStringsFor.fromString(result.error);
+    return SendResult.failed(ErrorStringsFor.fromString(result.error));
   }
 
-  Future<String?> sendStickerMessage(
+  Future<SendResult> sendStickerMessage(
     String conversationId,
     String stickerId, {
     String? replyToId,
@@ -164,9 +179,9 @@ class ConversationsNotifier
 
     if (result.success && result.data != null) {
       _recordOutgoing(conversationId, result.data!);
-      return null;
+      return SendResult.sent(result.data!);
     }
-    return ErrorStringsFor.fromString(result.error);
+    return SendResult.failed(ErrorStringsFor.fromString(result.error));
   }
 
   Future<bool> editMessage(

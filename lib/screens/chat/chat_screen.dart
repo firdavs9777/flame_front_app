@@ -215,25 +215,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  Future<void> _refreshMessages() async {
-    final chatService = ref.read(chatServiceProvider);
-    final result = await chatService.getMessages(widget.conversation.id);
-
-    if (!mounted) return;
-    if (!result.success || result.data == null) return;
-
-    // Merge-append rather than replace, so history loaded further up (via
-    // _loadMoreMessages) isn't collapsed by this newest-page fetch.
-    setState(() {
-      final existingIds = _messages.map((m) => m.id).toSet();
-      final newMessages = result.data!.messages.reversed
-          .where((m) => !existingIds.contains(m.id))
-          .toList();
-      _messages = [..._messages, ...newMessages];
-      _hasMoreMessages = result.data!.hasMore;
-    });
-  }
-
   // ==================== Polling ====================
 
   /// Starts the REST-polling fallback used while realtime delivery is
@@ -537,15 +518,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
     _messageController.clear();
 
-    final error = await ref
+    final result = await ref
         .read(conversationsProvider.notifier)
         .sendMessage(widget.conversation.id, content, replyToId: replyToId);
 
     if (mounted) {
       setState(() => _isSending = false);
 
-      if (error == null) {
-        await _refreshMessages();
+      if (result.ok) {
+        // The response already carried the created message, so there is nothing
+        // to refetch. This used to await a full newest-page fetch after every
+        // send.
+        setState(() => _messages = [..._messages, result.message!]);
         _scrollToBottom(animated: true);
       } else {
         // Restore the user's input and reply target so nothing is lost.
@@ -556,7 +540,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           );
           _replyingTo = sentReplyingTo;
         });
-        _showError(error);
+        _showError(result.error!);
       }
     }
   }
@@ -589,7 +573,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _replyingTo = null;
     });
 
-    final error = await ref.read(conversationsProvider.notifier).sendMessage(
+    final result = await ref.read(conversationsProvider.notifier).sendMessage(
           widget.conversation.id,
           emoji,
           type: MessageType.sticker,
@@ -599,12 +583,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (!mounted) return;
     setState(() => _isSending = false);
 
-    if (error == null) {
-      await _refreshMessages();
+    if (result.ok) {
+      // The send response carried the created message, so there is nothing to
+      // refetch — this used to await a full newest-page fetch every time.
+      setState(() => _messages = [..._messages, result.message!]);
       _scrollToBottom(animated: true);
     } else {
       setState(() => _replyingTo = sentReplyingTo);
-      _showError(error);
+      _showError(result.error!);
     }
   }
 
@@ -758,7 +744,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _replyingTo = null;
     });
 
-    final error = await ref.read(conversationsProvider.notifier).sendVoiceMessage(
+    final result = await ref.read(conversationsProvider.notifier).sendVoiceMessage(
           widget.conversation.id,
           file,
           duration: seconds,
@@ -768,12 +754,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (!mounted) return;
     setState(() => _isSending = false);
 
-    if (error == null) {
-      await _refreshMessages();
+    if (result.ok) {
+      // The send response carried the created message, so there is nothing to
+      // refetch — this used to await a full newest-page fetch every time.
+      setState(() => _messages = [..._messages, result.message!]);
       _scrollToBottom(animated: true);
     } else {
       setState(() => _replyingTo = sentReplyingTo);
-      _showError(error);
+      _showError(result.error!);
     }
   }
 
@@ -805,7 +793,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _replyingTo = null;
     });
 
-    final error = await sendAttachment(
+    final result = await sendAttachment(
       kind: kind,
       notifier: ref.read(conversationsProvider.notifier),
       conversationId: widget.conversation.id,
@@ -816,12 +804,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (!mounted) return;
     setState(() => _isSending = false);
 
-    if (error == null) {
-      await _refreshMessages();
+    if (result.ok) {
+      // The send response carried the created message, so there is nothing to
+      // refetch — this used to await a full newest-page fetch every time.
+      setState(() => _messages = [..._messages, result.message!]);
       _scrollToBottom(animated: true);
     } else {
       setState(() => _replyingTo = sentReplyingTo);
-      _showError(error);
+      _showError(result.error!);
     }
   }
 
