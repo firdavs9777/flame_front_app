@@ -1,8 +1,78 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/models/models.dart';
+import 'package:flame/screens/chat/conversation/handlers/message_actions.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
+
+/// Opens the long-press sheet for [message] and routes each choice to its
+/// handler.
+///
+/// Lives here rather than on the screen: deciding which rows a message may show,
+/// and popping the sheet before acting, is sheet wiring — the screen only needs
+/// to supply the two things it owns (its pin list and its reply target).
+void showMessageActions({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String conversationId,
+  required Message message,
+  required String currentUserId,
+  required bool isPinned,
+  required VoidCallback onTogglePin,
+  required VoidCallback onReply,
+}) {
+  // Edit and delete are offered only on the current user's own, not-yet-deleted
+  // messages.
+  final isOwn = message.isSentBy(currentUserId) && !message.isDeleted;
+
+  showModalBottomSheet(
+    context: context,
+    builder: (sheetContext) => MessageActionsSheet(
+      isPinned: isPinned,
+      onTogglePin: () {
+        Navigator.pop(sheetContext);
+        onTogglePin();
+      },
+      onReply: () {
+        Navigator.pop(sheetContext);
+        onReply();
+      },
+      onReact: (emoji) {
+        Navigator.pop(sheetContext);
+        handleAddReaction(
+          ref: ref,
+          conversationId: conversationId,
+          messageId: message.id,
+          emoji: emoji,
+        );
+      },
+      onEdit: isOwn
+          ? () {
+              Navigator.pop(sheetContext);
+              handleEditMessage(
+                context: context,
+                ref: ref,
+                conversationId: conversationId,
+                message: message,
+              );
+            }
+          : null,
+      onDelete: isOwn
+          ? () {
+              Navigator.pop(sheetContext);
+              handleShowDeleteOptions(
+                context: context,
+                ref: ref,
+                conversationId: conversationId,
+                message: message,
+              );
+            }
+          : null,
+    ),
+  );
+}
 
 class MessageActionsSheet extends StatelessWidget {
   final VoidCallback onReply;

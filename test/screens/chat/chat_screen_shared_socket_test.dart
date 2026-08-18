@@ -27,7 +27,7 @@ import 'package:flame/models/models.dart';
 import 'package:flame/providers/chat_provider.dart';
 import 'package:flame/providers/realtime_provider.dart';
 import 'package:flame/providers/user_provider.dart';
-import 'package:flame/screens/chat/chat_screen.dart';
+import 'package:flame/screens/chat/conversation/chat_screen.dart';
 import 'package:flame/services/api_client.dart';
 import 'package:flame/services/chat_service.dart';
 import 'package:flame/services/flame_socket_service.dart';
