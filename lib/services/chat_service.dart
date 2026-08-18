@@ -470,10 +470,14 @@ class ChatService {
   }
 
   // Mark messages as read
-  Future<ServiceResult<void>> markMessagesAsRead(
-    String conversationId,
-    List<String> messageIds,
-  ) async {
+  /// Marks the whole conversation read for the caller.
+  ///
+  /// Takes no message ids because the route takes none: `PUT
+  /// /conversations/:id/read` resolves to `markRead(userId, conversationId)`
+  /// server-side. This used to declare a `List<String> messageIds` it never
+  /// read, and the provider walked the entire message list to build it — which
+  /// was the only reason `Conversation` carried message bodies at all.
+  Future<ServiceResult<void>> markMessagesAsRead(String conversationId) async {
     final response = await _apiClient.put(
       '/conversations/$conversationId/read',
     );

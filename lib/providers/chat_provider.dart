@@ -288,49 +288,31 @@ class ConversationsNotifier
   }
 
   Future<bool> markAsRead(String conversationId) async {
-    final conversations = state.valueOrNull ?? [];
-    final conversation = conversations.firstWhere(
-      (c) => c.id == conversationId,
-      orElse: () => throw Exception('Conversation not found'),
+    final conversations = state.valueOrNull ?? const <Conversation>[];
+    // A stale tap on a conversation that is no longer listed is a no-op, not an
+    // exception. This used to be firstWhere(orElse: () => throw), which turned
+    // it into an unhandled error.
+    if (!conversations.any((c) => c.id == conversationId)) return false;
+
+    // No message ids: the route takes none. Deriving them from local state also
+    // gated the call behind an `isEmpty` check, and applyReadReceipt marks local
+    // copies read on the OTHER participant's behalf — so their receipt arriving
+    // first could suppress ours entirely.
+    final result = await _chatService.markMessagesAsRead(conversationId);
+    if (!result.success) return false;
+
+    // Re-read rather than reusing the snapshot taken before the PUT. A push
+    // landing while it was in flight is applied by addMessageToConversation on
+    // this same notifier, and writing the stale list back would drop that
+    // message from the preview until the next refetch. That race only became
+    // reachable when the socket started calling markAsRead on every push.
+    final current = state.valueOrNull ?? const <Conversation>[];
+    state = AsyncValue.data(
+      current
+          .map((c) => c.id == conversationId ? c.copyWith(unreadCount: 0) : c)
+          .toList(),
     );
-
-    // Get unread message IDs
-    final unreadMessageIds = conversation.messages
-        .where((m) => m.status != MessageStatus.read)
-        .map((m) => m.id)
-        .toList();
-
-    if (unreadMessageIds.isEmpty) return true;
-
-    final result = await _chatService.markMessagesAsRead(
-      conversationId,
-      unreadMessageIds,
-    );
-
-    if (result.success) {
-      // Re-read rather than reusing the `conversations` snapshot taken before
-      // the PATCH. A push landing while it was in flight is appended by
-      // `addMessageToConversation` on the same notifier, and writing the stale
-      // list back would drop that message from both the Messages-list preview
-      // and the cached thread until the next refetch. That race only became
-      // reachable when the socket started calling markAsRead on every push.
-      final current = state.valueOrNull ?? const <Conversation>[];
-      state = AsyncValue.data(
-        current.map((c) {
-          if (c.id == conversationId) {
-            return c.copyWith(
-              unreadCount: 0,
-              messages: c.messages
-                  .map((m) => m.copyWith(status: MessageStatus.read))
-                  .toList(),
-            );
-          }
-          return c;
-        }).toList(),
-      );
-      return true;
-    }
-    return false;
+    return true;
   }
 
   void addMessageToConversation(String conversationId, Message message) {

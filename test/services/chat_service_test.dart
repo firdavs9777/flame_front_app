@@ -164,7 +164,7 @@ void main() {
     await apiClient.init();
     final service = ChatService(apiClient: apiClient);
 
-    final result = await service.markMessagesAsRead('conv-1', ['msg-1', 'msg-2']);
+    final result = await service.markMessagesAsRead('conv-1');
 
     expect(result.success, true);
 

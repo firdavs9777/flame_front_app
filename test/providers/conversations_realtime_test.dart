@@ -38,10 +38,7 @@ class _GatedChatService extends ChatService {
   final Completer<void> gate = Completer<void>();
 
   @override
-  Future<ServiceResult<void>> markMessagesAsRead(
-    String conversationId,
-    List<String> messageIds,
-  ) async {
+  Future<ServiceResult<void>> markMessagesAsRead(String conversationId) async {
     await gate.future;
     return ServiceResult.success(null);
   }
