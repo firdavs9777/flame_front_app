@@ -131,8 +131,105 @@ class MessageThreadNotifier extends StateNotifier<MessageThreadState> {
     );
   }
 
+  /// Fetches the page immediately older than [MessageThreadState.oldestId].
+  ///
+  /// The cursor is a message id, not a count, so a message arriving between two
+  /// pages cannot shift the window. Paging by `offset: messages.length` could not
+  /// promise that: every socket push inflated the count, and the next page
+  /// skipped exactly as much history as had arrived. The old dedupe hid the
+  /// resulting overlap by dropping it; the gap on the other side was silent.
   Future<void> loadMore() async {
-    // Filled in by the next task.
+    if (state.isLoadingMore || state.isLoadingInitial || !state.hasMore) return;
+    final cursor = state.oldestId;
+    if (cursor == null) return;
+
+    state = state.copyWith(isLoadingMore: true, clearError: true);
+
+    final result = await _service.getMessages(
+      conversationId,
+      limit: pageSize,
+      before: cursor,
+    );
+    if (!mounted) return;
+
+    if (!result.success || result.data == null) {
+      // Keep every message already on screen, and leave the cursor alone:
+      // advancing past a page that never arrived loses that history silently.
+      state = state.copyWith(isLoadingMore: false, error: result.error);
+      return;
+    }
+
+    final older = result.data!.messages.reversed.toList();
+    if (older.isEmpty) {
+      state = state.copyWith(
+          isLoadingMore: false, hasMore: false, clearError: true);
+      return;
+    }
+
+    state = state.copyWith(
+      messages: [...older, ...state.messages],
+      oldestId: older.first.id,
+      hasMore: result.data!.hasMore,
+      isLoadingMore: false,
+      clearError: true,
+    );
+  }
+
+  /// Appends a message pushed by the socket, or one the send response returned.
+  ///
+  /// Does not touch [MessageThreadState.oldestId]: that anchors the older end of
+  /// the loaded window, and a newer message says nothing about it.
+  void appendPushed(Message message) {
+    if (!mounted) return;
+    if (state.messages.any((m) => m.id == message.id)) return;
+    state = state.copyWith(messages: [...state.messages, message]);
+  }
+
+  /// Replaces a message in place by id. Deletion arrives the same way — as a
+  /// tombstoned message with `is_deleted` set — so both go through here.
+  void applyUpdate(Message message) {
+    if (!mounted) return;
+    final index = state.messages.indexWhere((m) => m.id == message.id);
+    if (index < 0) return;
+    final next = [...state.messages];
+    next[index] = message;
+    state = state.copyWith(messages: next);
+  }
+
+  final List<StreamSubscription<void>> _subs = [];
+
+  /// Subscribes to the app-level connection's streams, filtered to this
+  /// conversation.
+  ///
+  /// Streams rather than the socket's callback fields: those are
+  /// single-assignment, so claiming them here would silently steal every push
+  /// from the conversation list and freeze the unread badge for every other
+  /// thread.
+  void listen() {
+    if (_subs.isNotEmpty) return;
+    _subs.addAll([
+      _connection.messageNew.listen((e) {
+        if (e.conversationId != conversationId) return;
+        appendPushed(e.message);
+      }),
+      _connection.messageEdited.listen((e) {
+        if (e.conversationId != conversationId) return;
+        applyUpdate(e.message);
+      }),
+      _connection.messageDeleted.listen((e) {
+        if (e.conversationId != conversationId) return;
+        applyUpdate(e.message);
+      }),
+    ]);
+  }
+
+  @override
+  void dispose() {
+    for (final s in _subs) {
+      s.cancel();
+    }
+    _subs.clear();
+    super.dispose();
   }
 }
 
