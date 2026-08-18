@@ -96,13 +96,55 @@ and cost three defects:
 With both changes in place the reconciliation loop has nothing to reconcile and
 is deleted, along with the post-frame drip and the one-at-a-time `break`.
 
+### Migration surface
+
+Fifteen sites in `chat_provider.dart` touch `conversation.messages`. Each has a
+stated fate, so none is discovered mid-implementation:
+
+| Sites | Fate |
+|---|---|
+| `:97`, `:128`, `:161`, `:194`, `:225` — `messages: [...conversation.messages, message]` in `sendMessage`, `sendImageMessage`, `sendVideoMessage`, `sendVoiceMessage`, `sendStickerMessage` | Five near-identical appends collapse to one shared `lastMessage` replacement. These five methods also currently discard the created message the API returns; they start returning it so the thread can append without a refetch. |
+| `:298` — `unreadMessageIds` in `markAsRead` | **Deleted.** See below. |
+| `:323`, `:413` — mapping every message to `MessageStatus.read` in `markAsRead` and `applyReadReceipt` | Deleted. Delivery state on the open thread belongs to `messageThread`; the list shows only `lastMessage`. |
+| `:342`, `:346` — `any()` id scan then append in `addMessageToConversation` | Replace `lastMessage`, bump `lastMessageAt`, increment unread. No scan. |
+| `:436`, `:439` — `applyMessageUpdate` finding and replacing by id | Moves to `messageThread`. The list only needs it when the edited message *is* `lastMessage`. |
+| `:519-539` `_updateMessageInConversation`, `:541-556` `_deleteMessageFromConversation` | Deleted — both exist only to maintain the list nobody reads. |
+| `conversation.dart:23,45,89` | `messages` field, the `last_message` merge in `fromJson`, and `copyWith` all become `lastMessage`. |
+| `chat_screen.dart:1019` | The reconciliation loop. Deleted. |
+
+**`markAsRead`'s unread-id computation is dead payload.**
+`ChatService.markMessagesAsRead(conversationId, messageIds)`
+(`chat_service.dart:465-478`) declares `messageIds` and never reads it — the
+`PUT` sends no body. The backend agrees: `PUT /conversations/:id/read` routes to
+`chatService.markRead(userId, conversationId)` (`chatService.js:310`), which
+takes no ids. So `chat_provider.dart:298` walks the whole message list to build a
+value that is then discarded, and that computation is the *only* reason the list
+provider ever needed full message bodies.
+
+Two consequences. The parameter goes, and with it the last obstacle to reducing
+`Conversation`. And `if (unreadMessageIds.isEmpty) return true;` goes too: it
+skips the server call based on local state, while `applyReadReceipt` marks local
+copies read when the *other* participant reads — so our own "I read this" can be
+suppressed by their receipt arriving first. Needs a test.
+
+This is the second unused parameter found in this surface, after
+`buildChatRows`'s `now`. Dart does not flag unused parameters and neither does
+`flutter analyze` at this repo's settings, so both sat behind docstrings
+describing what they were for. Worth a lint rule rather than a third discovery.
+
 ### Division of responsibility
 
 Stated so it cannot drift:
 
-- `conversationsProvider` owns list previews, unread counts, mute, pin, archive.
-  Never thread bodies.
+- `conversationsProvider` owns list previews, unread counts, mute, pin, archive,
+  and **presence for the list's online dots** (`applyPresence`). Never thread
+  bodies.
 - `messageThread` owns thread bodies. Never unread counts.
+- `thread_presence_provider` owns the open thread's typing state and the header
+  dot. It does not replace `conversationsProvider.applyPresence` — the list needs
+  presence while no thread is open, so both subscribe to the `presence` /
+  `presence:bulk` streams and each keeps its own view. Presence is idempotent
+  per user id, so two subscribers cannot disagree.
 
 Both subscribe to the same pushes and touch disjoint slices, so neither depends
 on the other's ordering. One cross-call remains: on a push into the open thread,
@@ -133,6 +175,13 @@ returns `total`, for installed clients. `before` and `offset` are mutually
 exclusive; if both arrive, `before` wins. This follows the precedent set when the
 refresh route was taught to accept both casings rather than inventing a second
 convention.
+
+**Rollout order across the two repositories.** The backend ships `before` first
+and is deployed before the app starts sending it. Until then the app keeps using
+`offset`, so there is no window in which a released client asks for a parameter
+the server ignores — which would silently reintroduce the drift while every test
+passed. The app-side switch is therefore the last change in this phase, not the
+first, and the plan sequences it that way.
 
 ### App
 
@@ -334,6 +383,10 @@ the bug it would have caught.
 - `addMessageToConversation` bumps unread and replaces `lastMessage` without
   retaining a list.
 - `markAsRead` no longer maps over a message list.
+- `markAsRead` calls the server even when local state already looks read — *the
+  suppression test*: an `applyReadReceipt` from the other participant arriving
+  first must not stop us telling the server we read the thread.
+- The five send methods return the created message rather than discarding it.
 
 **Handlers** — called directly as free functions with a fake `ref`, no widget
 pumping.
