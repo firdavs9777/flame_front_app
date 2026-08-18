@@ -1,22 +1,33 @@
 {
   "@@locale": "en",
-
   "appName": "Flame",
-  "@appName": {"description": "The app name"},
+  "@appName": {
+    "description": "The app name"
+  },
   "appTagline": "Where conversations spark",
-  "@appTagline": {"description": "Subtitle on the welcome screen"},
-
+  "@appTagline": {
+    "description": "Subtitle on the welcome screen"
+  },
   "welcomeSignIn": "Sign in",
-  "@welcomeSignIn": {"description": "Button to go to login screen"},
+  "@welcomeSignIn": {
+    "description": "Button to go to login screen"
+  },
   "welcomeCreateAccount": "Create account",
-  "@welcomeCreateAccount": {"description": "Button to start registration"},
+  "@welcomeCreateAccount": {
+    "description": "Button to start registration"
+  },
   "welcomeHeadline": "Find Your Match",
-  "@welcomeHeadline": {"description": "Top hero heading on the welcome screen"},
+  "@welcomeHeadline": {
+    "description": "Top hero heading on the welcome screen"
+  },
   "welcomeSubheadline": "Swipe right to like, left to pass.\nIt's that simple.",
-  "@welcomeSubheadline": {"description": "Subtitle under the welcome heading"},
+  "@welcomeSubheadline": {
+    "description": "Subtitle under the welcome heading"
+  },
   "welcomeTermsNotice": "By continuing, you agree to our Terms of Service\nand Privacy Policy",
-  "@welcomeTermsNotice": {"description": "Footer notice on the welcome screen before sign-in / create account"},
-
+  "@welcomeTermsNotice": {
+    "description": "Footer notice on the welcome screen before sign-in / create account"
+  },
   "loginTitle": "Welcome back",
   "loginEmailLabel": "Email",
   "loginPasswordLabel": "Password",
@@ -27,46 +38,71 @@
   "loginFacebook": "Continue with Facebook",
   "loginNoAccount": "Don't have an account?",
   "loginSignUpLink": "Sign up",
-
   "loginSubtitle": "Sign in to continue",
-  "@loginSubtitle": {"description": "Subtitle below the login screen heading"},
+  "@loginSubtitle": {
+    "description": "Subtitle below the login screen heading"
+  },
   "loginEmailHint": "Enter your email",
-  "@loginEmailHint": {"description": "Placeholder/hint inside the email text field"},
+  "@loginEmailHint": {
+    "description": "Placeholder/hint inside the email text field"
+  },
   "loginEmailRequired": "Please enter your email",
-  "@loginEmailRequired": {"description": "Validation error when email is empty"},
+  "@loginEmailRequired": {
+    "description": "Validation error when email is empty"
+  },
   "loginEmailInvalid": "Please enter a valid email",
-  "@loginEmailInvalid": {"description": "Validation error when email format is invalid"},
+  "@loginEmailInvalid": {
+    "description": "Validation error when email format is invalid"
+  },
   "loginPasswordHint": "Enter your password",
-  "@loginPasswordHint": {"description": "Placeholder/hint inside the password text field"},
+  "@loginPasswordHint": {
+    "description": "Placeholder/hint inside the password text field"
+  },
   "loginPasswordRequired": "Please enter your password",
-  "@loginPasswordRequired": {"description": "Validation error when password is empty"},
+  "@loginPasswordRequired": {
+    "description": "Validation error when password is empty"
+  },
   "loginPasswordTooShort": "Password must be at least 6 characters",
-  "@loginPasswordTooShort": {"description": "Validation error when password is below minimum length"},
+  "@loginPasswordTooShort": {
+    "description": "Validation error when password is below minimum length"
+  },
   "loginRememberMe": "Remember me",
-  "@loginRememberMe": {"description": "Checkbox label on the login form"},
+  "@loginRememberMe": {
+    "description": "Checkbox label on the login form"
+  },
   "loginOrContinueWith": "Or continue with",
-  "@loginOrContinueWith": {"description": "Divider text between email login and social login buttons"},
+  "@loginOrContinueWith": {
+    "description": "Divider text between email login and social login buttons"
+  },
   "loginCancelled": "Sign-in cancelled",
-  "@loginCancelled": {"description": "Snackbar when the user dismisses a social login flow"},
+  "@loginCancelled": {
+    "description": "Snackbar when the user dismisses a social login flow"
+  },
   "loginGoogleFailed": "Google sign-in failed",
-  "@loginGoogleFailed": {"description": "Snackbar when Google sign-in errors out"},
+  "@loginGoogleFailed": {
+    "description": "Snackbar when Google sign-in errors out"
+  },
   "loginAppleFailed": "Apple sign-in failed",
-  "@loginAppleFailed": {"description": "Snackbar when Apple sign-in errors out"},
+  "@loginAppleFailed": {
+    "description": "Snackbar when Apple sign-in errors out"
+  },
   "loginFacebookFailed": "Facebook sign-in failed",
-  "@loginFacebookFailed": {"description": "Snackbar when Facebook sign-in errors out"},
-
+  "@loginFacebookFailed": {
+    "description": "Snackbar when Facebook sign-in errors out"
+  },
   "navDiscover": "Discover",
   "navHome": "Home",
   "navMatches": "Matches",
   "navChat": "Chat",
   "navProfile": "Profile",
   "navSettings": "Settings",
-
   "settingsTitle": "Settings",
   "settingsAccount": "Account",
   "settingsNotifications": "Notifications",
   "settingsLanguage": "Language",
-  "@settingsLanguage": {"description": "Row label for the language picker"},
+  "@settingsLanguage": {
+    "description": "Row label for the language picker"
+  },
   "settingsPrivacy": "Privacy",
   "settingsLogout": "Log out",
   "settingsLogoutConfirmTitle": "Log out",
@@ -75,65 +111,237 @@
   "settingsDelete": "Delete",
   "settingsDeleteAccount": "Delete account",
   "settingsDeleteAccountBody": "This permanently deletes your account and all your data.",
-
   "settingsAppearance": "Appearance",
-  "@settingsAppearance": {"description": "Section header for appearance/theme settings"},
+  "@settingsAppearance": {
+    "description": "Section header for appearance/theme settings"
+  },
   "settingsTheme": "Theme",
-  "@settingsTheme": {"description": "Row label for the theme picker"},
+  "@settingsTheme": {
+    "description": "Row label for the theme picker"
+  },
   "themeSystem": "System",
-  "@themeSystem": {"description": "Theme option that follows the system setting"},
+  "@themeSystem": {
+    "description": "Theme option that follows the system setting"
+  },
   "themeLight": "Light",
-  "@themeLight": {"description": "Light theme option"},
+  "@themeLight": {
+    "description": "Light theme option"
+  },
   "themeDark": "Dark",
-  "@themeDark": {"description": "Dark theme option"},
-
+  "@themeDark": {
+    "description": "Dark theme option"
+  },
   "languagePickerTitle": "Language",
   "languageUseDevice": "Use device language",
-  "@languageUseDevice": {"description": "Row that clears the override and uses the system language"},
-
+  "@languageUseDevice": {
+    "description": "Row that clears the override and uses the system language"
+  },
   "errorInvalidCredentials": "Incorrect email or password.",
   "errorEmailExists": "An account with this email already exists.",
   "errorRateLimited": "You're doing that too often. Please try again in a moment.",
   "errorAuthLost": "Your session has ended. Please sign in again.",
   "errorNoInternet": "No internet connection.",
   "errorGeneric": "Something went wrong. Please try again.",
-
   "chatTranslate": "Translate",
-  "@chatTranslate": {"description": "Button to translate an incoming chat message"},
+  "@chatTranslate": {
+    "description": "Button to translate an incoming chat message"
+  },
   "chatHideTranslation": "Hide translation",
-  "@chatHideTranslation": {"description": "Button to hide the translation of a chat message"},
+  "@chatHideTranslation": {
+    "description": "Button to hide the translation of a chat message"
+  },
   "chatTranslating": "Translating…",
-  "@chatTranslating": {"description": "Status shown while a chat message is being translated"},
+  "@chatTranslating": {
+    "description": "Status shown while a chat message is being translated"
+  },
   "chatTranslationUnavailable": "Translation unavailable",
-  "@chatTranslationUnavailable": {"description": "Message shown when a chat message could not be translated"},
-
+  "@chatTranslationUnavailable": {
+    "description": "Message shown when a chat message could not be translated"
+  },
   "storyYourStory": "Your story",
-  "@storyYourStory": {"description": "Label for the current user's own story in the stories row"},
+  "@storyYourStory": {
+    "description": "Label for the current user's own story in the stories row"
+  },
   "storyAdd": "Add story",
-  "@storyAdd": {"description": "Button/label to create a new story"},
+  "@storyAdd": {
+    "description": "Button/label to create a new story"
+  },
   "storyCaptionHint": "Add a caption…",
-  "@storyCaptionHint": {"description": "Placeholder/hint in the story caption text field"},
+  "@storyCaptionHint": {
+    "description": "Placeholder/hint in the story caption text field"
+  },
   "storyPost": "Post",
-  "@storyPost": {"description": "Button to publish a story"},
+  "@storyPost": {
+    "description": "Button to publish a story"
+  },
   "storyDeleteTitle": "Delete story?",
-  "@storyDeleteTitle": {"description": "Title of the confirmation dialog for deleting a story"},
+  "@storyDeleteTitle": {
+    "description": "Title of the confirmation dialog for deleting a story"
+  },
   "storyDeleteBody": "This story will be removed.",
-  "@storyDeleteBody": {"description": "Body text of the confirmation dialog for deleting a story"},
+  "@storyDeleteBody": {
+    "description": "Body text of the confirmation dialog for deleting a story"
+  },
   "storyUploadFailed": "Couldn't post your story. Please try again.",
-  "@storyUploadFailed": {"description": "Error shown when posting a story fails"},
+  "@storyUploadFailed": {
+    "description": "Error shown when posting a story fails"
+  },
   "storyPickCamera": "Camera",
-  "@storyPickCamera": {"description": "Option to capture a story photo/video with the camera"},
+  "@storyPickCamera": {
+    "description": "Option to capture a story photo/video with the camera"
+  },
   "storyPickGallery": "Gallery",
-  "@storyPickGallery": {"description": "Option to pick a story photo/video from the gallery"},
-
+  "@storyPickGallery": {
+    "description": "Option to pick a story photo/video from the gallery"
+  },
   "registerAgreePrefix": "I agree to the ",
-  "@registerAgreePrefix": {"description": "Consent sentence prefix before the Terms link on registration"},
+  "@registerAgreePrefix": {
+    "description": "Consent sentence prefix before the Terms link on registration"
+  },
   "registerTermsOfService": "Terms of Service",
-  "@registerTermsOfService": {"description": "Terms of Service link text in the registration consent sentence"},
+  "@registerTermsOfService": {
+    "description": "Terms of Service link text in the registration consent sentence"
+  },
   "registerAgreeConjunction": " and ",
-  "@registerAgreeConjunction": {"description": "Conjunction between the Terms and Privacy links in the registration consent sentence"},
+  "@registerAgreeConjunction": {
+    "description": "Conjunction between the Terms and Privacy links in the registration consent sentence"
+  },
   "registerPrivacyPolicy": "Privacy Policy",
-  "@registerPrivacyPolicy": {"description": "Privacy Policy link text in the registration consent sentence"},
+  "@registerPrivacyPolicy": {
+    "description": "Privacy Policy link text in the registration consent sentence"
+  },
   "legalClose": "Close",
-  "@legalClose": {"description": "Button to close the legal document viewer"}
+  "@legalClose": {
+    "description": "Button to close the legal document viewer"
+  },
+  "chatDayToday": "Today",
+  "@chatDayToday": {
+    "description": "Date separator label for messages sent today"
+  },
+  "chatDayYesterday": "Yesterday",
+  "@chatDayYesterday": {
+    "description": "Date separator label for messages sent yesterday"
+  },
+  "chatTyping": "typing…",
+  "@chatTyping": {
+    "description": "Shown under the partner name while they are typing"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Button that retries a failed load"
+  },
+  "chatMatchedWith": "You matched with {name}!",
+  "@chatMatchedWith": {
+    "description": "Empty-conversation heading, names the match",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatSendFirstMessage": "Send a message to start the conversation",
+  "@chatSendFirstMessage": {
+    "description": "Empty-conversation subtitle"
+  },
+  "chatLoadFailed": "Couldn't load this conversation",
+  "@chatLoadFailed": {
+    "description": "Shown when the message thread fails to load"
+  },
+  "chatPinnedOne": "Pinned message",
+  "@chatPinnedOne": {
+    "description": "Pinned bar label when exactly one message is pinned"
+  },
+  "chatPinnedCount": "Pinned · {count}",
+  "@chatPinnedCount": {
+    "description": "Pinned bar label with the number of pinned messages",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chatAttachment": "Attachment",
+  "@chatAttachment": {
+    "description": "Stand-in preview for a pinned message that has no text"
+  },
+  "chatUnpin": "Unpin",
+  "@chatUnpin": {
+    "description": "Tooltip on the pinned bar dismiss button"
+  },
+  "chatMuteNotifications": "Mute notifications",
+  "@chatMuteNotifications": {
+    "description": "Chat menu item"
+  },
+  "chatUnmuteNotifications": "Unmute notifications",
+  "@chatUnmuteNotifications": {
+    "description": "Chat menu item shown when already muted"
+  },
+  "chatViewProfile": "View profile",
+  "@chatViewProfile": {
+    "description": "Chat menu item"
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Generic cancel button"
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Generic save button"
+  },
+  "chatEditMessage": "Edit message",
+  "@chatEditMessage": {
+    "description": "Chat handler string"
+  },
+  "chatDeleteForMe": "Delete for me",
+  "@chatDeleteForMe": {
+    "description": "Chat handler string"
+  },
+  "chatDeleteForEveryone": "Delete for everyone",
+  "@chatDeleteForEveryone": {
+    "description": "Chat handler string"
+  },
+  "chatPinFailed": "Couldn't pin that message",
+  "@chatPinFailed": {
+    "description": "Chat handler string"
+  },
+  "chatUnpinFailed": "Couldn't unpin that message",
+  "@chatUnpinFailed": {
+    "description": "Chat handler string"
+  },
+  "chatMuteFailed": "Couldn't change notifications",
+  "@chatMuteFailed": {
+    "description": "Chat handler string"
+  },
+  "chatMessageFurtherBack": "That message is further back in the conversation",
+  "@chatMessageFurtherBack": {
+    "description": "Chat handler string"
+  },
+  "chatMicPermission": "Microphone permission is needed to record",
+  "@chatMicPermission": {
+    "description": "Chat handler string"
+  },
+  "chatEditFailed": "Couldn't edit that message",
+  "@chatEditFailed": {
+    "description": "Chat handler string"
+  },
+  "chatDeleteFailed": "Couldn't delete that message",
+  "@chatDeleteFailed": {
+    "description": "Chat handler string"
+  },
+  "chatPin": "Pin",
+  "@chatPin": {
+    "description": "Message long-press action"
+  },
+  "chatReply": "Reply",
+  "@chatReply": {
+    "description": "Message long-press action"
+  },
+  "chatEdit": "Edit",
+  "@chatEdit": {
+    "description": "Message long-press action"
+  },
+  "chatDelete": "Delete",
+  "@chatDelete": {
+    "description": "Message long-press action"
+  }
 }

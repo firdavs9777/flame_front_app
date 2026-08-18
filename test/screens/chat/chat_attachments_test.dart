@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flame/models/models.dart';
 import 'package:flame/providers/chat_provider.dart';
 import 'package:flame/screens/chat/chat_attachments.dart';
 import 'package:flame/screens/chat/widgets/attachment_modal.dart';
@@ -25,8 +26,18 @@ class _RecordingNotifier extends ConversationsNotifier {
   String? lastReplyToId;
   String? failWith;
 
+  /// Mirrors the real notifier's contract: exactly one of message or error.
+  SendResult _outcome() => failWith == null
+      ? SendResult.sent(Message.fromJson({
+          'id': 'sent-1',
+          'sender_id': 'me',
+          'text': '',
+          'created_at': '2026-08-18T10:00:00.000Z',
+        }))
+      : SendResult.failed(failWith!);
+
   @override
-  Future<String?> sendImageMessage(
+  Future<SendResult> sendImageMessage(
     String conversationId,
     File image, {
     String? replyToId,
@@ -35,11 +46,11 @@ class _RecordingNotifier extends ConversationsNotifier {
     lastConversationId = conversationId;
     lastFile = image;
     lastReplyToId = replyToId;
-    return failWith;
+    return _outcome();
   }
 
   @override
-  Future<String?> sendVideoMessage(
+  Future<SendResult> sendVideoMessage(
     String conversationId,
     File video, {
     int? duration,
@@ -49,7 +60,7 @@ class _RecordingNotifier extends ConversationsNotifier {
     lastConversationId = conversationId;
     lastFile = video;
     lastReplyToId = replyToId;
-    return failWith;
+    return _outcome();
   }
 }
 
@@ -102,18 +113,37 @@ void main() {
           reason: 'replying with a photo must keep the reply target');
     });
 
-    test('an error from the sender is returned, not swallowed', () async {
-      final n = _RecordingNotifier()..failWith = 'upload failed';
+    test('a successful send hands back the created message', () async {
+      final n = _RecordingNotifier();
 
-      final err = await sendAttachment(
+      final result = await sendAttachment(
         kind: ChatAttachmentKind.gallery,
         notifier: n,
         conversationId: 'c1',
         file: File('/tmp/x.jpg'),
       );
 
-      expect(err, 'upload failed',
+      expect(result.ok, isTrue);
+      expect(result.message?.id, 'sent-1',
+          reason: 'the caller appends this instead of refetching the page');
+      expect(result.error, isNull);
+    });
+
+    test('an error from the sender is returned, not swallowed', () async {
+      final n = _RecordingNotifier()..failWith = 'upload failed';
+
+      final result = await sendAttachment(
+        kind: ChatAttachmentKind.gallery,
+        notifier: n,
+        conversationId: 'c1',
+        file: File('/tmp/x.jpg'),
+      );
+
+      expect(result.ok, isFalse);
+      expect(result.error, 'upload failed',
           reason: 'the caller shows this to the user; swallowing it fails silently');
+      expect(result.message, isNull,
+          reason: 'a failed send must not hand back a message');
     });
   });
 

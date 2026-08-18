@@ -47,14 +47,22 @@ class ChatService {
   }
 
   // Get messages in a conversation
+  /// One page of messages, newest-first as the server returns them.
+  ///
+  /// [before] is a message-id cursor: the page returned is strictly older than
+  /// that message. Prefer it over [offset], which drifts whenever a message
+  /// arrives between two pages. The two are mutually exclusive on the wire —
+  /// the server gives `before` precedence, and restating that by sending both
+  /// would only imply an intent the caller does not have.
   Future<ServiceResult<MessagesResult>> getMessages(
     String conversationId, {
     int limit = 50,
     int offset = 0,
+    String? before,
   }) async {
     final queryParams = <String, String>{
       'limit': limit.toString(),
-      'offset': offset.toString(),
+      if (before != null) 'before': before else 'offset': offset.toString(),
     };
 
     final response = await _apiClient.get(
@@ -462,10 +470,14 @@ class ChatService {
   }
 
   // Mark messages as read
-  Future<ServiceResult<void>> markMessagesAsRead(
-    String conversationId,
-    List<String> messageIds,
-  ) async {
+  /// Marks the whole conversation read for the caller.
+  ///
+  /// Takes no message ids because the route takes none: `PUT
+  /// /conversations/:id/read` resolves to `markRead(userId, conversationId)`
+  /// server-side. This used to declare a `List<String> messageIds` it never
+  /// read, and the provider walked the entire message list to build it — which
+  /// was the only reason `Conversation` carried message bodies at all.
+  Future<ServiceResult<void>> markMessagesAsRead(String conversationId) async {
     final response = await _apiClient.put(
       '/conversations/$conversationId/read',
     );

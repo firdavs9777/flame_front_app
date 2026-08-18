@@ -164,7 +164,7 @@ void main() {
     await apiClient.init();
     final service = ChatService(apiClient: apiClient);
 
-    final result = await service.markMessagesAsRead('conv-1', ['msg-1', 'msg-2']);
+    final result = await service.markMessagesAsRead('conv-1');
 
     expect(result.success, true);
 
@@ -385,5 +385,40 @@ void main() {
     expect(body.containsKey('duration_hours'), false,
         reason: 'absent means indefinite; an explicit null is a shape the '
             'backend only tolerates for older clients');
+  });
+
+  group('getMessages cursor', () {
+    Future<Uri> capture({int offset = 0, String? before}) async {
+      final mock = _MockClient(http.Response(
+        jsonEncode({
+          'success': true,
+          'data': {'messages': [], 'pagination': {'has_more': false}},
+        }),
+        200,
+      ));
+      final apiClient = _buildApiClient(mock);
+      await apiClient.init();
+      final service = ChatService(apiClient: apiClient);
+
+      await service.getMessages('conv-1', limit: 20, offset: offset, before: before);
+      return mock.calls.single.url;
+    }
+
+    test('sends before and omits offset when a cursor is given', () async {
+      final url = await capture(before: 'm9');
+
+      expect(url.queryParameters['before'], 'm9');
+      expect(url.queryParameters.containsKey('offset'), isFalse,
+          reason: 'sending both would imply a second intent the caller does '
+              'not have; the server would ignore offset anyway');
+      expect(url.queryParameters['limit'], '20');
+    });
+
+    test('sends offset when no cursor is given', () async {
+      final url = await capture(offset: 40);
+
+      expect(url.queryParameters['offset'], '40');
+      expect(url.queryParameters.containsKey('before'), isFalse);
+    });
   });
 }

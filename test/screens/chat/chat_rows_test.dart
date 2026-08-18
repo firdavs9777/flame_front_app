@@ -1,4 +1,6 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flame/l10n/gen/app_localizations.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/screens/chat/chat_rows.dart';
 
@@ -23,11 +25,11 @@ void main() {
 
   group('date separators', () {
     test('an empty conversation has no rows', () {
-      expect(buildChatRows(const [], now: day2), isEmpty);
+      expect(buildChatRows(const []), isEmpty);
     });
 
     test('one message gets one separator above it', () {
-      final rows = buildChatRows([_msg('m1', 'a', day1)], now: day2);
+      final rows = buildChatRows([_msg('m1', 'a', day1)]);
 
       expect(rows.length, 2);
       expect(rows.first, isA<DateSeparatorRow>());
@@ -38,7 +40,7 @@ void main() {
       final rows = buildChatRows([
         _msg('m1', 'a', day1),
         _msg('m2', 'a', day1.add(const Duration(hours: 3))),
-      ], now: day2);
+      ]);
 
       expect(rows.whereType<DateSeparatorRow>().length, 1);
       expect(rows.whereType<MessageRow>().length, 2);
@@ -48,7 +50,7 @@ void main() {
       final rows = buildChatRows([
         _msg('m1', 'a', day1),
         _msg('m2', 'a', day2),
-      ], now: day2);
+      ]);
 
       expect(rows.whereType<DateSeparatorRow>().length, 2);
     });
@@ -57,7 +59,7 @@ void main() {
       final rows = buildChatRows([
         _msg('m1', 'a', DateTime(2026, 8, 15, 23, 58)),
         _msg('m2', 'a', DateTime(2026, 8, 16, 0, 2)),
-      ], now: day2);
+      ]);
 
       expect(rows.whereType<DateSeparatorRow>().length, 2,
           reason: 'four minutes apart, but a different calendar day');
@@ -65,16 +67,23 @@ void main() {
   });
 
   group('separator labels', () {
+    late AppLocalizations en;
+
+    setUpAll(() async {
+      // The real delegate, so these assert the ARB wiring and not a constant.
+      en = await AppLocalizations.delegate.load(const Locale('en'));
+    });
+
     test('today and yesterday are named, not dated', () {
       final now = DateTime(2026, 8, 16, 15, 0);
 
-      expect(chatDayLabel(DateTime(2026, 8, 16, 9, 0), now), 'Today');
-      expect(chatDayLabel(DateTime(2026, 8, 15, 9, 0), now), 'Yesterday');
+      expect(chatDayLabel(DateTime(2026, 8, 16, 9, 0), now, en), 'Today');
+      expect(chatDayLabel(DateTime(2026, 8, 15, 9, 0), now, en), 'Yesterday');
     });
 
     test('anything older gets a date', () {
       final now = DateTime(2026, 8, 16, 15, 0);
-      final label = chatDayLabel(DateTime(2026, 8, 10, 9, 0), now);
+      final label = chatDayLabel(DateTime(2026, 8, 10, 9, 0), now, en);
 
       expect(label, isNot('Today'));
       expect(label, isNot('Yesterday'));
@@ -85,14 +94,37 @@ void main() {
       // 00:30 today is "Today" even though it is more than 24 hours after
       // 23:00 two days ago.
       final now = DateTime(2026, 8, 16, 0, 30);
-      expect(chatDayLabel(DateTime(2026, 8, 16, 0, 5), now), 'Today');
-      expect(chatDayLabel(DateTime(2026, 8, 15, 23, 0), now), 'Yesterday');
+      expect(chatDayLabel(DateTime(2026, 8, 16, 0, 5), now, en), 'Today');
+      expect(chatDayLabel(DateTime(2026, 8, 15, 23, 0), now, en), 'Yesterday');
+    });
+
+    test('a non-English locale gets its own words, not the English ones', () async {
+      final ko = await AppLocalizations.delegate.load(const Locale('ko'));
+      final now = DateTime(2026, 8, 16, 15, 0);
+
+      expect(chatDayLabel(DateTime(2026, 8, 16, 9, 0), now, ko), '오늘');
+      expect(chatDayLabel(DateTime(2026, 8, 15, 9, 0), now, ko), '어제');
+    });
+  });
+
+  group('rows are clock-independent', () {
+    test('the same messages give the same structure every call', () {
+      final msgs = [_msg('m1', 'a', day1), _msg('m2', 'b', day2)];
+
+      final first = buildChatRows(msgs);
+      final second = buildChatRows(msgs);
+
+      expect(first.length, second.length);
+      expect(
+        first.whereType<DateSeparatorRow>().map((r) => r.day),
+        second.whereType<DateSeparatorRow>().map((r) => r.day),
+      );
     });
   });
 
   group('grouping', () {
     test('a lone message is both first and last in its group', () {
-      final rows = buildChatRows([_msg('m1', 'a', day1)], now: day2);
+      final rows = buildChatRows([_msg('m1', 'a', day1)]);
       final row = rows.whereType<MessageRow>().single;
 
       expect(row.isFirstInGroup, isTrue);
@@ -104,7 +136,7 @@ void main() {
         _msg('m1', 'a', day1),
         _msg('m2', 'a', day1.add(const Duration(minutes: 1))),
         _msg('m3', 'a', day1.add(const Duration(minutes: 2))),
-      ], now: day2);
+      ]);
       final msgs = rows.whereType<MessageRow>().toList();
 
       expect(msgs[0].isFirstInGroup, isTrue);
@@ -120,7 +152,7 @@ void main() {
       final rows = buildChatRows([
         _msg('m1', 'a', day1),
         _msg('m2', 'b', day1.add(const Duration(minutes: 1))),
-      ], now: day2);
+      ]);
       final msgs = rows.whereType<MessageRow>().toList();
 
       expect(msgs[0].isLastInGroup, isTrue);
@@ -131,7 +163,7 @@ void main() {
       final rows = buildChatRows([
         _msg('m1', 'a', day1),
         _msg('m2', 'a', day1.add(const Duration(hours: 2))),
-      ], now: day2);
+      ]);
       final msgs = rows.whereType<MessageRow>().toList();
 
       expect(msgs[0].isLastInGroup, isTrue,
@@ -143,7 +175,7 @@ void main() {
       final rows = buildChatRows([
         _msg('m1', 'a', DateTime(2026, 8, 15, 23, 58)),
         _msg('m2', 'a', DateTime(2026, 8, 16, 0, 2)),
-      ], now: day2);
+      ]);
       final msgs = rows.whereType<MessageRow>().toList();
 
       // Four minutes apart and the same sender, but a separator sits between

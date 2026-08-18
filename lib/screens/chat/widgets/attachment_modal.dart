@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:flame/screens/chat/chat_attachments.dart';
+import 'package:flame/theme/app_theme.dart';
 
 /// The "share" sheet in the chat composer.
 ///
@@ -47,13 +48,13 @@ class AttachmentModal extends StatelessWidget {
                 _AttachmentOption(
                   icon: Icons.photo_library,
                   label: 'Gallery',
-                  color: Colors.purple,
+                  color: AppColors.attachmentPhoto,
                   onTap: () => onPick(ChatAttachmentKind.gallery),
                 ),
                 _AttachmentOption(
                   icon: Icons.camera_alt,
                   label: 'Camera',
-                  color: Colors.pink,
+                  color: AppColors.attachmentVideo,
                   onTap: () => onPick(ChatAttachmentKind.camera),
                 ),
                 _AttachmentOption(

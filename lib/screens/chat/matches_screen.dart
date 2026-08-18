@@ -4,11 +4,12 @@ import 'package:flame/models/models.dart';
 import 'package:flame/screens/chat/widgets/matches_empty_state.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
-import 'package:flame/screens/chat/chat_screen.dart';
+import 'package:flame/screens/chat/conversation/chat_screen.dart';
 import 'package:flame/screens/chat/chat_search_screen.dart';
 import 'package:flame/screens/chat/archived_conversations_screen.dart';
 import 'package:flame/screens/stories/widgets/story_tray.dart';
 import 'package:flame/widgets/smart_image.dart';
+import 'package:flame/theme/app_tokens.dart';
 
 class MatchesScreen extends ConsumerStatefulWidget {
   const MatchesScreen({super.key});
@@ -182,9 +183,10 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, size: 60, color: Colors.grey[400]),
+                      Icon(Icons.error_outline, size: 60, color: context.secondaryText),
                       const SizedBox(height: 16),
-                      Text('Failed to load messages', style: TextStyle(color: Colors.grey[600])),
+                      Text('Failed to load messages',
+                style: TextStyle(color: context.secondaryText)),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () {
@@ -217,7 +219,8 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
                           color: Colors.red,
                           alignment: Alignment.centerRight,
                           padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: const Icon(Icons.archive, color: Colors.white),
+                          // On the red swipe ground, not on a primary surface.
+                          child: Icon(Icons.archive, color: context.onOverlay),
                         ),
                         // confirmDismiss, not onDismissed: returning false on
                         // failure keeps a conversation on screen that is still
@@ -333,7 +336,7 @@ class _MatchCircle extends ConsumerWidget {
                         : null,
                     border: match.isNew
                         ? null
-                        : Border.all(color: Colors.grey[300]!, width: 2),
+                        : Border.all(color: context.divider, width: 2),
                   ),
                   child: CircleAvatar(
                     radius: 32,
@@ -350,7 +353,9 @@ class _MatchCircle extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: AppTheme.successColor,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                        // Reads as a cut-out from the row behind the dot, so it has to
+                        // follow the surface into dark mode.
+                        border: Border.all(color: context.surface, width: 2),
                       ),
                     ),
                   ),
@@ -448,7 +453,9 @@ class _ConversationTile extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: AppTheme.successColor,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+                  // Reads as a cut-out from the row behind the dot, so it has to
+                        // follow the surface into dark mode.
+                        border: Border.all(color: context.surface, width: 2),
                 ),
               ),
             ),
@@ -465,7 +472,9 @@ class _ConversationTile extends ConsumerWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          color: conversation.hasUnread ? Colors.black87 : Colors.grey[600],
+          color: conversation.hasUnread
+                              ? context.onSurface
+                              : context.secondaryText,
           fontWeight: conversation.hasUnread ? FontWeight.w500 : FontWeight.normal,
         ),
       ),
@@ -479,7 +488,7 @@ class _ConversationTile extends ConsumerWidget {
               fontSize: 12,
               color: conversation.hasUnread
                   ? AppTheme.primaryColor
-                  : Colors.grey[500],
+                  : context.secondaryText,
             ),
           ),
           if (conversation.hasUnread) ...[
@@ -492,8 +501,9 @@ class _ConversationTile extends ConsumerWidget {
               ),
               child: Text(
                 conversation.unreadCount.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  // On the primary-coloured unread badge.
+                  color: context.onPrimary,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),

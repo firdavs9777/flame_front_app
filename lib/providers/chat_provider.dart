@@ -8,6 +8,21 @@ import 'package:flame/core/i18n/error_strings_for.dart';
 
 final chatServiceProvider = Provider<ChatService>((ref) => ChatService());
 
+/// The outcome of a send: exactly one of [message] or [error] is non-null.
+///
+/// The five send paths used to return `String?` — null for success — and drop the
+/// message the server had just returned. ChatScreen then awaited a full
+/// newest-page refetch to get it back, one wasted round trip per message sent.
+class SendResult {
+  final Message? message;
+  final String? error;
+
+  const SendResult.sent(Message this.message) : error = null;
+  const SendResult.failed(String this.error) : message = null;
+
+  bool get ok => message != null;
+}
+
 // Conversations provider with async loading from API
 final conversationsProvider =
     StateNotifierProvider<
@@ -73,7 +88,7 @@ class ConversationsNotifier
   // The error string is what should be shown to the user — for 429 it's the
   // friendly "slow down" message set by ApiClient; for other failures it's
   // the backend's message or a sensible fallback.
-  Future<String?> sendMessage(
+  Future<SendResult> sendMessage(
     String conversationId,
     String content, {
     String? replyToId,
@@ -87,26 +102,13 @@ class ConversationsNotifier
     );
 
     if (result.success && result.data != null) {
-      final message = result.data!;
-      final conversations = state.valueOrNull ?? [];
-
-      state = AsyncValue.data(
-        conversations.map((conversation) {
-          if (conversation.id == conversationId) {
-            return conversation.copyWith(
-              messages: [...conversation.messages, message],
-              lastMessageAt: DateTime.now(),
-            );
-          }
-          return conversation;
-        }).toList(),
-      );
-      return null;
+      _recordOutgoing(conversationId, result.data!);
+      return SendResult.sent(result.data!);
     }
-    return ErrorStringsFor.fromString(result.error);
+    return SendResult.failed(ErrorStringsFor.fromString(result.error));
   }
 
-  Future<String?> sendImageMessage(
+  Future<SendResult> sendImageMessage(
     String conversationId,
     File image, {
     String? replyToId,
@@ -118,26 +120,13 @@ class ConversationsNotifier
     );
 
     if (result.success && result.data != null) {
-      final message = result.data!;
-      final conversations = state.valueOrNull ?? [];
-
-      state = AsyncValue.data(
-        conversations.map((conversation) {
-          if (conversation.id == conversationId) {
-            return conversation.copyWith(
-              messages: [...conversation.messages, message],
-              lastMessageAt: DateTime.now(),
-            );
-          }
-          return conversation;
-        }).toList(),
-      );
-      return null;
+      _recordOutgoing(conversationId, result.data!);
+      return SendResult.sent(result.data!);
     }
-    return ErrorStringsFor.fromString(result.error);
+    return SendResult.failed(ErrorStringsFor.fromString(result.error));
   }
 
-  Future<String?> sendVideoMessage(
+  Future<SendResult> sendVideoMessage(
     String conversationId,
     File video, {
     int? duration,
@@ -151,26 +140,13 @@ class ConversationsNotifier
     );
 
     if (result.success && result.data != null) {
-      final message = result.data!;
-      final conversations = state.valueOrNull ?? [];
-
-      state = AsyncValue.data(
-        conversations.map((conversation) {
-          if (conversation.id == conversationId) {
-            return conversation.copyWith(
-              messages: [...conversation.messages, message],
-              lastMessageAt: DateTime.now(),
-            );
-          }
-          return conversation;
-        }).toList(),
-      );
-      return null;
+      _recordOutgoing(conversationId, result.data!);
+      return SendResult.sent(result.data!);
     }
-    return ErrorStringsFor.fromString(result.error);
+    return SendResult.failed(ErrorStringsFor.fromString(result.error));
   }
 
-  Future<String?> sendVoiceMessage(
+  Future<SendResult> sendVoiceMessage(
     String conversationId,
     File voice, {
     int? duration,
@@ -184,26 +160,13 @@ class ConversationsNotifier
     );
 
     if (result.success && result.data != null) {
-      final message = result.data!;
-      final conversations = state.valueOrNull ?? [];
-
-      state = AsyncValue.data(
-        conversations.map((conversation) {
-          if (conversation.id == conversationId) {
-            return conversation.copyWith(
-              messages: [...conversation.messages, message],
-              lastMessageAt: DateTime.now(),
-            );
-          }
-          return conversation;
-        }).toList(),
-      );
-      return null;
+      _recordOutgoing(conversationId, result.data!);
+      return SendResult.sent(result.data!);
     }
-    return ErrorStringsFor.fromString(result.error);
+    return SendResult.failed(ErrorStringsFor.fromString(result.error));
   }
 
-  Future<String?> sendStickerMessage(
+  Future<SendResult> sendStickerMessage(
     String conversationId,
     String stickerId, {
     String? replyToId,
@@ -215,23 +178,10 @@ class ConversationsNotifier
     );
 
     if (result.success && result.data != null) {
-      final message = result.data!;
-      final conversations = state.valueOrNull ?? [];
-
-      state = AsyncValue.data(
-        conversations.map((conversation) {
-          if (conversation.id == conversationId) {
-            return conversation.copyWith(
-              messages: [...conversation.messages, message],
-              lastMessageAt: DateTime.now(),
-            );
-          }
-          return conversation;
-        }).toList(),
-      );
-      return null;
+      _recordOutgoing(conversationId, result.data!);
+      return SendResult.sent(result.data!);
     }
-    return ErrorStringsFor.fromString(result.error);
+    return SendResult.failed(ErrorStringsFor.fromString(result.error));
   }
 
   Future<bool> editMessage(
@@ -242,7 +192,7 @@ class ConversationsNotifier
     final result = await _chatService.editMessage(messageId, newContent);
 
     if (result.success && result.data != null) {
-      _updateMessageInConversation(conversationId, result.data!);
+      applyMessageUpdate(conversationId, result.data!);
       return true;
     }
     return false;
@@ -260,11 +210,26 @@ class ConversationsNotifier
 
     if (result.success) {
       if (result.data != null) {
-        _updateMessageInConversation(conversationId, result.data!);
-      } else {
-        _deleteMessageFromConversation(conversationId, messageId);
+        // A tombstoned message came back — it replaces the one it tombstones.
+        applyMessageUpdate(conversationId, result.data!);
+      } else if (_isPreview(conversationId, messageId)) {
+        // Delete-for-me returns no replacement, and this surface no longer keeps
+        // the message before it, so the preview cannot be recomputed locally.
+        // Refetching is cheap on a rare user-initiated action, and the
+        // alternative is a list that shows a deleted message until something
+        // else happens to refresh it.
+        loadConversations(refresh: true);
       }
       return true;
+    }
+    return false;
+  }
+
+  /// Whether [messageId] is the message the conversation list is previewing.
+  bool _isPreview(String conversationId, String messageId) {
+    final current = state.valueOrNull ?? const <Conversation>[];
+    for (final c in current) {
+      if (c.id == conversationId) return c.lastMessage?.id == messageId;
     }
     return false;
   }
@@ -288,67 +253,63 @@ class ConversationsNotifier
   }
 
   Future<bool> markAsRead(String conversationId) async {
-    final conversations = state.valueOrNull ?? [];
-    final conversation = conversations.firstWhere(
-      (c) => c.id == conversationId,
-      orElse: () => throw Exception('Conversation not found'),
+    final conversations = state.valueOrNull ?? const <Conversation>[];
+    // A stale tap on a conversation that is no longer listed is a no-op, not an
+    // exception. This used to be firstWhere(orElse: () => throw), which turned
+    // it into an unhandled error.
+    if (!conversations.any((c) => c.id == conversationId)) return false;
+
+    // No message ids: the route takes none. Deriving them from local state also
+    // gated the call behind an `isEmpty` check, and applyReadReceipt marks local
+    // copies read on the OTHER participant's behalf — so their receipt arriving
+    // first could suppress ours entirely.
+    final result = await _chatService.markMessagesAsRead(conversationId);
+    if (!result.success) return false;
+
+    // Re-read rather than reusing the snapshot taken before the PUT. A push
+    // landing while it was in flight is applied by addMessageToConversation on
+    // this same notifier, and writing the stale list back would drop that
+    // message from the preview until the next refetch. That race only became
+    // reachable when the socket started calling markAsRead on every push.
+    final current = state.valueOrNull ?? const <Conversation>[];
+    state = AsyncValue.data(
+      current
+          .map((c) => c.id == conversationId ? c.copyWith(unreadCount: 0) : c)
+          .toList(),
     );
+    return true;
+  }
 
-    // Get unread message IDs
-    final unreadMessageIds = conversation.messages
-        .where((m) => m.status != MessageStatus.read)
-        .map((m) => m.id)
-        .toList();
-
-    if (unreadMessageIds.isEmpty) return true;
-
-    final result = await _chatService.markMessagesAsRead(
-      conversationId,
-      unreadMessageIds,
+  /// Records a message we just sent as the conversation's newest.
+  ///
+  /// Shared by all five send paths, which previously carried five
+  /// near-identical copies of this block. Uses the message's own timestamp
+  /// rather than DateTime.now(): the server minted it, and the list sorts on it.
+  void _recordOutgoing(String conversationId, Message message) {
+    final current = state.valueOrNull ?? const <Conversation>[];
+    state = AsyncValue.data(
+      current
+          .map((c) => c.id == conversationId
+              ? c.copyWith(lastMessage: message, lastMessageAt: message.timestamp)
+              : c)
+          .toList(),
     );
-
-    if (result.success) {
-      // Re-read rather than reusing the `conversations` snapshot taken before
-      // the PATCH. A push landing while it was in flight is appended by
-      // `addMessageToConversation` on the same notifier, and writing the stale
-      // list back would drop that message from both the Messages-list preview
-      // and the cached thread until the next refetch. That race only became
-      // reachable when the socket started calling markAsRead on every push.
-      final current = state.valueOrNull ?? const <Conversation>[];
-      state = AsyncValue.data(
-        current.map((c) {
-          if (c.id == conversationId) {
-            return c.copyWith(
-              unreadCount: 0,
-              messages: c.messages
-                  .map((m) => m.copyWith(status: MessageStatus.read))
-                  .toList(),
-            );
-          }
-          return c;
-        }).toList(),
-      );
-      return true;
-    }
-    return false;
   }
 
   void addMessageToConversation(String conversationId, Message message) {
-    final conversations = state.valueOrNull ?? [];
+    final current = state.valueOrNull ?? const <Conversation>[];
     state = AsyncValue.data(
-      conversations.map((conversation) {
-        if (conversation.id == conversationId) {
-          // Check if message already exists
-          if (conversation.messages.any((m) => m.id == message.id)) {
-            return conversation;
-          }
-          return conversation.copyWith(
-            messages: [...conversation.messages, message],
-            lastMessageAt: message.timestamp,
-            unreadCount: conversation.unreadCount + 1,
-          );
-        }
-        return conversation;
+      current.map((c) {
+        if (c.id != conversationId) return c;
+        // Socket.IO can redeliver a frame, and the same message also arrives on
+        // the REST send path. Comparing against lastMessage suffices here
+        // because this surface only ever holds the newest one.
+        if (c.lastMessage?.id == message.id) return c;
+        return c.copyWith(
+          lastMessage: message,
+          lastMessageAt: message.timestamp,
+          unreadCount: c.unreadCount + 1,
+        );
       }).toList(),
     );
   }
@@ -403,19 +364,18 @@ class ConversationsNotifier
   /// other person reading their inbox says nothing about ours. Getting this
   /// backwards would blank the badge every time they opened the thread.
   void applyReadReceipt(String conversationId, String byUserId) {
-    final conversations = state.valueOrNull;
-    if (conversations == null) return;
+    final current = state.valueOrNull;
+    if (current == null) return;
 
     state = AsyncValue.data(
-      conversations.map((c) {
+      current.map((c) {
         if (c.id != conversationId) return c;
-        return c.copyWith(
-          messages: c.messages
-              .map((m) => m.senderId == byUserId
-                  ? m
-                  : m.copyWith(status: MessageStatus.read))
-              .toList(),
-        );
+        // A receipt says the OTHER participant read what WE sent, so it only
+        // applies to a message we sent. On this surface that is observable on
+        // lastMessage alone; the open thread is messageThreadProvider's.
+        final last = c.lastMessage;
+        if (last == null || last.senderId == byUserId) return c;
+        return c.copyWith(lastMessage: last.copyWith(status: MessageStatus.read));
       }).toList(),
     );
   }
@@ -427,17 +387,16 @@ class ConversationsNotifier
   /// `messages.last`, so a stale entry there is visible on the main screen.
   /// A message we have not cached is ignored: the next fetch brings it in whole.
   void applyMessageUpdate(String conversationId, Message message) {
-    final conversations = state.valueOrNull;
-    if (conversations == null) return;
+    final current = state.valueOrNull;
+    if (current == null) return;
 
     state = AsyncValue.data(
-      conversations.map((c) {
+      current.map((c) {
         if (c.id != conversationId) return c;
-        if (!c.messages.any((m) => m.id == message.id)) return c;
-        return c.copyWith(
-          messages:
-              c.messages.map((m) => m.id == message.id ? message : m).toList(),
-        );
+        // Only the newest message is visible here. An edit or deletion of
+        // anything older changes nothing this surface shows.
+        if (c.lastMessage?.id != message.id) return c;
+        return c.copyWith(lastMessage: message);
       }).toList(),
     );
   }
@@ -516,43 +475,7 @@ class ConversationsNotifier
     super.dispose();
   }
 
-  void _updateMessageInConversation(
-    String conversationId,
-    Message updatedMessage,
-  ) {
-    final conversations = state.valueOrNull ?? [];
-    state = AsyncValue.data(
-      conversations.map((conversation) {
-        if (conversation.id == conversationId) {
-          return conversation.copyWith(
-            messages: conversation.messages.map((m) {
-              if (m.id == updatedMessage.id) {
-                return updatedMessage;
-              }
-              return m;
-            }).toList(),
-          );
-        }
-        return conversation;
-      }).toList(),
-    );
-  }
 
-  void _deleteMessageFromConversation(String conversationId, String messageId) {
-    final conversations = state.valueOrNull ?? [];
-    state = AsyncValue.data(
-      conversations.map((conversation) {
-        if (conversation.id == conversationId) {
-          return conversation.copyWith(
-            messages: conversation.messages
-                .where((m) => m.id != messageId)
-                .toList(),
-          );
-        }
-        return conversation;
-      }).toList(),
-    );
-  }
 }
 
 final conversationMessagesProvider =

@@ -55,7 +55,7 @@ Future<File?> pickAttachment(
 /// Kept separate from the widget so the routing is testable — before this
 /// existed, `sendImageMessage` and friends had no callers at all and nothing
 /// would have caught wiring a photo to the video endpoint.
-Future<String?> sendAttachment({
+Future<SendResult> sendAttachment({
   required ChatAttachmentKind kind,
   required ConversationsNotifier notifier,
   required String conversationId,

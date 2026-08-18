@@ -5,7 +5,19 @@ class Conversation {
   final String id;
   final String? matchId;
   final User otherUser;
-  final List<Message> messages;
+
+  /// The newest message, or null for a conversation nobody has written in.
+  ///
+  /// This used to be a `List<Message>` holding the whole thread, with
+  /// `lastMessage` as a getter over it. Nothing on the conversation-list
+  /// surface ever read another element, while `addMessageToConversation`
+  /// appended to it on every socket push, for every conversation, for the whole
+  /// session, with nothing trimming it — and `markAsRead` mapped a `copyWith`
+  /// over all of it to set a status only the newest element displays.
+  ///
+  /// The open thread is owned by `messageThreadProvider`.
+  final Message? lastMessage;
+
   final DateTime lastMessageAt;
   final int unreadCount;
 
@@ -20,37 +32,34 @@ class Conversation {
     required this.id,
     this.matchId,
     required this.otherUser,
-    required this.messages,
+    this.lastMessage,
     required this.lastMessageAt,
     this.unreadCount = 0,
     this.isMuted = false,
   });
 
   factory Conversation.fromJson(Map<String, dynamic> json) {
-    // Parse messages if present
-    List<Message> messages = [];
-    if (json['messages'] != null) {
-      messages = (json['messages'] as List)
-          .map((m) => Message.fromJson(m))
-          .toList();
-    }
-
-    // Parse last_message if present (for conversation list)
+    // `last_message` is what the list endpoint sends, and it wins: it is the
+    // field the server computes for exactly this purpose.
+    //
+    // The `messages` array is a legacy shape no current endpoint produces — the
+    // thread endpoint's messages are parsed by `MessagesResult`, not here. It is
+    // still read so an older payload degrades rather than losing its preview,
+    // and its last element is treated as the newest, which is the ordering the
+    // previous `messages.last` getter assumed.
     Message? lastMessage;
+    final rawMessages = json['messages'];
     if (json['last_message'] != null) {
       lastMessage = Message.fromJson(json['last_message']);
-      // Add to messages list if not already there
-      if (messages.isEmpty ||
-          (messages.isNotEmpty && messages.last.id != lastMessage.id)) {
-        messages = [...messages, lastMessage];
-      }
+    } else if (rawMessages is List && rawMessages.isNotEmpty) {
+      lastMessage = Message.fromJson(rawMessages.last);
     }
 
     return Conversation(
       id: json['id'] ?? '',
       matchId: json['match_id'],
       otherUser: User.fromJson(json['other_user'] ?? {}),
-      messages: messages,
+      lastMessage: lastMessage,
       lastMessageAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
           : (json['last_message_at'] != null
@@ -66,7 +75,7 @@ class Conversation {
       'id': id,
       'match_id': matchId,
       'other_user': otherUser.toJson(),
-      'messages': messages.map((m) => m.toJson()).toList(),
+      'last_message': lastMessage?.toJson(),
       'last_message_at': lastMessageAt.toIso8601String(),
       'unread_count': unreadCount,
       'is_muted': isMuted,
@@ -77,7 +86,7 @@ class Conversation {
     String? id,
     String? matchId,
     User? otherUser,
-    List<Message>? messages,
+    Message? lastMessage,
     DateTime? lastMessageAt,
     int? unreadCount,
     bool? isMuted,
@@ -86,18 +95,16 @@ class Conversation {
       id: id ?? this.id,
       matchId: matchId ?? this.matchId,
       otherUser: otherUser ?? this.otherUser,
-      messages: messages ?? this.messages,
+      lastMessage: lastMessage ?? this.lastMessage,
       lastMessageAt: lastMessageAt ?? this.lastMessageAt,
       unreadCount: unreadCount ?? this.unreadCount,
       isMuted: isMuted ?? this.isMuted,
     );
   }
 
-  Message? get lastMessage => messages.isNotEmpty ? messages.last : null;
-
   String get lastMessagePreview {
-    if (lastMessage == null) return 'Say hello!';
-    final msg = lastMessage!;
+    final msg = lastMessage;
+    if (msg == null) return 'Say hello!';
     if (msg.type == MessageType.image) return '📷 Photo';
     if (msg.type == MessageType.gif) return 'GIF';
     if (msg.content.length > 40) {
