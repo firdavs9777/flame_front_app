@@ -57,6 +57,7 @@ class _FakeChatService extends ChatService {
     String conversationId, {
     int limit = 50,
     int offset = 0,
+    String? before,
   }) async {
     return ServiceResult.failure('no network in tests');
   }
