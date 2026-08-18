@@ -245,6 +245,9 @@ final messageThreadProvider = StateNotifierProvider.autoDispose
   // socket subscription. Re-entering refetches, which is what the screen already
   // did, and memory stays bounded rather than accumulating one loaded thread per
   // conversation visited. An LRU cache is a later decision with its own evidence.
-  ref.onDispose(notifier.dispose);
+  // No ref.onDispose(notifier.dispose): StateNotifierProvider already
+  // disposes the notifier when the element goes, and StateNotifier.dispose
+  // asserts it has not run before — so registering it here threw
+  // 'Tried to use ... after dispose' every time the screen closed.
   return notifier;
 });

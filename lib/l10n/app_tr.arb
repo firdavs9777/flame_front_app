@@ -92,5 +92,21 @@
   "chatUnpin": "Sabitlemeyi kaldır",
   "chatMuteNotifications": "Bildirimleri sessize al",
   "chatUnmuteNotifications": "Bildirimleri aç",
-  "chatViewProfile": "Profili görüntüle"
+  "chatViewProfile": "Profili görüntüle",
+  "commonCancel": "İptal",
+  "commonSave": "Kaydet",
+  "chatEditMessage": "Mesajı düzenle",
+  "chatDeleteForMe": "Benden sil",
+  "chatDeleteForEveryone": "Herkesten sil",
+  "chatPinFailed": "Bu mesaj sabitlenemedi",
+  "chatUnpinFailed": "Sabitleme kaldırılamadı",
+  "chatMuteFailed": "Bildirimler değiştirilemedi",
+  "chatMessageFurtherBack": "Bu mesaj sohbetin daha gerisinde",
+  "chatMicPermission": "Kayıt için mikrofon izni gerekiyor",
+  "chatEditFailed": "Bu mesaj düzenlenemedi",
+  "chatDeleteFailed": "Bu mesaj silinemedi",
+  "chatPin": "Sabitle",
+  "chatReply": "Yanıtla",
+  "chatEdit": "Düzenle",
+  "chatDelete": "Sil"
 }

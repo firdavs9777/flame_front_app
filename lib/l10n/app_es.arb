@@ -92,5 +92,21 @@
   "chatUnpin": "Dejar de fijar",
   "chatMuteNotifications": "Silenciar notificaciones",
   "chatUnmuteNotifications": "Reactivar notificaciones",
-  "chatViewProfile": "Ver perfil"
+  "chatViewProfile": "Ver perfil",
+  "commonCancel": "Cancelar",
+  "commonSave": "Guardar",
+  "chatEditMessage": "Editar mensaje",
+  "chatDeleteForMe": "Eliminar para mí",
+  "chatDeleteForEveryone": "Eliminar para todos",
+  "chatPinFailed": "No se pudo fijar ese mensaje",
+  "chatUnpinFailed": "No se pudo dejar de fijar",
+  "chatMuteFailed": "No se pudieron cambiar las notificaciones",
+  "chatMessageFurtherBack": "Ese mensaje está más atrás en la conversación",
+  "chatMicPermission": "Se necesita permiso del micrófono para grabar",
+  "chatEditFailed": "No se pudo editar ese mensaje",
+  "chatDeleteFailed": "No se pudo eliminar ese mensaje",
+  "chatPin": "Fijar",
+  "chatReply": "Responder",
+  "chatEdit": "Editar",
+  "chatDelete": "Eliminar"
 }

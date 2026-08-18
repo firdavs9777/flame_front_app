@@ -170,6 +170,9 @@ final threadPresenceProvider = StateNotifierProvider.autoDispose
     seedOnline: args.seedOnline,
     connection: ref.watch(realtimeConnectionProvider),
   )..listen();
-  ref.onDispose(notifier.dispose);
+  // No ref.onDispose(notifier.dispose): StateNotifierProvider already
+  // disposes the notifier when the element goes, and StateNotifier.dispose
+  // asserts it has not run before — so registering it here threw
+  // 'Tried to use ... after dispose' every time the screen closed.
   return notifier;
 });

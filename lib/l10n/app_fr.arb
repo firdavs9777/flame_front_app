@@ -92,5 +92,21 @@
   "chatUnpin": "Désépingler",
   "chatMuteNotifications": "Couper les notifications",
   "chatUnmuteNotifications": "Réactiver les notifications",
-  "chatViewProfile": "Voir le profil"
+  "chatViewProfile": "Voir le profil",
+  "commonCancel": "Annuler",
+  "commonSave": "Enregistrer",
+  "chatEditMessage": "Modifier le message",
+  "chatDeleteForMe": "Supprimer pour moi",
+  "chatDeleteForEveryone": "Supprimer pour tout le monde",
+  "chatPinFailed": "Impossible d’épingler ce message",
+  "chatUnpinFailed": "Impossible de désépingler",
+  "chatMuteFailed": "Impossible de modifier les notifications",
+  "chatMessageFurtherBack": "Ce message se trouve plus haut dans la conversation",
+  "chatMicPermission": "L’autorisation du micro est nécessaire pour enregistrer",
+  "chatEditFailed": "Impossible de modifier ce message",
+  "chatDeleteFailed": "Impossible de supprimer ce message",
+  "chatPin": "Épingler",
+  "chatReply": "Répondre",
+  "chatEdit": "Modifier",
+  "chatDelete": "Supprimer"
 }

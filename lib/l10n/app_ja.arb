@@ -92,5 +92,21 @@
   "chatUnpin": "固定を解除",
   "chatMuteNotifications": "通知をオフ",
   "chatUnmuteNotifications": "通知をオン",
-  "chatViewProfile": "プロフィールを見る"
+  "chatViewProfile": "プロフィールを見る",
+  "commonCancel": "キャンセル",
+  "commonSave": "保存",
+  "chatEditMessage": "メッセージを編集",
+  "chatDeleteForMe": "自分だけ削除",
+  "chatDeleteForEveryone": "全員から削除",
+  "chatPinFailed": "メッセージを固定できませんでした",
+  "chatUnpinFailed": "固定を解除できませんでした",
+  "chatMuteFailed": "通知を変更できませんでした",
+  "chatMessageFurtherBack": "そのメッセージは会話のさらに前にあります",
+  "chatMicPermission": "録音するにはマイクの許可が必要です",
+  "chatEditFailed": "メッセージを編集できませんでした",
+  "chatDeleteFailed": "メッセージを削除できませんでした",
+  "chatPin": "固定",
+  "chatReply": "返信",
+  "chatEdit": "編集",
+  "chatDelete": "削除"
 }

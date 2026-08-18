@@ -92,5 +92,21 @@
   "chatUnpin": "Lepas sematan",
   "chatMuteNotifications": "Bisukan notifikasi",
   "chatUnmuteNotifications": "Aktifkan notifikasi",
-  "chatViewProfile": "Lihat profil"
+  "chatViewProfile": "Lihat profil",
+  "commonCancel": "Batal",
+  "commonSave": "Simpan",
+  "chatEditMessage": "Edit pesan",
+  "chatDeleteForMe": "Hapus untuk saya",
+  "chatDeleteForEveryone": "Hapus untuk semua",
+  "chatPinFailed": "Tidak dapat menyematkan pesan itu",
+  "chatUnpinFailed": "Tidak dapat melepas sematan",
+  "chatMuteFailed": "Tidak dapat mengubah notifikasi",
+  "chatMessageFurtherBack": "Pesan itu ada lebih jauh di percakapan",
+  "chatMicPermission": "Izin mikrofon diperlukan untuk merekam",
+  "chatEditFailed": "Tidak dapat mengedit pesan itu",
+  "chatDeleteFailed": "Tidak dapat menghapus pesan itu",
+  "chatPin": "Sematkan",
+  "chatReply": "Balas",
+  "chatEdit": "Edit",
+  "chatDelete": "Hapus"
 }

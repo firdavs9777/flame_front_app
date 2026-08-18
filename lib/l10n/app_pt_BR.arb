@@ -92,5 +92,21 @@
   "chatUnpin": "Desafixar",
   "chatMuteNotifications": "Silenciar notificações",
   "chatUnmuteNotifications": "Reativar notificações",
-  "chatViewProfile": "Ver perfil"
+  "chatViewProfile": "Ver perfil",
+  "commonCancel": "Cancelar",
+  "commonSave": "Salvar",
+  "chatEditMessage": "Editar mensagem",
+  "chatDeleteForMe": "Apagar para mim",
+  "chatDeleteForEveryone": "Apagar para todos",
+  "chatPinFailed": "Não foi possível fixar essa mensagem",
+  "chatUnpinFailed": "Não foi possível desafixar",
+  "chatMuteFailed": "Não foi possível alterar as notificações",
+  "chatMessageFurtherBack": "Essa mensagem está mais atrás na conversa",
+  "chatMicPermission": "É necessária permissão do microfone para gravar",
+  "chatEditFailed": "Não foi possível editar essa mensagem",
+  "chatDeleteFailed": "Não foi possível apagar essa mensagem",
+  "chatPin": "Fixar",
+  "chatReply": "Responder",
+  "chatEdit": "Editar",
+  "chatDelete": "Apagar"
 }

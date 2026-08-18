@@ -92,5 +92,21 @@
   "chatUnpin": "Loslösen",
   "chatMuteNotifications": "Benachrichtigungen stummschalten",
   "chatUnmuteNotifications": "Stummschaltung aufheben",
-  "chatViewProfile": "Profil ansehen"
+  "chatViewProfile": "Profil ansehen",
+  "commonCancel": "Abbrechen",
+  "commonSave": "Speichern",
+  "chatEditMessage": "Nachricht bearbeiten",
+  "chatDeleteForMe": "Für mich löschen",
+  "chatDeleteForEveryone": "Für alle löschen",
+  "chatPinFailed": "Nachricht konnte nicht angepinnt werden",
+  "chatUnpinFailed": "Anpinnen konnte nicht aufgehoben werden",
+  "chatMuteFailed": "Benachrichtigungen konnten nicht geändert werden",
+  "chatMessageFurtherBack": "Diese Nachricht liegt weiter zurück im Gespräch",
+  "chatMicPermission": "Für die Aufnahme wird die Mikrofonberechtigung benötigt",
+  "chatEditFailed": "Nachricht konnte nicht bearbeitet werden",
+  "chatDeleteFailed": "Nachricht konnte nicht gelöscht werden",
+  "chatPin": "Anpinnen",
+  "chatReply": "Antworten",
+  "chatEdit": "Bearbeiten",
+  "chatDelete": "Löschen"
 }

@@ -279,5 +279,69 @@
   "chatViewProfile": "View profile",
   "@chatViewProfile": {
     "description": "Chat menu item"
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Generic cancel button"
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Generic save button"
+  },
+  "chatEditMessage": "Edit message",
+  "@chatEditMessage": {
+    "description": "Chat handler string"
+  },
+  "chatDeleteForMe": "Delete for me",
+  "@chatDeleteForMe": {
+    "description": "Chat handler string"
+  },
+  "chatDeleteForEveryone": "Delete for everyone",
+  "@chatDeleteForEveryone": {
+    "description": "Chat handler string"
+  },
+  "chatPinFailed": "Couldn't pin that message",
+  "@chatPinFailed": {
+    "description": "Chat handler string"
+  },
+  "chatUnpinFailed": "Couldn't unpin that message",
+  "@chatUnpinFailed": {
+    "description": "Chat handler string"
+  },
+  "chatMuteFailed": "Couldn't change notifications",
+  "@chatMuteFailed": {
+    "description": "Chat handler string"
+  },
+  "chatMessageFurtherBack": "That message is further back in the conversation",
+  "@chatMessageFurtherBack": {
+    "description": "Chat handler string"
+  },
+  "chatMicPermission": "Microphone permission is needed to record",
+  "@chatMicPermission": {
+    "description": "Chat handler string"
+  },
+  "chatEditFailed": "Couldn't edit that message",
+  "@chatEditFailed": {
+    "description": "Chat handler string"
+  },
+  "chatDeleteFailed": "Couldn't delete that message",
+  "@chatDeleteFailed": {
+    "description": "Chat handler string"
+  },
+  "chatPin": "Pin",
+  "@chatPin": {
+    "description": "Message long-press action"
+  },
+  "chatReply": "Reply",
+  "@chatReply": {
+    "description": "Message long-press action"
+  },
+  "chatEdit": "Edit",
+  "@chatEdit": {
+    "description": "Message long-press action"
+  },
+  "chatDelete": "Delete",
+  "@chatDelete": {
+    "description": "Message long-press action"
   }
 }
