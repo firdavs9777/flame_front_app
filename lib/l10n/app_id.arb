@@ -82,5 +82,8 @@
   "chatDayToday": "Hari ini",
   "chatDayYesterday": "Kemarin",
   "chatTyping": "sedang menulis…",
-  "retry": "Coba lagi"
+  "retry": "Coba lagi",
+  "chatMatchedWith": "Kamu cocok dengan {name}!",
+  "chatSendFirstMessage": "Kirim pesan untuk memulai percakapan",
+  "chatLoadFailed": "Tidak dapat memuat percakapan ini"
 }

@@ -82,5 +82,8 @@
   "chatDayToday": "今日",
   "chatDayYesterday": "昨日",
   "chatTyping": "入力中…",
-  "retry": "再試行"
+  "retry": "再試行",
+  "chatMatchedWith": "{name}さんとマッチしました！",
+  "chatSendFirstMessage": "メッセージを送って会話を始めましょう",
+  "chatLoadFailed": "この会話を読み込めませんでした"
 }

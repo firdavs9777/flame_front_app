@@ -82,5 +82,8 @@
   "chatDayToday": "Сегодня",
   "chatDayYesterday": "Вчера",
   "chatTyping": "печатает…",
-  "retry": "Повторить"
+  "retry": "Повторить",
+  "chatMatchedWith": "У вас совпадение с {name}!",
+  "chatSendFirstMessage": "Отправьте сообщение, чтобы начать разговор",
+  "chatLoadFailed": "Не удалось загрузить этот разговор"
 }

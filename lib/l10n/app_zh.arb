@@ -82,5 +82,8 @@
   "chatDayToday": "今天",
   "chatDayYesterday": "昨天",
   "chatTyping": "正在输入…",
-  "retry": "重试"
+  "retry": "重试",
+  "chatMatchedWith": "你和 {name} 配对成功！",
+  "chatSendFirstMessage": "发送消息开始对话",
+  "chatLoadFailed": "无法加载此对话"
 }

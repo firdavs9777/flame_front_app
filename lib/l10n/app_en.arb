@@ -229,5 +229,22 @@
   "retry": "Retry",
   "@retry": {
     "description": "Button that retries a failed load"
+  },
+  "chatMatchedWith": "You matched with {name}!",
+  "@chatMatchedWith": {
+    "description": "Empty-conversation heading, names the match",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatSendFirstMessage": "Send a message to start the conversation",
+  "@chatSendFirstMessage": {
+    "description": "Empty-conversation subtitle"
+  },
+  "chatLoadFailed": "Couldn't load this conversation",
+  "@chatLoadFailed": {
+    "description": "Shown when the message thread fails to load"
   }
 }

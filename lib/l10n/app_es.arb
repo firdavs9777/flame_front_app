@@ -82,5 +82,8 @@
   "chatDayToday": "Hoy",
   "chatDayYesterday": "Ayer",
   "chatTyping": "escribiendo…",
-  "retry": "Reintentar"
+  "retry": "Reintentar",
+  "chatMatchedWith": "¡Hiciste match con {name}!",
+  "chatSendFirstMessage": "Envía un mensaje para empezar la conversación",
+  "chatLoadFailed": "No se pudo cargar esta conversación"
 }

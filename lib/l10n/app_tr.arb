@@ -82,5 +82,8 @@
   "chatDayToday": "Bugün",
   "chatDayYesterday": "Dün",
   "chatTyping": "yazıyor…",
-  "retry": "Yeniden dene"
+  "retry": "Yeniden dene",
+  "chatMatchedWith": "{name} ile eşleştin!",
+  "chatSendFirstMessage": "Sohbeti başlatmak için bir mesaj gönder",
+  "chatLoadFailed": "Bu sohbet yüklenemedi"
 }
