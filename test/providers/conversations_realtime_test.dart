@@ -133,18 +133,26 @@ void main() {
         reason: 'their read receipt must not wipe our badge');
   });
 
-  test('a read receipt marks the messages we sent as read', () {
+  test('a read receipt marks the previewed message we sent as read', () {
     final n = _Seeded([_conv('c1', 'u1', 0)]);
     n.addMessageToConversation('c1', _msg('mine', 'me'));
+
+    n.applyReadReceipt('c1', 'u1');
+
+    expect(n.state.valueOrNull!.single.lastMessage!.status, MessageStatus.read);
+  });
+
+  test('a receipt does not touch a preview the reader sent themselves', () {
+    final n = _Seeded([_conv('c1', 'u1', 0)]);
     n.addMessageToConversation('c1', _msg('theirs', 'u1'));
 
     n.applyReadReceipt('c1', 'u1');
 
-    final msgs = n.state.valueOrNull!.single.messages;
-    expect(msgs.firstWhere((m) => m.id == 'mine').status, MessageStatus.read);
-    expect(msgs.firstWhere((m) => m.id == 'theirs').status,
-        isNot(MessageStatus.read),
-        reason: 'a message the reader sent themselves is not their own receipt');
+    // u1 having sent the newest message says nothing about u1 reading ours, and
+    // marking their own message 'read' would put a receipt tick on the wrong
+    // side of the thread.
+    expect(n.state.valueOrNull!.single.lastMessage!.status,
+        isNot(MessageStatus.read));
   });
 
   test('an edit replaces the cached message so the preview is not stale', () {
@@ -159,9 +167,12 @@ void main() {
   test('an update for a message we never cached is ignored', () {
     final n = _Seeded([_conv('c1', 'u1', 0)]);
 
+    final before = n.state.valueOrNull!.single.lastMessage;
+
     n.applyMessageUpdate('c1', _msg('ghost', 'u1'));
 
-    expect(n.state.valueOrNull!.single.messages, isEmpty);
+    expect(n.state.valueOrNull!.single.lastMessage, before,
+        reason: 'an update for a message this surface is not showing is a no-op');
   });
 
   test('presence flips the online dot for the matching conversation only', () {
@@ -288,9 +299,8 @@ void main() {
     service.gate.complete();
     expect(await inFlight, isTrue);
 
-    final messages = n.state.valueOrNull!.single.messages;
-    expect(messages.map((m) => m.id), containsAll(<String>['m1', 'm2']),
-        reason: 'the message that arrived during the PATCH must survive it');
+    expect(n.state.valueOrNull!.single.lastMessage?.id, 'm2',
+        reason: 'the message that arrived during the PUT must survive it');
     expect(n.state.valueOrNull!.single.unreadCount, 0);
   });
 }

@@ -87,20 +87,7 @@ class ConversationsNotifier
     );
 
     if (result.success && result.data != null) {
-      final message = result.data!;
-      final conversations = state.valueOrNull ?? [];
-
-      state = AsyncValue.data(
-        conversations.map((conversation) {
-          if (conversation.id == conversationId) {
-            return conversation.copyWith(
-              messages: [...conversation.messages, message],
-              lastMessageAt: DateTime.now(),
-            );
-          }
-          return conversation;
-        }).toList(),
-      );
+      _recordOutgoing(conversationId, result.data!);
       return null;
     }
     return ErrorStringsFor.fromString(result.error);
@@ -118,20 +105,7 @@ class ConversationsNotifier
     );
 
     if (result.success && result.data != null) {
-      final message = result.data!;
-      final conversations = state.valueOrNull ?? [];
-
-      state = AsyncValue.data(
-        conversations.map((conversation) {
-          if (conversation.id == conversationId) {
-            return conversation.copyWith(
-              messages: [...conversation.messages, message],
-              lastMessageAt: DateTime.now(),
-            );
-          }
-          return conversation;
-        }).toList(),
-      );
+      _recordOutgoing(conversationId, result.data!);
       return null;
     }
     return ErrorStringsFor.fromString(result.error);
@@ -151,20 +125,7 @@ class ConversationsNotifier
     );
 
     if (result.success && result.data != null) {
-      final message = result.data!;
-      final conversations = state.valueOrNull ?? [];
-
-      state = AsyncValue.data(
-        conversations.map((conversation) {
-          if (conversation.id == conversationId) {
-            return conversation.copyWith(
-              messages: [...conversation.messages, message],
-              lastMessageAt: DateTime.now(),
-            );
-          }
-          return conversation;
-        }).toList(),
-      );
+      _recordOutgoing(conversationId, result.data!);
       return null;
     }
     return ErrorStringsFor.fromString(result.error);
@@ -184,20 +145,7 @@ class ConversationsNotifier
     );
 
     if (result.success && result.data != null) {
-      final message = result.data!;
-      final conversations = state.valueOrNull ?? [];
-
-      state = AsyncValue.data(
-        conversations.map((conversation) {
-          if (conversation.id == conversationId) {
-            return conversation.copyWith(
-              messages: [...conversation.messages, message],
-              lastMessageAt: DateTime.now(),
-            );
-          }
-          return conversation;
-        }).toList(),
-      );
+      _recordOutgoing(conversationId, result.data!);
       return null;
     }
     return ErrorStringsFor.fromString(result.error);
@@ -215,20 +163,7 @@ class ConversationsNotifier
     );
 
     if (result.success && result.data != null) {
-      final message = result.data!;
-      final conversations = state.valueOrNull ?? [];
-
-      state = AsyncValue.data(
-        conversations.map((conversation) {
-          if (conversation.id == conversationId) {
-            return conversation.copyWith(
-              messages: [...conversation.messages, message],
-              lastMessageAt: DateTime.now(),
-            );
-          }
-          return conversation;
-        }).toList(),
-      );
+      _recordOutgoing(conversationId, result.data!);
       return null;
     }
     return ErrorStringsFor.fromString(result.error);
@@ -242,7 +177,7 @@ class ConversationsNotifier
     final result = await _chatService.editMessage(messageId, newContent);
 
     if (result.success && result.data != null) {
-      _updateMessageInConversation(conversationId, result.data!);
+      applyMessageUpdate(conversationId, result.data!);
       return true;
     }
     return false;
@@ -260,11 +195,26 @@ class ConversationsNotifier
 
     if (result.success) {
       if (result.data != null) {
-        _updateMessageInConversation(conversationId, result.data!);
-      } else {
-        _deleteMessageFromConversation(conversationId, messageId);
+        // A tombstoned message came back — it replaces the one it tombstones.
+        applyMessageUpdate(conversationId, result.data!);
+      } else if (_isPreview(conversationId, messageId)) {
+        // Delete-for-me returns no replacement, and this surface no longer keeps
+        // the message before it, so the preview cannot be recomputed locally.
+        // Refetching is cheap on a rare user-initiated action, and the
+        // alternative is a list that shows a deleted message until something
+        // else happens to refresh it.
+        loadConversations(refresh: true);
       }
       return true;
+    }
+    return false;
+  }
+
+  /// Whether [messageId] is the message the conversation list is previewing.
+  bool _isPreview(String conversationId, String messageId) {
+    final current = state.valueOrNull ?? const <Conversation>[];
+    for (final c in current) {
+      if (c.id == conversationId) return c.lastMessage?.id == messageId;
     }
     return false;
   }
@@ -315,22 +265,36 @@ class ConversationsNotifier
     return true;
   }
 
-  void addMessageToConversation(String conversationId, Message message) {
-    final conversations = state.valueOrNull ?? [];
+  /// Records a message we just sent as the conversation's newest.
+  ///
+  /// Shared by all five send paths, which previously carried five
+  /// near-identical copies of this block. Uses the message's own timestamp
+  /// rather than DateTime.now(): the server minted it, and the list sorts on it.
+  void _recordOutgoing(String conversationId, Message message) {
+    final current = state.valueOrNull ?? const <Conversation>[];
     state = AsyncValue.data(
-      conversations.map((conversation) {
-        if (conversation.id == conversationId) {
-          // Check if message already exists
-          if (conversation.messages.any((m) => m.id == message.id)) {
-            return conversation;
-          }
-          return conversation.copyWith(
-            messages: [...conversation.messages, message],
-            lastMessageAt: message.timestamp,
-            unreadCount: conversation.unreadCount + 1,
-          );
-        }
-        return conversation;
+      current
+          .map((c) => c.id == conversationId
+              ? c.copyWith(lastMessage: message, lastMessageAt: message.timestamp)
+              : c)
+          .toList(),
+    );
+  }
+
+  void addMessageToConversation(String conversationId, Message message) {
+    final current = state.valueOrNull ?? const <Conversation>[];
+    state = AsyncValue.data(
+      current.map((c) {
+        if (c.id != conversationId) return c;
+        // Socket.IO can redeliver a frame, and the same message also arrives on
+        // the REST send path. Comparing against lastMessage suffices here
+        // because this surface only ever holds the newest one.
+        if (c.lastMessage?.id == message.id) return c;
+        return c.copyWith(
+          lastMessage: message,
+          lastMessageAt: message.timestamp,
+          unreadCount: c.unreadCount + 1,
+        );
       }).toList(),
     );
   }
@@ -385,19 +349,18 @@ class ConversationsNotifier
   /// other person reading their inbox says nothing about ours. Getting this
   /// backwards would blank the badge every time they opened the thread.
   void applyReadReceipt(String conversationId, String byUserId) {
-    final conversations = state.valueOrNull;
-    if (conversations == null) return;
+    final current = state.valueOrNull;
+    if (current == null) return;
 
     state = AsyncValue.data(
-      conversations.map((c) {
+      current.map((c) {
         if (c.id != conversationId) return c;
-        return c.copyWith(
-          messages: c.messages
-              .map((m) => m.senderId == byUserId
-                  ? m
-                  : m.copyWith(status: MessageStatus.read))
-              .toList(),
-        );
+        // A receipt says the OTHER participant read what WE sent, so it only
+        // applies to a message we sent. On this surface that is observable on
+        // lastMessage alone; the open thread is messageThreadProvider's.
+        final last = c.lastMessage;
+        if (last == null || last.senderId == byUserId) return c;
+        return c.copyWith(lastMessage: last.copyWith(status: MessageStatus.read));
       }).toList(),
     );
   }
@@ -409,17 +372,16 @@ class ConversationsNotifier
   /// `messages.last`, so a stale entry there is visible on the main screen.
   /// A message we have not cached is ignored: the next fetch brings it in whole.
   void applyMessageUpdate(String conversationId, Message message) {
-    final conversations = state.valueOrNull;
-    if (conversations == null) return;
+    final current = state.valueOrNull;
+    if (current == null) return;
 
     state = AsyncValue.data(
-      conversations.map((c) {
+      current.map((c) {
         if (c.id != conversationId) return c;
-        if (!c.messages.any((m) => m.id == message.id)) return c;
-        return c.copyWith(
-          messages:
-              c.messages.map((m) => m.id == message.id ? message : m).toList(),
-        );
+        // Only the newest message is visible here. An edit or deletion of
+        // anything older changes nothing this surface shows.
+        if (c.lastMessage?.id != message.id) return c;
+        return c.copyWith(lastMessage: message);
       }).toList(),
     );
   }
@@ -498,43 +460,7 @@ class ConversationsNotifier
     super.dispose();
   }
 
-  void _updateMessageInConversation(
-    String conversationId,
-    Message updatedMessage,
-  ) {
-    final conversations = state.valueOrNull ?? [];
-    state = AsyncValue.data(
-      conversations.map((conversation) {
-        if (conversation.id == conversationId) {
-          return conversation.copyWith(
-            messages: conversation.messages.map((m) {
-              if (m.id == updatedMessage.id) {
-                return updatedMessage;
-              }
-              return m;
-            }).toList(),
-          );
-        }
-        return conversation;
-      }).toList(),
-    );
-  }
 
-  void _deleteMessageFromConversation(String conversationId, String messageId) {
-    final conversations = state.valueOrNull ?? [];
-    state = AsyncValue.data(
-      conversations.map((conversation) {
-        if (conversation.id == conversationId) {
-          return conversation.copyWith(
-            messages: conversation.messages
-                .where((m) => m.id != messageId)
-                .toList(),
-          );
-        }
-        return conversation;
-      }).toList(),
-    );
-  }
 }
 
 final conversationMessagesProvider =

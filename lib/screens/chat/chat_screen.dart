@@ -1015,20 +1015,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final currentUserId = currentUserState.valueOrNull?.id ?? '';
     final isOtherUserTyping = _isOtherUserTypingFlame;
 
-    // Check for new messages from WebSocket and add them to local list
-    for (final msg in currentConversation.messages) {
-      if (!_messages.any((m) => m.id == msg.id)) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() {
-              _messages = [..._messages, msg];
-            });
-            _scrollToBottom(animated: true);
-          }
-        });
-        break; // Only add one at a time to avoid multiple setState calls
-      }
-    }
+    // The reconciliation loop that used to sit here is gone with the state it
+    // reconciled. It scanned every message the conversation list held against
+    // every message this screen held — on every rebuild — and fed a post-frame
+    // setState that admitted one message per frame. The list now previews only
+    // its newest message, so there is nothing here to merge. Socket pushes reach
+    // this screen through _onSocketMessageNew, which is the only path.
 
     return Scaffold(
       appBar: _buildAppBar(currentConversation, isOtherUserTyping),

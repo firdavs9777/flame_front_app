@@ -28,7 +28,6 @@ Conversation _conversation(String id, int unreadCount) {
       'gender': 'female',
       'photos': [],
     }),
-    messages: const [],
     lastMessageAt: DateTime(2026, 1, 1),
     unreadCount: unreadCount,
   );

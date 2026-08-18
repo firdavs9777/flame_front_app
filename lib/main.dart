@@ -42,7 +42,6 @@ Locale? _parseLocaleTag(String tag) {
   if (parts.length == 2) return Locale(parts[0], parts[1]);
   return null;
 }
-
 class FlameApp extends ConsumerWidget {
   const FlameApp({super.key});
 
