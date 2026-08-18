@@ -246,5 +246,38 @@
   "chatLoadFailed": "Couldn't load this conversation",
   "@chatLoadFailed": {
     "description": "Shown when the message thread fails to load"
+  },
+  "chatPinnedOne": "Pinned message",
+  "@chatPinnedOne": {
+    "description": "Pinned bar label when exactly one message is pinned"
+  },
+  "chatPinnedCount": "Pinned · {count}",
+  "@chatPinnedCount": {
+    "description": "Pinned bar label with the number of pinned messages",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chatAttachment": "Attachment",
+  "@chatAttachment": {
+    "description": "Stand-in preview for a pinned message that has no text"
+  },
+  "chatUnpin": "Unpin",
+  "@chatUnpin": {
+    "description": "Tooltip on the pinned bar dismiss button"
+  },
+  "chatMuteNotifications": "Mute notifications",
+  "@chatMuteNotifications": {
+    "description": "Chat menu item"
+  },
+  "chatUnmuteNotifications": "Unmute notifications",
+  "@chatUnmuteNotifications": {
+    "description": "Chat menu item shown when already muted"
+  },
+  "chatViewProfile": "View profile",
+  "@chatViewProfile": {
+    "description": "Chat menu item"
   }
 }

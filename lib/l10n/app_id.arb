@@ -85,5 +85,12 @@
   "retry": "Coba lagi",
   "chatMatchedWith": "Kamu cocok dengan {name}!",
   "chatSendFirstMessage": "Kirim pesan untuk memulai percakapan",
-  "chatLoadFailed": "Tidak dapat memuat percakapan ini"
+  "chatLoadFailed": "Tidak dapat memuat percakapan ini",
+  "chatPinnedOne": "Pesan yang disematkan",
+  "chatPinnedCount": "Disematkan · {count}",
+  "chatAttachment": "Lampiran",
+  "chatUnpin": "Lepas sematan",
+  "chatMuteNotifications": "Bisukan notifikasi",
+  "chatUnmuteNotifications": "Aktifkan notifikasi",
+  "chatViewProfile": "Lihat profil"
 }

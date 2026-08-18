@@ -85,5 +85,12 @@
   "retry": "Reintentar",
   "chatMatchedWith": "¡Hiciste match con {name}!",
   "chatSendFirstMessage": "Envía un mensaje para empezar la conversación",
-  "chatLoadFailed": "No se pudo cargar esta conversación"
+  "chatLoadFailed": "No se pudo cargar esta conversación",
+  "chatPinnedOne": "Mensaje fijado",
+  "chatPinnedCount": "Fijados · {count}",
+  "chatAttachment": "Adjunto",
+  "chatUnpin": "Dejar de fijar",
+  "chatMuteNotifications": "Silenciar notificaciones",
+  "chatUnmuteNotifications": "Reactivar notificaciones",
+  "chatViewProfile": "Ver perfil"
 }

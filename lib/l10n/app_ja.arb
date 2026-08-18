@@ -85,5 +85,12 @@
   "retry": "再試行",
   "chatMatchedWith": "{name}さんとマッチしました！",
   "chatSendFirstMessage": "メッセージを送って会話を始めましょう",
-  "chatLoadFailed": "この会話を読み込めませんでした"
+  "chatLoadFailed": "この会話を読み込めませんでした",
+  "chatPinnedOne": "固定されたメッセージ",
+  "chatPinnedCount": "固定 · {count}",
+  "chatAttachment": "添付ファイル",
+  "chatUnpin": "固定を解除",
+  "chatMuteNotifications": "通知をオフ",
+  "chatUnmuteNotifications": "通知をオン",
+  "chatViewProfile": "プロフィールを見る"
 }

@@ -85,5 +85,12 @@
   "retry": "Erneut versuchen",
   "chatMatchedWith": "Du hast ein Match mit {name}!",
   "chatSendFirstMessage": "Sende eine Nachricht, um das Gespräch zu beginnen",
-  "chatLoadFailed": "Diese Unterhaltung konnte nicht geladen werden"
+  "chatLoadFailed": "Diese Unterhaltung konnte nicht geladen werden",
+  "chatPinnedOne": "Angepinnte Nachricht",
+  "chatPinnedCount": "Angepinnt · {count}",
+  "chatAttachment": "Anhang",
+  "chatUnpin": "Loslösen",
+  "chatMuteNotifications": "Benachrichtigungen stummschalten",
+  "chatUnmuteNotifications": "Stummschaltung aufheben",
+  "chatViewProfile": "Profil ansehen"
 }

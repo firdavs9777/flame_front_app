@@ -85,5 +85,12 @@
   "retry": "Повторить",
   "chatMatchedWith": "У вас совпадение с {name}!",
   "chatSendFirstMessage": "Отправьте сообщение, чтобы начать разговор",
-  "chatLoadFailed": "Не удалось загрузить этот разговор"
+  "chatLoadFailed": "Не удалось загрузить этот разговор",
+  "chatPinnedOne": "Закреплённое сообщение",
+  "chatPinnedCount": "Закреплено · {count}",
+  "chatAttachment": "Вложение",
+  "chatUnpin": "Открепить",
+  "chatMuteNotifications": "Отключить уведомления",
+  "chatUnmuteNotifications": "Включить уведомления",
+  "chatViewProfile": "Посмотреть профиль"
 }

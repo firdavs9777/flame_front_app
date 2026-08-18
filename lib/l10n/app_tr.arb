@@ -85,5 +85,12 @@
   "retry": "Yeniden dene",
   "chatMatchedWith": "{name} ile eşleştin!",
   "chatSendFirstMessage": "Sohbeti başlatmak için bir mesaj gönder",
-  "chatLoadFailed": "Bu sohbet yüklenemedi"
+  "chatLoadFailed": "Bu sohbet yüklenemedi",
+  "chatPinnedOne": "Sabitlenmiş mesaj",
+  "chatPinnedCount": "Sabitlenen · {count}",
+  "chatAttachment": "Ek",
+  "chatUnpin": "Sabitlemeyi kaldır",
+  "chatMuteNotifications": "Bildirimleri sessize al",
+  "chatUnmuteNotifications": "Bildirimleri aç",
+  "chatViewProfile": "Profili görüntüle"
 }

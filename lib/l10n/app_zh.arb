@@ -85,5 +85,12 @@
   "retry": "重试",
   "chatMatchedWith": "你和 {name} 配对成功！",
   "chatSendFirstMessage": "发送消息开始对话",
-  "chatLoadFailed": "无法加载此对话"
+  "chatLoadFailed": "无法加载此对话",
+  "chatPinnedOne": "置顶消息",
+  "chatPinnedCount": "置顶 · {count}",
+  "chatAttachment": "附件",
+  "chatUnpin": "取消置顶",
+  "chatMuteNotifications": "关闭通知",
+  "chatUnmuteNotifications": "开启通知",
+  "chatViewProfile": "查看资料"
 }

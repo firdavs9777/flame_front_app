@@ -85,5 +85,12 @@
   "retry": "Réessayer",
   "chatMatchedWith": "Vous avez matché avec {name} !",
   "chatSendFirstMessage": "Envoyez un message pour démarrer la conversation",
-  "chatLoadFailed": "Impossible de charger cette conversation"
+  "chatLoadFailed": "Impossible de charger cette conversation",
+  "chatPinnedOne": "Message épinglé",
+  "chatPinnedCount": "Épinglés · {count}",
+  "chatAttachment": "Pièce jointe",
+  "chatUnpin": "Désépingler",
+  "chatMuteNotifications": "Couper les notifications",
+  "chatUnmuteNotifications": "Réactiver les notifications",
+  "chatViewProfile": "Voir le profil"
 }
