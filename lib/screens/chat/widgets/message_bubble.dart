@@ -10,6 +10,24 @@ import 'package:flame/core/i18n/locale_provider.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/theme/app_tokens.dart';
 
+/// The width every photo, gif and video thumbnail occupies in a thread.
+///
+/// Roughly two thirds of a phone's width: big enough to see, small enough that
+/// a photo does not push the conversation off screen.
+///
+/// It is a fixed width rather than a maximum, and that is the point. As a
+/// maximum it only ever capped: a small photo drew small, a tall one narrowed
+/// to fit the height cap, and video and gif used a different number entirely —
+/// so a thread of photos was a ragged column of different-sized rectangles.
+const double kChatMediaWidth = 240;
+
+/// How tall a medium may get before it is cropped instead.
+///
+/// Height still follows each image's own aspect ratio — a portrait photo reads
+/// as a portrait photo — but a very tall one would otherwise fill the screen
+/// and bury the messages around it. Tap opens the full, uncropped view.
+const double kChatMediaMaxHeight = 320;
+
 class MessageBubble extends StatelessWidget {
   final Message message;
   final bool isMe;
@@ -164,10 +182,35 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
+  /// Content that is its own shape and gets no pill.
+  ///
+  /// A sticker was always here: a big emoji inside a coloured bubble reads as a
+  /// typo, which is why every chat app renders them bare. Media joins it for the
+  /// same reason — the pill's 16/10 padding plus its fill drew a visible frame
+  /// around every photo, brand-coloured on the way out and grey on the way in.
+  /// A photograph does not need a coloured mount.
+  ///
+  /// Voice and audio deliberately stay on the pill: a player is controls, and
+  /// controls need a surface to sit on.
+  bool get _isBare =>
+      message.type == MessageType.sticker ||
+      message.type == MessageType.image ||
+      message.type == MessageType.video ||
+      message.type == MessageType.gif;
+
+  /// The bubble's shape — square-ish on the tail corner that points at its
+  /// sender. Stated once so bare media can take the same shape: with no pill
+  /// behind it, the picture *is* the bubble, and a flat 12px rounding made it
+  /// read as a floating thumbnail rather than a message.
+  BorderRadius _bubbleRadius() => BorderRadius.only(
+        topLeft: const Radius.circular(20),
+        topRight: const Radius.circular(20),
+        bottomLeft: Radius.circular(isMe ? 20 : 4),
+        bottomRight: Radius.circular(isMe ? 4 : 20),
+      );
+
   Widget _buildBubble(BuildContext context) {
-    // A sticker gets no pill. A big emoji inside a coloured bubble reads as a
-    // typo rather than a sticker, which is how every chat app renders them.
-    final bare = message.type == MessageType.sticker;
+    final bare = _isBare;
 
     return Container(
       padding: bare
@@ -177,18 +220,15 @@ class MessageBubble extends StatelessWidget {
         color: bare
             ? Colors.transparent
             : (isMe ? AppTheme.primaryColor : context.fill),
-        borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(20),
-          topRight: const Radius.circular(20),
-          bottomLeft: Radius.circular(isMe ? 20 : 4),
-          bottomRight: Radius.circular(isMe ? 4 : 20),
-        ),
+        borderRadius: _bubbleRadius(),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           _buildContent(context),
-          const SizedBox(height: 4),
+          // No pill means no padding, so the meta needs its own breathing room
+          // rather than borrowing the bubble's.
+          SizedBox(height: bare ? 2 : 4),
           if (isLastInGroup) _buildMeta(context),
         ],
       ),
@@ -238,6 +278,7 @@ class MessageBubble extends StatelessWidget {
     return _MediaThumbnail(
       url: imageUrl,
       heroTag: 'msg-${message.id}',
+      borderRadius: _bubbleRadius(),
       onTap: () => _openViewer(context, imageUrl),
     );
   }
@@ -258,26 +299,30 @@ class MessageBubble extends StatelessWidget {
 
   Widget _buildVideoContent(BuildContext context) {
     final thumbnailUrl = message.mediaInfo?.thumbnailUrl;
+    // 16:9 within the shared media width, so a video sits in the same column as
+    // the photos around it instead of at its own private size.
+    const height = kChatMediaWidth * 9 / 16;
     return Stack(
+      key: const Key('chat-media'),
       alignment: Alignment.center,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: _bubbleRadius(),
           child: thumbnailUrl != null
               ? Image.network(
                   thumbnailUrl,
-                  width: 200,
-                  height: 150,
+                  width: kChatMediaWidth,
+                  height: height,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
-                    width: 200,
-                    height: 150,
+                    width: kChatMediaWidth,
+                    height: height,
                     color: context.fill,
                   ),
                 )
               : Container(
-                  width: 200,
-                  height: 150,
+                  width: kChatMediaWidth,
+                  height: height,
                   color: context.fill,
                 ),
         ),
@@ -331,20 +376,38 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildGifContent(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        message.content,
-        width: 200,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
-          width: 200,
-          height: 150,
-          color: context.divider,
-          child: const Icon(Icons.gif),
+    return SizedBox(
+      key: const Key('chat-media'),
+      width: kChatMediaWidth,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: kChatMediaMaxHeight),
+        child: ClipRRect(
+          borderRadius: _bubbleRadius(),
+          child: Image.network(
+            message.content,
+            width: kChatMediaWidth,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              width: kChatMediaWidth,
+              height: kChatMediaWidth * 3 / 4,
+              color: context.divider,
+              child: const Icon(Icons.gif),
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  /// The colour for the timestamp, the "edited" marker and the delivery tick.
+  ///
+  /// `onPrimary` is only correct when the meta sits ON the brand-coloured pill.
+  /// A bare bubble has no pill, so the meta sits on the page — and `onPrimary`
+  /// is white in both themes, which is invisible there in light mode. That was
+  /// already true of stickers before media joined them.
+  Color _metaColour(BuildContext context, {double onPillAlpha = 0.7}) {
+    if (_isBare || !isMe) return context.secondaryText;
+    return context.onPrimary.withValues(alpha: onPillAlpha);
   }
 
   Widget _buildMeta(BuildContext context) {
@@ -355,9 +418,7 @@ class MessageBubble extends StatelessWidget {
           Text(
             'edited',
             style: TextStyle(
-              color: isMe
-                ? context.onPrimary.withValues(alpha: 0.6)
-                : context.secondaryText,
+              color: _metaColour(context, onPillAlpha: 0.6),
               fontSize: 10,
               fontStyle: FontStyle.italic,
             ),
@@ -367,9 +428,7 @@ class MessageBubble extends StatelessWidget {
         Text(
           message.timeText,
           style: TextStyle(
-            color: isMe
-                ? context.onPrimary.withValues(alpha: 0.7)
-                : context.secondaryText,
+            color: _metaColour(context),
             fontSize: 11,
           ),
         ),
@@ -388,15 +447,15 @@ class MessageBubble extends StatelessWidget {
     switch (message.status) {
       case MessageStatus.sending:
         icon = Icons.access_time;
-        color = context.onPrimary.withValues(alpha: 0.54);
+        color = _metaColour(context, onPillAlpha: 0.54);
         break;
       case MessageStatus.sent:
         icon = Icons.done;
-        color = context.onPrimary.withValues(alpha: 0.7);
+        color = _metaColour(context);
         break;
       case MessageStatus.delivered:
         icon = Icons.done_all;
-        color = context.onPrimary.withValues(alpha: 0.7);
+        color = _metaColour(context);
         break;
       case MessageStatus.read:
         icon = Icons.done_all;
@@ -546,53 +605,67 @@ class _TranslateSection extends ConsumerWidget {
 /// cost ~48MB of memory to show a thumbnail; and `cover` at a fixed width
 /// cropped every photo that was not roughly the assumed shape.
 ///
-/// `memCacheWidth` fixes the decode cost, and a max-width box with the image's
-/// own aspect ratio preserved fixes the cropping — a portrait photo now reads
-/// as a portrait photo.
+/// `memCacheWidth` fixes the decode cost, and preserving the image's own aspect
+/// ratio fixes the cropping — a portrait photo reads as a portrait photo.
+///
+/// The width is fixed at [kChatMediaWidth] rather than merely capped there. A
+/// cap left every photo a different width, which read as a bug; the height is
+/// what varies with the picture's shape, bounded by [kChatMediaMaxHeight].
 class _MediaThumbnail extends StatelessWidget {
   final String url;
   final String? heroTag;
   final VoidCallback onTap;
 
+  /// The bubble's own shape, since a bare photo is the bubble.
+  final BorderRadius borderRadius;
+
   const _MediaThumbnail({
     required this.url,
     required this.onTap,
+    required this.borderRadius,
     this.heroTag,
   });
 
-  // Roughly two thirds of a phone's width: big enough to see, small enough
-  // that a photo does not push the surrounding conversation off screen.
-  static const double _maxWidth = 240;
+  /// What a medium occupies before its own dimensions are known — the
+  /// placeholder, the error state, and a 4:3 default. Without this the
+  /// placeholder had no width, so every bubble resized the instant its photo
+  /// arrived and the whole thread reflowed while scrolling.
+  static const double _pendingHeight = kChatMediaWidth * 3 / 4;
 
   @override
   Widget build(BuildContext context) {
     final dpr = MediaQuery.maybeOf(context)?.devicePixelRatio ?? 2.0;
+
+    Widget pending(Widget child) => Container(
+          width: kChatMediaWidth,
+          height: _pendingHeight,
+          color: context.divider,
+          child: Center(child: child),
+        );
 
     final image = CachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.cover,
       // Decode at display size, not source size. The multiplier keeps it sharp
       // on high-DPI screens without decoding the original.
-      memCacheWidth: (_maxWidth * dpr).round(),
-      placeholder: (_, __) => Container(
-        height: 160,
-        color: context.divider,
-        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      ),
-      errorWidget: (_, __, ___) => Container(
-        height: 160,
-        color: context.divider,
-        child: const Icon(Icons.broken_image_outlined),
-      ),
+      memCacheWidth: (kChatMediaWidth * dpr).round(),
+      placeholder: (_, __) =>
+          pending(const CircularProgressIndicator(strokeWidth: 2)),
+      errorWidget: (_, __, ___) =>
+          pending(const Icon(Icons.broken_image_outlined)),
     );
 
     return GestureDetector(
       onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxWidth, maxHeight: 320),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: heroTag == null ? image : Hero(tag: heroTag!, child: image),
+      child: SizedBox(
+        key: const Key('chat-media'),
+        width: kChatMediaWidth,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: kChatMediaMaxHeight),
+          child: ClipRRect(
+            borderRadius: borderRadius,
+            child: heroTag == null ? image : Hero(tag: heroTag!, child: image),
+          ),
         ),
       ),
     );
