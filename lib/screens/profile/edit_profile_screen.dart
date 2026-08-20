@@ -8,6 +8,7 @@ import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/core/format/distance_format.dart';
+import 'package:flame/core/date/age.dart';
 
 /// Saves the About section (name, age, bio) — nothing else. The signature is
 /// the independence guarantee: this function has no parameter through which
@@ -506,24 +507,54 @@ class _AboutSection extends StatefulWidget {
 class _AboutSectionState extends State<_AboutSection> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  late final TextEditingController _ageController;
   late final TextEditingController _bioController;
+
+  /// The age as it stands, held as a number rather than as text.
+  ///
+  /// It used to be a `TextEditingController` the user typed into, which meant
+  /// "17" and "abc" were both reachable and had to be rejected afterwards. The
+  /// date picker's bounds make an invalid age unreachable instead.
+  late int _age;
   bool _isSaving = false;
+
+  // The route's own bounds: `age: z.number().int().min(18).max(100)`
+  // (flame/routes/users.js:17). They belong to the picker now, not to a
+  // validator, so an ineligible date simply cannot be selected.
+  static const _minimumAge = 18;
+  static const _maximumAge = 100;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.user.name);
-    _ageController = TextEditingController(text: widget.user.age.toString());
     _bioController = TextEditingController(text: widget.user.bio);
+    _age = widget.user.age;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _ageController.dispose();
     _bioController.dispose();
     super.dispose();
+  }
+
+  /// Opens the birthday picker, bounded so only an eligible date can be chosen.
+  ///
+  /// The date itself is not stored: the server keeps an integer age and has no
+  /// birthdate field, so this derives the age and sends that. Reopening the
+  /// screen therefore shows a date derived from the age, not the real birthday
+  /// — a known trade, documented in `lib/core/date/age.dart`.
+  Future<void> _pickBirthDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: birthDateForAge(_age, now: now),
+      firstDate: earliestBirthDateFor(_maximumAge, now: now),
+      lastDate: latestBirthDateFor(_minimumAge, now: now),
+      helpText: 'Select your date of birth',
+    );
+    if (picked == null) return;
+    setState(() => _age = ageOn(picked, now: DateTime.now()));
   }
 
   Future<void> _save() async {
@@ -532,7 +563,7 @@ class _AboutSectionState extends State<_AboutSection> {
     setState(() => _isSaving = true);
     final ok = await widget.onSave(
       name: _nameController.text.trim(),
-      age: int.parse(_ageController.text),
+      age: _age,
       bio: _bioController.text,
     );
     if (!mounted) return;
@@ -574,18 +605,29 @@ class _AboutSectionState extends State<_AboutSection> {
           const SizedBox(height: 16),
           _fieldLabel(context, 'Age'),
           const SizedBox(height: 8),
-          TextFormField(
-            key: const Key('about_age_field'),
-            controller: _ageController,
-            keyboardType: TextInputType.number,
-            decoration: _fieldDecoration(context, 'Your age'),
-            validator: (value) {
-              final age = int.tryParse(value ?? '');
-              if (age == null || age < 18 || age > 100) {
-                return 'Enter a valid age (18-100)';
-              }
-              return null;
-            },
+          // A picker rather than a number field: the bounds below make an
+          // ineligible age unreachable, so there is no error state to report.
+          InkWell(
+            key: const Key('about_age_picker'),
+            onTap: _pickBirthDate,
+            borderRadius: BorderRadius.circular(12),
+            child: InputDecorator(
+              decoration: _fieldDecoration(context, 'Your age'),
+              child: Row(
+                children: [
+                  Icon(Icons.cake_outlined, size: 20, color: context.secondaryText),
+                  const SizedBox(width: 12),
+                  Text(
+                    '$_age',
+                    key: const Key('about_age_value'),
+                    style: TextStyle(fontSize: 16, color: context.onSurface),
+                  ),
+                  const Spacer(),
+                  Icon(Icons.calendar_today_outlined,
+                      size: 18, color: context.secondaryText),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 16),
           _fieldLabel(context, 'About Me'),
@@ -816,9 +858,24 @@ class _PreferencesSectionState extends State<_PreferencesSection> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _minAgeController;
   late final TextEditingController _maxAgeController;
-  late final TextEditingController _maxDistanceController;
   late bool _showOnlineStatus;
   bool _isSaving = false;
+
+  /// Max distance in km, held as a number for the slider.
+  ///
+  /// It was a text field, which made 5000 and "abc" reachable and left them to
+  /// be rejected afterwards. A slider cannot leave its own track, so the route's
+  /// bounds are enforced by construction rather than by a validator.
+  late double _maxDistance;
+
+  // The route's own bounds: `max_distance: z.number().min(0).max(500)`
+  // (flame/routes/users.js:39).
+  static const _minDistance = 0.0;
+  static const _maxDistanceKm = 500.0;
+
+  // 5 km steps. Fine enough to feel continuous, coarse enough that the value
+  // lands somewhere a person would actually say out loud.
+  static const _distanceStep = 5.0;
 
   @override
   void initState() {
@@ -827,9 +884,11 @@ class _PreferencesSectionState extends State<_PreferencesSection> {
         TextEditingController(text: widget.user.minAgePreference.toString());
     _maxAgeController =
         TextEditingController(text: widget.user.maxAgePreference.toString());
-    _maxDistanceController = TextEditingController(
-      text: formatDistance(widget.user.maxDistancePreference),
-    );
+    // Clamped rather than trusted: a value stored outside the route's range
+    // would otherwise throw when handed to the slider.
+    _maxDistance = widget.user.maxDistancePreference
+        .clamp(_minDistance, _maxDistanceKm)
+        .toDouble();
     _showOnlineStatus = widget.user.showOnlineStatus;
   }
 
@@ -837,7 +896,6 @@ class _PreferencesSectionState extends State<_PreferencesSection> {
   void dispose() {
     _minAgeController.dispose();
     _maxAgeController.dispose();
-    _maxDistanceController.dispose();
     super.dispose();
   }
 
@@ -848,7 +906,7 @@ class _PreferencesSectionState extends State<_PreferencesSection> {
     final ok = await widget.onSave(
       minAge: int.parse(_minAgeController.text),
       maxAge: int.parse(_maxAgeController.text),
-      maxDistance: double.parse(_maxDistanceController.text),
+      maxDistance: _maxDistance,
       showOnlineStatus: _showOnlineStatus,
     );
     if (!mounted) return;
@@ -904,40 +962,37 @@ class _PreferencesSectionState extends State<_PreferencesSection> {
             },
           ),
           const SizedBox(height: 16),
-          _fieldLabel(context, 'Maximum Distance (km)'),
-          const SizedBox(height: 8),
-          TextFormField(
-            key: const Key('preferences_max_distance_field'),
-            controller: _maxDistanceController,
-            keyboardType: TextInputType.number,
-            decoration: _fieldDecoration(context, 'Maximum distance'),
-            // Bounds copied from the route's own schema — Flame's backend is
-            // Node/zod, and `flame/routes/users.js:39` reads
-            // `max_distance: z.number().min(0).max(500).optional()`.
-            //
-            // So: no floor above zero, and NOT an int — a fractional value
-            // like 24.6 is accepted, which is what lets Task 6's decision to
-            // stop rounding actually hold end to end. The ceiling was
-            // previously unchecked, so 5000 went out and came back as a bare
-            // "Could not save".
-            //
-            // Matching the server exactly is deliberate. A client that
-            // rejects what the server accepts is the same two-sides-disagree
-            // divergence this whole screen's review kept turning up, just
-            // pointing the other way.
-            validator: (value) {
-              final distance = double.tryParse(value ?? '');
-              if (distance == null) {
-                return 'Enter a distance in kilometres';
-              }
-              if (distance < 0) {
-                return 'Distance cannot be negative';
-              }
-              if (distance > 500) {
-                return 'Maximum distance is 500 km';
-              }
-              return null;
-            },
+          // The label carries the value, because a slider with no readout only
+          // tells you "somewhere around here".
+          Row(
+            children: [
+              _fieldLabel(context, 'Maximum Distance'),
+              const Spacer(),
+              Text(
+                '${formatDistance(_maxDistance)} km',
+                key: const Key('preferences_max_distance_value'),
+                style: TextStyle(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          // A slider, not a number field. The route's bounds are
+          // `max_distance: z.number().min(0).max(500).optional()`
+          // (flame/routes/users.js:39), and a slider cannot leave its own
+          // track — so 5000 and "abc", both previously reachable and both
+          // rejected only after the user had moved on, are now unreachable.
+          // The bounds are enforced by construction rather than by a message.
+          Slider(
+            key: const Key('preferences_max_distance_slider'),
+            value: _maxDistance,
+            min: _minDistance,
+            max: _maxDistanceKm,
+            divisions: ((_maxDistanceKm - _minDistance) / _distanceStep).round(),
+            label: '${formatDistance(_maxDistance)} km',
+            activeColor: AppTheme.primaryColor,
+            onChanged: (value) => setState(() => _maxDistance = value),
           ),
           SwitchListTile(
             key: const Key('preferences_show_online_switch'),

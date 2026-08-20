@@ -12,6 +12,7 @@ import 'package:flame/providers/user_provider.dart';
 import 'package:flame/screens/profile/edit_profile_screen.dart';
 import 'package:flame/services/user_service.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/core/date/age.dart';
 
 // Never actually invoked: the screen reads its initial data off
 // currentUserProvider (seeded below via setUser) and every save in these
@@ -81,31 +82,42 @@ Widget _host(
 
 void main() {
   group('About section', () {
-    testWidgets(
-      'an age below 18 is rejected before any request is made',
-      (tester) async {
-        var calls = 0;
-        await tester.pumpWidget(_host(
-          _user(),
-          saveAbout: ({required name, required age, required bio}) async {
-            calls++;
-            return true;
-          },
-        ));
+    // Age is a bounded date picker rather than a number field, so an
+    // ineligible age is unreachable instead of rejected after the fact. The
+    // arithmetic behind the bounds is covered directly in
+    // test/core/date/age_test.dart; these two assert that this screen actually
+    // hands those bounds to the picker, and that nothing can be typed.
+    testWidgets('the age picker cannot reach an age below 18', (tester) async {
+      await tester.pumpWidget(_host(_user(age: 28)));
 
-        await tester.enterText(find.byKey(const Key('about_age_field')), '15');
-        await tester.ensureVisible(find.byKey(const Key('about_save_button')));
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const Key('about_save_button')));
-        await tester.pump();
+      await tester.ensureVisible(find.byKey(const Key('about_age_picker')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('about_age_picker')));
+      await tester.pumpAndSettle();
 
-        expect(
-          calls,
-          0,
-          reason: 'an invalid age must never reach the save callback',
-        );
-      },
-    );
+      final dialog = tester.widget<DatePickerDialog>(
+        find.byType(DatePickerDialog),
+      );
+      final now = DateTime.now();
+
+      // The newest selectable birthday is exactly 18 years ago, so every
+      // selectable date yields 18 or more.
+      expect(ageOn(dialog.lastDate, now: now), 18);
+      expect(ageOn(dialog.firstDate, now: now), 100);
+      expect(
+        dialog.initialDate == null ? null : ageOn(dialog.initialDate!, now: now),
+        28,
+        reason: 'the picker should open on the age the user already has',
+      );
+    });
+
+    testWidgets('an age cannot be typed at all', (tester) async {
+      await tester.pumpWidget(_host(_user(age: 28)));
+
+      expect(find.byKey(const Key('about_age_field')), findsNothing);
+      expect(find.byKey(const Key('about_age_value')), findsOneWidget);
+      expect(find.text('28'), findsOneWidget);
+    });
 
     testWidgets(
       'a name shorter than 2 characters is rejected before any request',
@@ -173,7 +185,6 @@ void main() {
           find.byKey(const Key('about_name_field')),
           'Alexandra',
         );
-        await tester.enterText(find.byKey(const Key('about_age_field')), '29');
         await tester.enterText(
           find.byKey(const Key('about_bio_field')),
           'Updated bio',
@@ -184,7 +195,9 @@ void main() {
         await tester.pump();
 
         expect(capturedName, 'Alexandra');
-        expect(capturedAge, 29);
+        // Untouched, so it carries the user's existing age — the point of this
+        // test is which fields travel, not what they contain.
+        expect(capturedAge, 28);
         expect(capturedBio, 'Updated bio');
         expect(
           interestsCalls,
@@ -319,134 +332,71 @@ void main() {
       },
     );
 
-    // The route's schema is `max_distance: z.number().min(0).max(500).optional()`
-    // (flame/routes/users.js:39). The ceiling was not enforced at all, so 5000
-    // went to the server and came back as a bare "Could not save".
-    testWidgets(
-      'a max distance above 500 is rejected before any request',
-      (tester) async {
-        var calls = 0;
-        await tester.pumpWidget(_host(
-          _user(),
-          savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
-            calls++;
-            return true;
-          },
-        ));
+    // Distance is a slider now, so the route's bounds
+    // (`max_distance: z.number().min(0).max(500).optional()`,
+    // flame/routes/users.js:39) are enforced by construction: a slider cannot
+    // leave its own track. The old tests typed 5000 and -5 and asserted the
+    // error messages; those values are no longer reachable, so what needs
+    // asserting is that the track itself matches the route.
+    testWidgets('the slider track is exactly the route\'s range', (tester) async {
+      await tester.pumpWidget(_host(_user()));
 
-        await tester.enterText(
-          find.byKey(const Key('preferences_max_distance_field')),
-          '5000',
-        );
-        await tester.ensureVisible(
-          find.byKey(const Key('preferences_save_button')),
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const Key('preferences_save_button')));
-        await tester.pump();
+      final slider = tester.widget<Slider>(
+        find.byKey(const Key('preferences_max_distance_slider')),
+      );
 
-        expect(calls, 0);
-        expect(
-          find.text('Maximum distance is 500 km'),
-          findsOneWidget,
-          reason: 'the message must name the bound that was hit',
-        );
-      },
-    );
+      expect(slider.min, 0, reason: 'min(0) — the route accepts zero');
+      expect(slider.max, 500, reason: 'max(500), inclusive');
+      expect(
+        slider.divisions,
+        100,
+        reason: '5 km steps across 0-500; a value a person would say out loud',
+      );
+    });
 
-    testWidgets(
-      'exactly 500 km is accepted — the bound is inclusive',
-      (tester) async {
-        double? captured;
-        await tester.pumpWidget(_host(
-          _user(),
-          savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
-            captured = maxDistance;
-            return true;
-          },
-        ));
+    testWidgets('dragging the slider changes what is saved and what is shown',
+        (tester) async {
+      double? captured;
+      await tester.pumpWidget(_host(
+        _user(maxDistance: 25),
+        savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
+          captured = maxDistance;
+          return true;
+        },
+      ));
 
-        await tester.enterText(
-          find.byKey(const Key('preferences_max_distance_field')),
-          '500',
-        );
-        await tester.ensureVisible(
-          find.byKey(const Key('preferences_save_button')),
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const Key('preferences_save_button')));
-        await tester.pump();
+      final slider = find.byKey(const Key('preferences_max_distance_slider'));
+      await tester.ensureVisible(slider);
+      await tester.pumpAndSettle();
 
-        expect(
-          captured,
-          500,
-          reason: 'le=500 means 500 is valid; an off-by-one here would '
-              'block a legitimate value',
-        );
-      },
-    );
+      // Drag to the far right: the track's own maximum, wherever that is.
+      await tester.drag(slider, const Offset(1000, 0));
+      await tester.pumpAndSettle();
 
-    // Zero is what the route's `min(0)` accepts, so the client must accept it
-    // too. A client stricter than its server is the same two-sides-disagree
-    // divergence as a client looser than its server — it just fails by
-    // refusing work the server would have done.
-    testWidgets(
-      'a max distance of zero is allowed, because the route allows it',
-      (tester) async {
-        var calls = 0;
-        double? sentDistance;
-        await tester.pumpWidget(_host(
-          _user(),
-          savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
-            calls++;
-            sentDistance = maxDistance;
-            return true;
-          },
-        ));
+      expect(
+        find.text('500 km'),
+        findsOneWidget,
+        reason: 'a slider with no readout only says "somewhere around here"',
+      );
 
-        await tester.enterText(
-          find.byKey(const Key('preferences_max_distance_field')),
-          '0',
-        );
-        await tester.ensureVisible(
-          find.byKey(const Key('preferences_save_button')),
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const Key('preferences_save_button')));
-        await tester.pump();
+      await tester.tap(find.byKey(const Key('preferences_save_button')));
+      await tester.pump();
 
-        expect(calls, 1);
-        expect(sentDistance, 0);
-      },
-    );
+      expect(captured, 500);
+    });
 
-    testWidgets(
-      'a negative max distance is rejected before any request',
-      (tester) async {
-        var calls = 0;
-        await tester.pumpWidget(_host(
-          _user(),
-          savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
-            calls++;
-            return true;
-          },
-        ));
+    testWidgets('a stored value outside the track does not throw',
+        (tester) async {
+      // Nothing should write one, but the slider throws rather than clamping if
+      // handed a value off its track, which would break the whole screen.
+      await tester.pumpWidget(_host(_user(maxDistance: 5000)));
 
-        await tester.enterText(
-          find.byKey(const Key('preferences_max_distance_field')),
-          '-5',
-        );
-        await tester.ensureVisible(
-          find.byKey(const Key('preferences_save_button')),
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const Key('preferences_save_button')));
-        await tester.pump();
-
-        expect(calls, 0);
-        expect(find.text('Distance cannot be negative'), findsOneWidget);
-      },
-    );
+      expect(tester.takeException(), isNull);
+      final slider = tester.widget<Slider>(
+        find.byKey(const Key('preferences_max_distance_slider')),
+      );
+      expect(slider.value, 500);
+    });
   });
 
   group('About section length ceiling', () {
