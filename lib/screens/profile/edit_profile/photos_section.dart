@@ -8,6 +8,7 @@ import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 class PhotosSection extends ConsumerStatefulWidget {
   final User user;
@@ -133,12 +134,34 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
 
   void _showPhotoOptions(int index) {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Only offered for a photo that is not already the main one — the
+            // route rejects a no-op reorder, and offering an action that cannot
+            // change anything is the shape this scope is removing.
+            if (index > 0)
+              ListTile(
+                key: const Key('photo_set_main'),
+                leading: const Icon(Icons.star_outline),
+                title: Text(context.l10n.profileSetMainPhoto),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final ok = await ref
+                      .read(currentUserProvider.notifier)
+                      .setMainPhotoAt(index);
+                  if (!mounted) return;
+                  if (!ok) {
+                    messenger.showSnackBar(SnackBar(
+                      content: Text(l10n.settingsSaveFailed),
+                    ));
+                  }
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
               title: const Text('Delete photo', style: TextStyle(color: Colors.red)),

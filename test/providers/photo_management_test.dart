@@ -7,6 +7,7 @@ class _FakeUserService extends UserService {
   bool deleteCalled = false;
   String? deletedId;
   List<String>? reorderedIds;
+  bool reorderSucceeds = true;
 
   @override
   Future<ServiceResult<void>> deletePhoto(String photoId) async {
@@ -18,6 +19,7 @@ class _FakeUserService extends UserService {
   @override
   Future<ServiceResult<List<Photo>>> reorderPhotos(List<String> photoIds) async {
     reorderedIds = photoIds;
+    if (!reorderSucceeds) return ServiceResult.failure('nope');
     // Echo back the requested order as Photo objects.
     final photos = <Photo>[];
     for (var i = 0; i < photoIds.length; i++) {
@@ -78,5 +80,34 @@ void main() {
     expect(fake.reorderedIds, ['p3', 'p1', 'p2']);
     expect(n.state.value!.photoIds, ['p3', 'p1', 'p2']);
     expect(n.state.value!.photos, ['url-p3', 'url-p1', 'url-p2']);
+  });
+
+  test('setMainPhotoAt moves the chosen photo to the front', () async {
+    final fake = _FakeUserService();
+    final n = CurrentUserNotifier(fake)..setUser(_userWithPhotos());
+
+    expect(await n.setMainPhotoAt(2), isTrue);
+
+    expect(fake.reorderedIds, ['p3', 'p1', 'p2']);
+    expect(n.state.value!.photoIds, ['p3', 'p1', 'p2']);
+  });
+
+  test('setMainPhotoAt on index 0 is a no-op', () async {
+    final fake = _FakeUserService();
+    final n = CurrentUserNotifier(fake)..setUser(_userWithPhotos());
+
+    expect(await n.setMainPhotoAt(0), isFalse,
+        reason: 'it is already the main photo; a request is not a change');
+    expect(fake.reorderedIds, isNull, reason: 'and no request went out');
+  });
+
+  test('a failed reorder leaves the order alone', () async {
+    final fake = _FakeUserService()..reorderSucceeds = false;
+    final n = CurrentUserNotifier(fake)..setUser(_userWithPhotos());
+
+    expect(await n.setMainPhotoAt(1), isFalse);
+    expect(n.state.value!.photoIds, ['p1', 'p2', 'p3'],
+        reason: 'an optimistic reorder that reverts on the next fetch looks '
+            'like the app forgetting what you asked for');
   });
 }
