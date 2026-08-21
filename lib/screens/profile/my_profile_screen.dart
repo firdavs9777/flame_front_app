@@ -10,6 +10,8 @@ import 'package:flame/screens/profile/edit_profile_screen.dart';
 import 'package:flame/core/format/distance_format.dart';
 import 'package:flame/screens/settings/settings_screen.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/screens/settings/widgets/settings_section.dart';
+import 'package:flame/screens/profile/profile_detail_screen.dart';
 
 class MyProfileScreen extends ConsumerStatefulWidget {
   const MyProfileScreen({super.key});
@@ -265,6 +267,23 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 30),
+
+                // The cheapest way a user notices their own profile is thin
+                // before concluding the app is broken.
+                SettingsRow(
+                  title: context.l10n.profilePreview,
+                  subtitle: context.l10n.profilePreviewSubtitle,
+                  leading: const Icon(Icons.visibility_outlined),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          ProfileDetailScreen(user: user, isPreview: true),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
 
                 // Preferences — read-only here. Displaying a value edited
                 // elsewhere is not duplication; a second editor is. Tapping opens

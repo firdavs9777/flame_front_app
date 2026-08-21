@@ -145,5 +145,11 @@
   "deckRelaxFilters": "Filtreleri gevşet",
   "deckSeenEveryone": "Yakındaki herkesi gördün",
   "deckRefresh": "Yenile",
-  "deckLoadFailed": "Profiller yüklenemedi"
+  "deckLoadFailed": "Profiller yüklenemedi",
+  "settingsShowDistance": "Mesafemi göster",
+  "settingsShowDistanceSubtitle": "Diğerleri yaklaşık uzaklığını görebilir",
+  "settingsSaveFailed": "Bu değişiklik kaydedilemedi",
+  "profilePreview": "Profilimi önizle",
+  "profilePreviewSubtitle": "Eşleşmelerin ne gördüğünü gör",
+  "profileSetMainPhoto": "Ana fotoğraf yap"
 }

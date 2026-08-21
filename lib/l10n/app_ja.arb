@@ -145,5 +145,11 @@
   "deckRelaxFilters": "条件を広げる",
   "deckSeenEveryone": "近くの人はすべて見ました",
   "deckRefresh": "更新",
-  "deckLoadFailed": "プロフィールを読み込めませんでした"
+  "deckLoadFailed": "プロフィールを読み込めませんでした",
+  "settingsShowDistance": "距離を表示",
+  "settingsShowDistanceSubtitle": "相手におおよその距離が表示されます",
+  "settingsSaveFailed": "変更を保存できませんでした",
+  "profilePreview": "プロフィールをプレビュー",
+  "profilePreviewSubtitle": "相手に見える表示を確認",
+  "profileSetMainPhoto": "メイン写真に設定"
 }

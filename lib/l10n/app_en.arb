@@ -506,5 +506,29 @@
   "deckLoadFailed": "Couldn't load profiles",
   "@deckLoadFailed": {
     "description": "Discover filter / deck state"
+  },
+  "settingsShowDistance": "Show my distance",
+  "@settingsShowDistance": {
+    "description": "Profile / settings"
+  },
+  "settingsShowDistanceSubtitle": "Others can see roughly how far away you are",
+  "@settingsShowDistanceSubtitle": {
+    "description": "Profile / settings"
+  },
+  "settingsSaveFailed": "Couldn't save that change",
+  "@settingsSaveFailed": {
+    "description": "Profile / settings"
+  },
+  "profilePreview": "Preview my profile",
+  "@profilePreview": {
+    "description": "Profile / settings"
+  },
+  "profilePreviewSubtitle": "See what a match sees",
+  "@profilePreviewSubtitle": {
+    "description": "Profile / settings"
+  },
+  "profileSetMainPhoto": "Set as main photo",
+  "@profileSetMainPhoto": {
+    "description": "Profile / settings"
   }
 }

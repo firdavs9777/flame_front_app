@@ -83,6 +83,20 @@ class SettingsScreen extends ConsumerWidget {
                 ? null
                 : (value) => _setShowOnlineStatus(context, ref, value),
           ),
+          // Scope A made distance real and taught the server to honour
+          // preferences.showDistance, but shipped no way to exercise it. Same
+          // disabled-while-loading contract as the switch above.
+          _buildSwitchTile(
+            key: const Key('settings_show_distance_switch'),
+            context: context,
+            icon: Icons.social_distance_outlined,
+            title: context.l10n.settingsShowDistance,
+            subtitle: context.l10n.settingsShowDistanceSubtitle,
+            value: user?.showDistance ?? true,
+            onChanged: user == null
+                ? null
+                : (value) => _setShowDistance(context, ref, value),
+          ),
           const SizedBox(height: 20),
 
           // Notifications section
@@ -306,6 +320,25 @@ class SettingsScreen extends ConsumerWidget {
   /// Profile control uses. On failure the notifier leaves state alone, so the
   /// switch snaps back on its own — the SnackBar is there so that snap-back
   /// reads as a failed save rather than an unresponsive control.
+  /// Writes preferences.showDistance.
+  ///
+  /// On failure the switch reverts, because the control reflects server state
+  /// rather than intent — one that stays flipped after a refusal is lying.
+  Future<void> _setShowDistance(
+    BuildContext context,
+    WidgetRef ref,
+    bool value,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final ok = await ref
+        .read(currentUserProvider.notifier)
+        .updatePreferences(showDistance: value);
+    if (!ok) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.settingsSaveFailed)));
+    }
+  }
+
   Future<void> _setShowOnlineStatus(
     BuildContext context,
     WidgetRef ref,

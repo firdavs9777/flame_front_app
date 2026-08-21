@@ -145,5 +145,11 @@
   "deckRelaxFilters": "放宽筛选",
   "deckSeenEveryone": "你已看过附近所有人",
   "deckRefresh": "刷新",
-  "deckLoadFailed": "无法加载资料"
+  "deckLoadFailed": "无法加载资料",
+  "settingsShowDistance": "显示我的距离",
+  "settingsShowDistanceSubtitle": "其他人可以看到你的大致距离",
+  "settingsSaveFailed": "无法保存该更改",
+  "profilePreview": "预览我的资料",
+  "profilePreviewSubtitle": "查看配对对象看到的内容",
+  "profileSetMainPhoto": "设为主照片"
 }

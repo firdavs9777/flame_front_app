@@ -145,5 +145,11 @@
   "deckRelaxFilters": "Ampliar filtros",
   "deckSeenEveryone": "Você já viu todos por perto",
   "deckRefresh": "Atualizar",
-  "deckLoadFailed": "Não foi possível carregar os perfis"
+  "deckLoadFailed": "Não foi possível carregar os perfis",
+  "settingsShowDistance": "Mostrar minha distância",
+  "settingsShowDistanceSubtitle": "Outros podem ver aproximadamente sua distância",
+  "settingsSaveFailed": "Não foi possível salvar a alteração",
+  "profilePreview": "Visualizar meu perfil",
+  "profilePreviewSubtitle": "Veja o que um match vê",
+  "profileSetMainPhoto": "Definir como foto principal"
 }

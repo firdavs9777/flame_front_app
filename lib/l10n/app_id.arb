@@ -145,5 +145,11 @@
   "deckRelaxFilters": "Longgarkan filter",
   "deckSeenEveryone": "Kamu sudah melihat semua orang di sekitar",
   "deckRefresh": "Muat ulang",
-  "deckLoadFailed": "Tidak dapat memuat profil"
+  "deckLoadFailed": "Tidak dapat memuat profil",
+  "settingsShowDistance": "Tampilkan jarak saya",
+  "settingsShowDistanceSubtitle": "Orang lain bisa melihat perkiraan jarakmu",
+  "settingsSaveFailed": "Tidak dapat menyimpan perubahan itu",
+  "profilePreview": "Pratinjau profil saya",
+  "profilePreviewSubtitle": "Lihat apa yang dilihat match",
+  "profileSetMainPhoto": "Jadikan foto utama"
 }

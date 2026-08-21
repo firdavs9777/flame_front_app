@@ -145,5 +145,11 @@
   "deckRelaxFilters": "Ослабить фильтры",
   "deckSeenEveryone": "Вы посмотрели всех поблизости",
   "deckRefresh": "Обновить",
-  "deckLoadFailed": "Не удалось загрузить профили"
+  "deckLoadFailed": "Не удалось загрузить профили",
+  "settingsShowDistance": "Показывать моё расстояние",
+  "settingsShowDistanceSubtitle": "Другие увидят примерное расстояние до вас",
+  "settingsSaveFailed": "Не удалось сохранить изменение",
+  "profilePreview": "Предпросмотр профиля",
+  "profilePreviewSubtitle": "Посмотрите, что видят другие",
+  "profileSetMainPhoto": "Сделать главным фото"
 }
