@@ -28,16 +28,20 @@ class _DiscoverFiltersScreenState extends ConsumerState<DiscoverFiltersScreen> {
 
   Future<void> _applyFilters() async {
     setState(() => _isSaving = true);
-    final saved = await ref.read(filterProvider.notifier).savePreferencesToApi();
+    final saved = await ref
+        .read(filterProvider.notifier)
+        .savePreferencesToApi();
     if (!mounted) return;
     setState(() => _isSaving = false);
 
     if (!saved) {
       // Stay open. A sheet that closes on a failed save looks saved.
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(context.l10n.filterSaveFailed),
-        backgroundColor: AppTheme.errorColor,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.filterSaveFailed),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
       return;
     }
 
@@ -50,7 +54,8 @@ class _DiscoverFiltersScreenState extends ConsumerState<DiscoverFiltersScreen> {
   @override
   Widget build(BuildContext context) {
     final filters = ref.watch(filterProvider);
-    final locationKnown = ref.watch(locationRefresherProvider).availability !=
+    final locationKnown =
+        ref.watch(locationRefresherProvider).availability !=
         LocationAvailability.denied;
 
     return Scaffold(
@@ -110,7 +115,9 @@ class _DiscoverFiltersScreenState extends ConsumerState<DiscoverFiltersScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: locationKnown ? context.onSurface : context.secondaryText,
+                  color: locationKnown
+                      ? context.onSurface
+                      : context.secondaryText,
                 ),
               ),
               Slider(
@@ -124,8 +131,9 @@ class _DiscoverFiltersScreenState extends ConsumerState<DiscoverFiltersScreen> {
                 // cannot work must not look like one that can — that was the
                 // original defect on this screen.
                 onChanged: locationKnown
-                    ? (value) =>
-                        ref.read(filterProvider.notifier).setMaxDistance(value)
+                    ? (value) => ref
+                          .read(filterProvider.notifier)
+                          .setMaxDistance(value)
                     : null,
               ),
               if (!locationKnown)
@@ -133,7 +141,10 @@ class _DiscoverFiltersScreenState extends ConsumerState<DiscoverFiltersScreen> {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     context.l10n.filterDistanceNeedsLocation,
-                    style: TextStyle(fontSize: 13, color: context.secondaryText),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: context.secondaryText,
+                    ),
                   ),
                 ),
               const SizedBox(height: 24),
@@ -142,8 +153,9 @@ class _DiscoverFiltersScreenState extends ConsumerState<DiscoverFiltersScreen> {
               const SizedBox(height: 12),
               _GenderSelector(
                 selectedGender: filters.genderPreference,
-                onChanged: (gender) =>
-                    ref.read(filterProvider.notifier).setGenderPreference(gender),
+                onChanged: (gender) => ref
+                    .read(filterProvider.notifier)
+                    .setGenderPreference(gender),
               ),
               const SizedBox(height: 24),
 
@@ -201,7 +213,10 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _GenderSelector extends StatelessWidget {
-  const _GenderSelector({required this.selectedGender, required this.onChanged});
+  const _GenderSelector({
+    required this.selectedGender,
+    required this.onChanged,
+  });
 
   final Gender? selectedGender;
   final ValueChanged<Gender?> onChanged;
@@ -292,7 +307,9 @@ class _InterestsSelector extends StatelessWidget {
                     color: isSelected
                         ? interest.color
                         : (enabled ? context.onSurface : context.secondaryText),
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
               ],

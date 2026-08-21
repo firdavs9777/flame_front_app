@@ -9,6 +9,7 @@ import 'package:flame/widgets/action_buttons.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/screens/discover/widgets/deck_states.dart';
 import 'package:flame/core/layout/breakpoints.dart';
+import 'package:flame/theme/app_tokens.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -124,10 +125,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 "It's a Match!",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: context.onOverlay,
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                 ),
@@ -135,7 +136,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               const SizedBox(height: 10),
               Text(
                 'You and ${user.name} liked each other',
-                style: const TextStyle(color: Colors.white70, fontSize: 16),
+                style: TextStyle(
+                  color: context.onOverlay.withValues(alpha: 0.7),
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 20),
               CircleAvatar(
@@ -152,9 +156,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         ref.read(swipeProvider.notifier).clearNewMatch();
                         Navigator.pop(context);
                       },
-                      child: const Text(
+                      child: Text(
                         'Keep Swiping',
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(
+                          color: context.onOverlay.withValues(alpha: 0.7),
+                        ),
                       ),
                     ),
                   ),
@@ -170,7 +176,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             .loadConversations(refresh: true);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
+                        backgroundColor: context.onOverlay,
                         foregroundColor: AppTheme.primaryColor,
                       ),
                       child: const Text('Send Message'),
@@ -316,7 +322,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               ),
               if (swipeState.isLoading)
                 Container(
-                  color: Colors.black26,
+                  color: context.viewerScrim.withValues(alpha: 0.15),
                   child: const Center(child: CircularProgressIndicator()),
                 ),
             ],
