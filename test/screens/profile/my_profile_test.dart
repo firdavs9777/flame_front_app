@@ -15,6 +15,7 @@ import 'package:flame/providers/user_provider.dart';
 import 'package:flame/screens/profile/my_profile_screen.dart';
 import 'package:flame/services/user_service.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/l10n/gen/app_localizations.dart';
 
 // MyProfileScreen calls loadUser() from initState's post-frame callback.
 // Overriding getCurrentUser here — rather than leaving the real UserService
@@ -62,6 +63,11 @@ Widget _host(User user, {ThemeData? theme}) {
     ],
     child: MaterialApp(
       theme: theme,
+      // The settings gear's tooltip reads from the ARBs, so the screen needs
+      // localizations to build.
+      locale: const Locale('en'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: const MyProfileScreen(),
     ),
   );

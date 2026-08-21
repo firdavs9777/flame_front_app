@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/notification_settings_provider.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/kit/kit.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 class NotificationSettingsScreen extends ConsumerStatefulWidget {
   const NotificationSettingsScreen({super.key});
@@ -36,7 +37,7 @@ class _NotificationSettingsScreenState
       body: state.when(
         loading: () => const Center(child: AppLoading()),
         error: (error, stack) => AppErrorState(
-          title: 'Could not load notification settings',
+          title: context.l10n.notifLoadFailed,
           message: '$error',
           onRetry: () =>
               ref.read(notificationSettingsProvider.notifier).load(),
@@ -45,24 +46,24 @@ class _NotificationSettingsScreenState
           return ListView(
             children: [
               SwitchListTile(
-                title: const Text('All notifications'),
-                subtitle: const Text('Turn all notifications on or off'),
+                title: Text(context.l10n.notifAll),
+                subtitle: Text(context.l10n.notifAllSubtitle),
                 value: settings.enabled,
                 activeColor: AppTheme.primaryColor,
                 onChanged: (value) => _setEnabled(context, value),
               ),
               const Divider(height: 1),
               SwitchListTile(
-                title: const Text('Chat messages'),
-                subtitle: const Text('Notify me about new messages'),
+                title: Text(context.l10n.notifMessages),
+                subtitle: Text(context.l10n.notifMessagesSubtitle),
                 value: settings.chatMessages,
                 activeColor: AppTheme.primaryColor,
                 onChanged:
                     settings.enabled ? (value) => _setChatMessages(context, value) : null,
               ),
               SwitchListTile(
-                title: const Text('New matches'),
-                subtitle: const Text('Notify me when I get a new match'),
+                title: Text(context.l10n.notifNewMatches),
+                subtitle: Text(context.l10n.notifNewMatchesSubtitle),
                 value: settings.matches,
                 activeColor: AppTheme.primaryColor,
                 onChanged:
@@ -82,7 +83,7 @@ class _NotificationSettingsScreenState
     if (!context.mounted) return;
     if (!ok) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Could not update notification settings')),
+        SnackBar(content: Text(context.l10n.notifUpdateFailed)),
       );
     }
   }
@@ -95,7 +96,7 @@ class _NotificationSettingsScreenState
     if (!context.mounted) return;
     if (!ok) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Could not update notification settings')),
+        SnackBar(content: Text(context.l10n.notifUpdateFailed)),
       );
     }
   }
@@ -107,7 +108,7 @@ class _NotificationSettingsScreenState
     if (!context.mounted) return;
     if (!ok) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Could not update notification settings')),
+        SnackBar(content: Text(context.l10n.notifUpdateFailed)),
       );
     }
   }

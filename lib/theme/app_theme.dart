@@ -57,11 +57,10 @@ class AppColors {
   /// The super-like action's accent. A fixed swipe-affordance colour in both
   /// themes, like [attachmentPhoto].
   ///
-  /// Named here because the widened theme gate surfaced it — though the control
-  /// it paints is one the profile follow-ups already recorded as dead
-  /// (`profile_detail_screen.dart`: onTap pops the sheet and the body is
-  /// `// Handle super like`). Its colour is the least of its problems; that
-  /// belongs to the swipe surface, not to this sweep.
+  /// Named when the widened theme gate surfaced it, at which point the control it
+  /// paints was dead — `profile_detail_screen`'s onTap popped the sheet and its
+  /// body was a comment. Scope B wired both buttons to swipeProvider, so this now
+  /// paints something that works.
   static const Color superLike = Color(0xFF2196F3);
 
   /// The verified checkmark on a profile card. Sits on a user photo, not on a

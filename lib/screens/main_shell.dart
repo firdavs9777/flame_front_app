@@ -10,7 +10,7 @@ import 'package:flame/core/i18n/build_context_ext.dart';
 import 'chat/matches_screen.dart';
 import 'discover/discover_screen.dart';
 import 'profile/my_profile_screen.dart';
-import 'settings/settings_screen.dart';
+import 'package:flame/theme/app_tokens.dart';
 
 final bottomNavIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -30,7 +30,6 @@ class _MainShellState extends ConsumerState<MainShell>
     const DiscoverScreen(),
     if (EnvConfig.current.chatEnabled) const MatchesScreen(),
     const MyProfileScreen(),
-    const SettingsScreen(),
   ];
 
   @override
@@ -115,7 +114,12 @@ class _MainShellState extends ConsumerState<MainShell>
 
   @override
   Widget build(BuildContext context) {
-    final currentIndex = ref.watch(bottomNavIndexProvider);
+    // bottomNavIndexProvider holds a raw int that outlives a release, and this
+    // list just got shorter when Settings stopped being a tab. An index written by
+    // the previous version would otherwise select the wrong screen or throw inside
+    // IndexedStack.
+    final currentIndex =
+        ref.watch(bottomNavIndexProvider).clamp(0, _screens.length - 1);
     final chatUnreadCount = ref.watch(chatUnreadCountProvider);
 
     // ApiClient refreshes the access token proactively, so a socket may be
@@ -188,14 +192,6 @@ class _FlameNavBar extends StatelessWidget {
       onTap: () => onTap(profileIndex),
     ));
 
-    final settingsIndex = index++;
-    items.add(_NavItem(
-      selected: currentIndex == settingsIndex,
-      icon: Icons.settings_outlined,
-      activeIcon: Icons.settings,
-      label: context.l10n.navSettings,
-      onTap: () => onTap(settingsIndex),
-    ));
 
     return items;
   }
@@ -209,7 +205,9 @@ class _FlameNavBar extends StatelessWidget {
         color: surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            // A scrim under the bar, not a colour: it stays dark in both themes
+            // because it darkens whatever is behind it.
+            color: context.viewerScrim.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -248,8 +246,10 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final unselectedColor =
-        Theme.of(context).brightness == Brightness.dark ? AppColors.gray500 : AppColors.gray500;
+    // Was a brightness conditional with IDENTICAL branches — a theme check that
+    // decided nothing. secondaryText resolves per theme, which is what that
+    // conditional was reaching for.
+    final unselectedColor = context.secondaryText;
     final color = selected ? AppColors.primary : unselectedColor;
 
     Widget iconWidget = AnimatedSwitcher(

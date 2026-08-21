@@ -5,6 +5,7 @@ import 'package:flame/services/report_service.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:intl/intl.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 class BlockedUsersScreen extends ConsumerStatefulWidget {
   const BlockedUsersScreen({super.key});
@@ -32,11 +33,11 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
     final state = ref.watch(blockedUsersProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Blocked Users')),
+      appBar: AppBar(title: Text(context.l10n.settingsBlockedUsers)),
       body: state.when(
         loading: () => const Center(child: AppLoading()),
         error: (error, stack) => AppErrorState(
-          title: 'Could not load blocked users',
+          title: context.l10n.blockedLoadFailed,
           message: '$error',
           onRetry: () => ref.read(blockedUsersProvider.notifier).load(),
         ),
@@ -57,10 +58,10 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
                 return ListTile(
                   leading: const CircleAvatar(child: Icon(Icons.person)),
                   title: Text(user.name),
-                  subtitle: Text('Blocked ${_formatDate(user.blockedAt)}'),
+                  subtitle: Text(context.l10n.blockedOnDate(_formatDate(user.blockedAt))),
                   trailing: TextButton(
                     onPressed: () => _confirmUnblock(context, user),
-                    child: const Text('Unblock'),
+                    child: Text(context.l10n.blockedUnblock),
                   ),
                 );
               },
@@ -79,12 +80,12 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Unblock user?'),
+        title: Text(context.l10n.blockedUnblockConfirm),
         content: Text('${user.name} will be able to see your profile and match with you again.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
