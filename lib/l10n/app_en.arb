@@ -343,5 +343,81 @@
   "chatDelete": "Delete",
   "@chatDelete": {
     "description": "Message long-press action"
+  },
+  "interestTravel": "Travel",
+  "@interestTravel": {
+    "description": "Interest label: Travel"
+  },
+  "interestMusic": "Music",
+  "@interestMusic": {
+    "description": "Interest label: Music"
+  },
+  "interestMovies": "Movies",
+  "@interestMovies": {
+    "description": "Interest label: Movies"
+  },
+  "interestFood": "Food",
+  "@interestFood": {
+    "description": "Interest label: Food"
+  },
+  "interestFitness": "Fitness",
+  "@interestFitness": {
+    "description": "Interest label: Fitness"
+  },
+  "interestReading": "Reading",
+  "@interestReading": {
+    "description": "Interest label: Reading"
+  },
+  "interestGaming": "Gaming",
+  "@interestGaming": {
+    "description": "Interest label: Gaming"
+  },
+  "interestArt": "Art",
+  "@interestArt": {
+    "description": "Interest label: Art"
+  },
+  "interestPhotography": "Photography",
+  "@interestPhotography": {
+    "description": "Interest label: Photography"
+  },
+  "interestSports": "Sports",
+  "@interestSports": {
+    "description": "Interest label: Sports"
+  },
+  "interestCooking": "Cooking",
+  "@interestCooking": {
+    "description": "Interest label: Cooking"
+  },
+  "interestNature": "Nature",
+  "@interestNature": {
+    "description": "Interest label: Nature"
+  },
+  "interestCoffee": "Coffee",
+  "@interestCoffee": {
+    "description": "Interest label: Coffee"
+  },
+  "interestWine": "Wine",
+  "@interestWine": {
+    "description": "Interest label: Wine"
+  },
+  "interestDancing": "Dancing",
+  "@interestDancing": {
+    "description": "Interest label: Dancing"
+  },
+  "interestYoga": "Yoga",
+  "@interestYoga": {
+    "description": "Interest label: Yoga"
+  },
+  "interestPets": "Pets",
+  "@interestPets": {
+    "description": "Interest label: Pets"
+  },
+  "interestTech": "Tech",
+  "@interestTech": {
+    "description": "Interest label: Tech"
+  },
+  "interestHiking": "Hiking",
+  "@interestHiking": {
+    "description": "Interest label: Hiking"
   }
 }

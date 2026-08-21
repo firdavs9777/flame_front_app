@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
 import 'package:flame/widgets/kit/kit.dart';
+import 'package:flame/core/interests/interest_catalogue.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 class StepBioInterests extends StatefulWidget {
   final RegistrationData data;
@@ -22,26 +24,12 @@ class _StepBioInterestsState extends State<StepBioInterests> {
   final _bioController = TextEditingController();
   final List<String> _selectedInterests = [];
 
-  static const List<_InterestItem> _availableInterests = [
-    _InterestItem('Travel', Icons.flight_takeoff_rounded, Color(0xFF3498DB)),
-    _InterestItem('Music', Icons.music_note_rounded, Color(0xFF9B59B6)),
-    _InterestItem('Movies', Icons.movie_creation_rounded, Color(0xFFE74C3C)),
-    _InterestItem('Food', Icons.restaurant_rounded, Color(0xFFE67E22)),
-    _InterestItem('Fitness', Icons.fitness_center_rounded, Color(0xFF27AE60)),
-    _InterestItem('Reading', Icons.menu_book_rounded, Color(0xFF8E44AD)),
-    _InterestItem('Gaming', Icons.sports_esports_rounded, Color(0xFF2980B9)),
-    _InterestItem('Art', Icons.palette_rounded, Color(0xFFD35400)),
-    _InterestItem('Photography', Icons.camera_alt_rounded, Color(0xFF16A085)),
-    _InterestItem('Sports', Icons.sports_soccer_rounded, Color(0xFF2ECC71)),
-    _InterestItem('Cooking', Icons.soup_kitchen_rounded, Color(0xFFF39C12)),
-    _InterestItem('Nature', Icons.park_rounded, Color(0xFF1ABC9C)),
-    _InterestItem('Coffee', Icons.coffee_rounded, Color(0xFF795548)),
-    _InterestItem('Wine', Icons.wine_bar_rounded, Color(0xFFC0392B)),
-    _InterestItem('Dancing', Icons.nightlife_rounded, Color(0xFFFF6B6B)),
-    _InterestItem('Yoga', Icons.self_improvement_rounded, Color(0xFF00BCD4)),
-    _InterestItem('Pets', Icons.pets_rounded, Color(0xFFFF9800)),
-    _InterestItem('Tech', Icons.devices_rounded, Color(0xFF607D8B)),
-  ];
+  /// The shared catalogue, not a local copy.
+  ///
+  /// This list used to live here and a second, partly-different one lived in the
+  /// filter sheet — which is how the sheet ended up offering an interest
+  /// ('Hiking') that registration never let anyone pick.
+  static const List<Interest> _availableInterests = kInterests;
 
   @override
   void initState() {
@@ -175,10 +163,10 @@ class _StepBioInterestsState extends State<StepBioInterests> {
       spacing: 10,
       runSpacing: 10,
       children: _availableInterests.map((interest) {
-        final isSelected = _selectedInterests.contains(interest.name);
+        final isSelected = _selectedInterests.contains(interest.token);
 
         return GestureDetector(
-          onTap: () => _toggleInterest(interest.name),
+          onTap: () => _toggleInterest(interest.token),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -200,7 +188,7 @@ class _StepBioInterestsState extends State<StepBioInterests> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  interest.name,
+                  interest.label(context.l10n),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -285,10 +273,3 @@ class _StepBioInterestsState extends State<StepBioInterests> {
 /// enable-logic is unit-testable independent of the widget.
 bool canContinue(int selectedInterestCount) => selectedInterestCount >= 1;
 
-class _InterestItem {
-  final String name;
-  final IconData icon;
-  final Color color;
-
-  const _InterestItem(this.name, this.icon, this.color);
-}
