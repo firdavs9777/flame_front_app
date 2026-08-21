@@ -10,6 +10,7 @@ import 'package:flame/core/i18n/build_context_ext.dart';
 import 'chat/matches_screen.dart';
 import 'discover/discover_screen.dart';
 import 'profile/my_profile_screen.dart';
+import 'package:flame/theme/app_tokens.dart';
 
 final bottomNavIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -204,7 +205,9 @@ class _FlameNavBar extends StatelessWidget {
         color: surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            // A scrim under the bar, not a colour: it stays dark in both themes
+            // because it darkens whatever is behind it.
+            color: context.viewerScrim.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -243,8 +246,10 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final unselectedColor =
-        Theme.of(context).brightness == Brightness.dark ? AppColors.gray500 : AppColors.gray500;
+    // Was a brightness conditional with IDENTICAL branches — a theme check that
+    // decided nothing. secondaryText resolves per theme, which is what that
+    // conditional was reaching for.
+    final unselectedColor = context.secondaryText;
     final color = selected ? AppColors.primary : unselectedColor;
 
     Widget iconWidget = AnimatedSwitcher(

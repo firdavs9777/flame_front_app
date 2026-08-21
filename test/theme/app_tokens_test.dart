@@ -14,6 +14,7 @@ import 'package:flame/theme/app_theme.dart';
 // token references, not literals. This test pins onOverlay to a value that
 // does not move when onPrimary does.
 void main() {
+  _profileSettingsTokenResolution();
   _discoverTokenResolution();
   _chatTokenResolution();
   Future<Map<String, Color>> readTokens(
@@ -191,5 +192,32 @@ void _discoverTokenResolution() {
     // matters is that they are not the scrim.
     expect(AppColors.verifiedBadge, isNot(AppColors.black));
     expect(AppColors.superLike, isNot(AppColors.black));
+  });
+}
+
+
+// Appended by the Scope B gate. A SettingsRow divider is drawn against a fill, and
+// the literal-banning gate cannot see a token that resolves to the wrong colour.
+void _profileSettingsTokenResolution() {
+  test('settings tokens resolve to distinguishable colours in both themes', () {
+    for (final theme in [AppTheme.lightTheme, AppTheme.darkTheme]) {
+      final scheme = theme.colorScheme;
+      final label = theme.brightness.name;
+
+      expect(scheme.surfaceContainerHighest, isNot(scheme.surface),
+          reason: 'a settings row sits on the page ($label)');
+      expect(scheme.onSurfaceVariant, isNot(scheme.onSurface),
+          reason: 'a row subtitle must read as quieter than its title ($label)');
+      expect(theme.dividerTheme.color, isNot(scheme.surfaceContainerHighest),
+          reason: 'a row divider is drawn against a fill ($label)');
+    }
+  });
+
+  test('the unselected nav colour actually differs between themes', () {
+    // main_shell had a brightness conditional whose two branches were the same
+    // constant — a theme check that decided nothing. This is what would have
+    // caught it.
+    expect(AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+        isNot(AppTheme.darkTheme.colorScheme.onSurfaceVariant));
   });
 }
