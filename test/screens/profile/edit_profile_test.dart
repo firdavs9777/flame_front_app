@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/user_provider.dart';
-import 'package:flame/screens/profile/edit_profile_screen.dart';
+import 'package:flame/screens/profile/edit_profile/edit_profile_screen.dart';
 import 'package:flame/services/user_service.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/core/date/age.dart';

@@ -9,7 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('edit-profile contains no preferences editor', () {
     final source =
-        File('lib/screens/profile/edit_profile_screen.dart').readAsStringSync();
+        File('lib/screens/profile/edit_profile/edit_profile_screen.dart').readAsStringSync();
 
     expect(source.contains('_PreferencesSection'), isFalse,
         reason: 'the Discover filter sheet owns discovery preferences');

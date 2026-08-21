@@ -6,7 +6,7 @@ import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
-import 'package:flame/screens/profile/edit_profile_screen.dart';
+import 'package:flame/screens/profile/edit_profile/edit_profile_screen.dart';
 import 'package:flame/core/format/distance_format.dart';
 import 'package:flame/screens/settings/settings_screen.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
