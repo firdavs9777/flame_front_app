@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/smart_image.dart';
+import 'package:flame/core/format/distance_display.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 class ProfileCard extends StatefulWidget {
   final User user;
@@ -34,6 +36,14 @@ class _ProfileCardState extends State<ProfileCard> {
 
   @override
   Widget build(BuildContext context) {
+    // Formatted here rather than on the model: rendering a distance needs
+    // localisations and a locale, which are a widget's business.
+    final km = widget.user.distance;
+    final distanceAway = km == null
+        ? null
+        : formatDistanceAway(
+            km, context.l10n, Localizations.localeOf(context).toString());
+
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
@@ -187,24 +197,31 @@ class _ProfileCardState extends State<ProfileCard> {
                       ],
                     ),
                     const SizedBox(height: 5),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on,
-                          color: Colors.white70,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          widget.user.distanceText,
-                          style: const TextStyle(
+                    // Omitted entirely when there is no distance to show. The
+                    // old code could only render a number, which is why every
+                    // card said "0 km away".
+                    if (distanceAway != null) ...[
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on,
                             color: Colors.white70,
-                            fontSize: 14,
+                            size: 16,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              distanceAway,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                     Text(
                       widget.user.bio,
                       style: const TextStyle(

@@ -4,6 +4,8 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/widgets/report_block_menu.dart';
+import 'package:flame/core/format/distance_display.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 class ProfileDetailScreen extends StatefulWidget {
   final User user;
@@ -26,6 +28,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Formatted here rather than on the model: rendering a distance needs
+    // localisations and a locale, which are a widget's business.
+    final km = widget.user.distance;
+    final distanceAway = km == null
+        ? null
+        : formatDistanceAway(
+            km, context.l10n, Localizations.localeOf(context).toString());
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -161,12 +171,18 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                     children: [
                       Icon(Icons.location_on, color: context.secondaryText, size: 18),
                       const SizedBox(width: 4),
-                      Text(
-                        '${widget.user.location} - ${widget.user.distanceText}',
+                      Flexible(
+                        child: Text(
+                        // Location alone when distance is unknown — no dangling
+                        // separator with nothing after it.
+                        distanceAway == null
+                            ? '${widget.user.location}'
+                            : '${widget.user.location} - $distanceAway',
                         style: TextStyle(
                           color: context.secondaryText,
                           fontSize: 14,
                         ),
+                      ),
                       ),
                     ],
                   ),

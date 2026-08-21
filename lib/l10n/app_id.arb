@@ -127,5 +127,7 @@
   "interestYoga": "Yoga",
   "interestPets": "Hewan peliharaan",
   "interestTech": "Teknologi",
-  "interestHiking": "Mendaki"
+  "interestHiking": "Mendaki",
+  "distanceAwayKm": "{value} km dari kamu",
+  "distanceAwayMiles": "{value} mil dari kamu"
 }

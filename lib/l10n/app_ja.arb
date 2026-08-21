@@ -127,5 +127,7 @@
   "interestYoga": "ヨガ",
   "interestPets": "ペット",
   "interestTech": "テック",
-  "interestHiking": "ハイキング"
+  "interestHiking": "ハイキング",
+  "distanceAwayKm": "{value}km 先",
+  "distanceAwayMiles": "{value}マイル先"
 }

@@ -419,5 +419,23 @@
   "interestHiking": "Hiking",
   "@interestHiking": {
     "description": "Interest label: Hiking"
+  },
+  "distanceAwayKm": "{value} km away",
+  "@distanceAwayKm": {
+    "description": "Distance to another user",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceAwayMiles": "{value} mi away",
+  "@distanceAwayMiles": {
+    "description": "Distance to another user",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
   }
 }

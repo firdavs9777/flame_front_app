@@ -127,5 +127,7 @@
   "interestYoga": "요가",
   "interestPets": "반려동물",
   "interestTech": "테크",
-  "interestHiking": "등산"
+  "interestHiking": "등산",
+  "distanceAwayKm": "{value}km 거리",
+  "distanceAwayMiles": "{value}마일 거리"
 }

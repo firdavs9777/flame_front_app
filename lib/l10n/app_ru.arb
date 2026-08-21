@@ -127,5 +127,7 @@
   "interestYoga": "Йога",
   "interestPets": "Питомцы",
   "interestTech": "Технологии",
-  "interestHiking": "Походы"
+  "interestHiking": "Походы",
+  "distanceAwayKm": "{value} км от вас",
+  "distanceAwayMiles": "{value} миль от вас"
 }

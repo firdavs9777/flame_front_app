@@ -127,5 +127,7 @@
   "interestYoga": "Yoga",
   "interestPets": "Evcil hayvan",
   "interestTech": "Teknoloji",
-  "interestHiking": "Doğa yürüyüşü"
+  "interestHiking": "Doğa yürüyüşü",
+  "distanceAwayKm": "{value} km uzakta",
+  "distanceAwayMiles": "{value} mil uzakta"
 }

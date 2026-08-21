@@ -127,5 +127,7 @@
   "interestYoga": "Yoga",
   "interestPets": "Mascotas",
   "interestTech": "Tecnología",
-  "interestHiking": "Senderismo"
+  "interestHiking": "Senderismo",
+  "distanceAwayKm": "a {value} km",
+  "distanceAwayMiles": "a {value} mi"
 }
