@@ -129,5 +129,21 @@
   "interestTech": "Teknologi",
   "interestHiking": "Mendaki",
   "distanceAwayKm": "{value} km dari kamu",
-  "distanceAwayMiles": "{value} mil dari kamu"
+  "distanceAwayMiles": "{value} mil dari kamu",
+  "filterTitle": "Filter jelajah",
+  "filterReset": "Atur ulang",
+  "filterApply": "Terapkan filter",
+  "filterAgeRange": "Rentang usia",
+  "filterDistance": "Jarak maksimum",
+  "filterDistanceNeedsLocation": "Izinkan akses lokasi untuk memfilter berdasarkan jarak",
+  "filterShowMe": "Tampilkan",
+  "filterEveryone": "Semua",
+  "filterInterests": "Minat",
+  "filterInterestsHint": "Pilih hingga {count}",
+  "filterSaveFailed": "Tidak dapat menyimpan filter",
+  "deckNoMatches": "Tidak ada yang cocok dengan filter ini",
+  "deckRelaxFilters": "Longgarkan filter",
+  "deckSeenEveryone": "Kamu sudah melihat semua orang di sekitar",
+  "deckRefresh": "Muat ulang",
+  "deckLoadFailed": "Tidak dapat memuat profil"
 }

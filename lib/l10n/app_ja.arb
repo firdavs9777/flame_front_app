@@ -129,5 +129,21 @@
   "interestTech": "テック",
   "interestHiking": "ハイキング",
   "distanceAwayKm": "{value}km 先",
-  "distanceAwayMiles": "{value}マイル先"
+  "distanceAwayMiles": "{value}マイル先",
+  "filterTitle": "検索フィルター",
+  "filterReset": "リセット",
+  "filterApply": "フィルターを適用",
+  "filterAgeRange": "年齢の範囲",
+  "filterDistance": "最大距離",
+  "filterDistanceNeedsLocation": "距離で絞り込むには位置情報を許可してください",
+  "filterShowMe": "表示する相手",
+  "filterEveryone": "すべて",
+  "filterInterests": "興味",
+  "filterInterestsHint": "最大{count}個まで",
+  "filterSaveFailed": "フィルターを保存できませんでした",
+  "deckNoMatches": "この条件に合う人がいません",
+  "deckRelaxFilters": "条件を広げる",
+  "deckSeenEveryone": "近くの人はすべて見ました",
+  "deckRefresh": "更新",
+  "deckLoadFailed": "プロフィールを読み込めませんでした"
 }

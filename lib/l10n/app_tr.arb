@@ -129,5 +129,21 @@
   "interestTech": "Teknoloji",
   "interestHiking": "Doğa yürüyüşü",
   "distanceAwayKm": "{value} km uzakta",
-  "distanceAwayMiles": "{value} mil uzakta"
+  "distanceAwayMiles": "{value} mil uzakta",
+  "filterTitle": "Keşfet filtreleri",
+  "filterReset": "Sıfırla",
+  "filterApply": "Filtreleri uygula",
+  "filterAgeRange": "Yaş aralığı",
+  "filterDistance": "Maksimum mesafe",
+  "filterDistanceNeedsLocation": "Mesafeye göre filtrelemek için konum erişimine izin verin",
+  "filterShowMe": "Bana göster",
+  "filterEveryone": "Herkes",
+  "filterInterests": "İlgi alanları",
+  "filterInterestsHint": "En fazla {count} seçin",
+  "filterSaveFailed": "Filtreler kaydedilemedi",
+  "deckNoMatches": "Bu filtrelere uyan kimse yok",
+  "deckRelaxFilters": "Filtreleri gevşet",
+  "deckSeenEveryone": "Yakındaki herkesi gördün",
+  "deckRefresh": "Yenile",
+  "deckLoadFailed": "Profiller yüklenemedi"
 }

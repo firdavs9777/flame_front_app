@@ -129,5 +129,21 @@
   "interestTech": "Технологии",
   "interestHiking": "Походы",
   "distanceAwayKm": "{value} км от вас",
-  "distanceAwayMiles": "{value} миль от вас"
+  "distanceAwayMiles": "{value} миль от вас",
+  "filterTitle": "Фильтры поиска",
+  "filterReset": "Сбросить",
+  "filterApply": "Применить фильтры",
+  "filterAgeRange": "Возраст",
+  "filterDistance": "Максимальное расстояние",
+  "filterDistanceNeedsLocation": "Разрешите доступ к местоположению, чтобы фильтровать по расстоянию",
+  "filterShowMe": "Показывать",
+  "filterEveryone": "Все",
+  "filterInterests": "Интересы",
+  "filterInterestsHint": "Выберите до {count}",
+  "filterSaveFailed": "Не удалось сохранить фильтры",
+  "deckNoMatches": "Никто не подходит под эти фильтры",
+  "deckRelaxFilters": "Ослабить фильтры",
+  "deckSeenEveryone": "Вы посмотрели всех поблизости",
+  "deckRefresh": "Обновить",
+  "deckLoadFailed": "Не удалось загрузить профили"
 }

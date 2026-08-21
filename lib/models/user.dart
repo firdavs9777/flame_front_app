@@ -30,6 +30,10 @@ class User {
   final int maxAgePreference;
   final double maxDistancePreference;
   final bool showDistance;
+
+  /// The tokens this user filters Discover by — NOT their own [interests].
+  /// Empty means no interest filter.
+  final List<String> interestsFilter;
   final bool showOnlineStatus;
   final DateTime lastActive;
   final bool isOnline;
@@ -64,6 +68,7 @@ class User {
     this.maxAgePreference = 50,
     this.maxDistancePreference = 50,
     this.showDistance = true,
+    this.interestsFilter = const [],
     this.showOnlineStatus = true,
     required this.lastActive,
     this.isOnline = false,
@@ -159,6 +164,8 @@ class User {
               .toDouble(),
       showDistance:
           preferences['show_distance'] ?? preferences['showDistance'] ?? true,
+      interestsFilter: List<String>.from(
+          preferences['interests_filter'] ?? preferences['interestsFilter'] ?? []),
       showOnlineStatus: preferences['show_online_status'] ??
           preferences['showOnlineStatus'] ??
           true,
@@ -206,6 +213,7 @@ class User {
         'min_age': minAgePreference,
         'max_age': maxAgePreference,
         'max_distance': maxDistancePreference,
+        'interests_filter': interestsFilter,
         'show_distance': showDistance,
         'show_online_status': showOnlineStatus,
       },
@@ -234,6 +242,7 @@ class User {
     int? minAgePreference,
     int? maxAgePreference,
     double? maxDistancePreference,
+    List<String>? interestsFilter,
     bool? showDistance,
     bool? showOnlineStatus,
     DateTime? lastActive,
@@ -263,6 +272,7 @@ class User {
       minAgePreference: minAgePreference ?? this.minAgePreference,
       maxAgePreference: maxAgePreference ?? this.maxAgePreference,
       maxDistancePreference: maxDistancePreference ?? this.maxDistancePreference,
+      interestsFilter: interestsFilter ?? this.interestsFilter,
       showDistance: showDistance ?? this.showDistance,
       showOnlineStatus: showOnlineStatus ?? this.showOnlineStatus,
       lastActive: lastActive ?? this.lastActive,

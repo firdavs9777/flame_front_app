@@ -129,5 +129,21 @@
   "interestTech": "Technik",
   "interestHiking": "Wandern",
   "distanceAwayKm": "{value} km entfernt",
-  "distanceAwayMiles": "{value} mi entfernt"
+  "distanceAwayMiles": "{value} mi entfernt",
+  "filterTitle": "Entdecken-Filter",
+  "filterReset": "Zurücksetzen",
+  "filterApply": "Filter anwenden",
+  "filterAgeRange": "Altersbereich",
+  "filterDistance": "Maximale Entfernung",
+  "filterDistanceNeedsLocation": "Standortzugriff erlauben, um nach Entfernung zu filtern",
+  "filterShowMe": "Zeige mir",
+  "filterEveryone": "Alle",
+  "filterInterests": "Interessen",
+  "filterInterestsHint": "Wähle bis zu {count}",
+  "filterSaveFailed": "Filter konnten nicht gespeichert werden",
+  "deckNoMatches": "Niemand passt zu diesen Filtern",
+  "deckRelaxFilters": "Filter lockern",
+  "deckSeenEveryone": "Du hast alle in der Nähe gesehen",
+  "deckRefresh": "Aktualisieren",
+  "deckLoadFailed": "Profile konnten nicht geladen werden"
 }

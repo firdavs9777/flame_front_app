@@ -437,5 +437,74 @@
         "type": "String"
       }
     }
+  },
+  "filterTitle": "Discovery filters",
+  "@filterTitle": {
+    "description": "Discover filter / deck state"
+  },
+  "filterReset": "Reset",
+  "@filterReset": {
+    "description": "Discover filter / deck state"
+  },
+  "filterApply": "Apply filters",
+  "@filterApply": {
+    "description": "Discover filter / deck state"
+  },
+  "filterAgeRange": "Age range",
+  "@filterAgeRange": {
+    "description": "Discover filter / deck state"
+  },
+  "filterDistance": "Maximum distance",
+  "@filterDistance": {
+    "description": "Discover filter / deck state"
+  },
+  "filterDistanceNeedsLocation": "Allow location access to filter by distance",
+  "@filterDistanceNeedsLocation": {
+    "description": "Discover filter / deck state"
+  },
+  "filterShowMe": "Show me",
+  "@filterShowMe": {
+    "description": "Discover filter / deck state"
+  },
+  "filterEveryone": "Everyone",
+  "@filterEveryone": {
+    "description": "Discover filter / deck state"
+  },
+  "filterInterests": "Interests",
+  "@filterInterests": {
+    "description": "Discover filter / deck state"
+  },
+  "filterInterestsHint": "Pick up to {count}",
+  "@filterInterestsHint": {
+    "description": "Discover filter / deck state",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filterSaveFailed": "Couldn't save your filters",
+  "@filterSaveFailed": {
+    "description": "Discover filter / deck state"
+  },
+  "deckNoMatches": "No one matches these filters",
+  "@deckNoMatches": {
+    "description": "Discover filter / deck state"
+  },
+  "deckRelaxFilters": "Relax filters",
+  "@deckRelaxFilters": {
+    "description": "Discover filter / deck state"
+  },
+  "deckSeenEveryone": "You've seen everyone nearby",
+  "@deckSeenEveryone": {
+    "description": "Discover filter / deck state"
+  },
+  "deckRefresh": "Refresh",
+  "@deckRefresh": {
+    "description": "Discover filter / deck state"
+  },
+  "deckLoadFailed": "Couldn't load profiles",
+  "@deckLoadFailed": {
+    "description": "Discover filter / deck state"
   }
 }

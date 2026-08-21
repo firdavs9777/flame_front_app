@@ -129,5 +129,21 @@
   "interestTech": "科技",
   "interestHiking": "徒步",
   "distanceAwayKm": "{value} 公里外",
-  "distanceAwayMiles": "{value} 英里外"
+  "distanceAwayMiles": "{value} 英里外",
+  "filterTitle": "发现筛选",
+  "filterReset": "重置",
+  "filterApply": "应用筛选",
+  "filterAgeRange": "年龄范围",
+  "filterDistance": "最大距离",
+  "filterDistanceNeedsLocation": "允许访问位置以按距离筛选",
+  "filterShowMe": "显示",
+  "filterEveryone": "所有人",
+  "filterInterests": "兴趣",
+  "filterInterestsHint": "最多选择 {count} 个",
+  "filterSaveFailed": "无法保存筛选条件",
+  "deckNoMatches": "没有符合这些筛选条件的人",
+  "deckRelaxFilters": "放宽筛选",
+  "deckSeenEveryone": "你已看过附近所有人",
+  "deckRefresh": "刷新",
+  "deckLoadFailed": "无法加载资料"
 }
