@@ -6,7 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'theme/app_theme.dart';
 import 'providers/providers.dart';
 import 'screens/main_shell.dart';
-import 'screens/discover/discover_screen.dart';
+import 'screens/discover/discover_filters_screen.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/registration/social_profile_completion_flow.dart';
 import 'screens/splash/splash_screen.dart';
@@ -92,7 +92,7 @@ class FlameApp extends ConsumerWidget {
             ? const SocialProfileCompletionFlow()
             : const WelcomeScreen(),
       ),
-      routes: {'/discover': (context) => const DiscoverScreen()},
+      routes: {'/discover/filters': (context) => const DiscoverFiltersScreen()},
     );
   }
 }
