@@ -12,6 +12,7 @@ import 'package:flame/config/env.dart';
 import 'package:flame/screens/auth/registration/legal_document_sheet.dart';
 import 'package:flame/screens/settings/blocked_users_screen.dart';
 import 'package:flame/screens/settings/notification_settings_screen.dart';
+import 'package:flame/screens/settings/widgets/settings_section.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -301,18 +302,19 @@ class SettingsScreen extends ConsumerWidget {
     Color? titleColor,
     required VoidCallback onTap,
   }) {
-    return ListTile(
+    // Delegates to SettingsRow rather than building a ListTile, so text scaling,
+    // tap targets and the wide-window constraint are decided in one place for all
+    // twenty call sites instead of here and in _buildSwitchTile separately.
+    //
+    // titleColor is still honoured because the destructive rows (delete account)
+    // depend on it, so this is a routing change and not a restyle.
+    return SettingsRow(
+      title: title,
+      subtitle: subtitle,
       leading: Icon(icon, color: titleColor ?? context.secondaryText),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: titleColor,
-          fontWeight: titleColor != null ? FontWeight.w600 : FontWeight.normal,
-        ),
-      ),
-      subtitle: subtitle != null ? Text(subtitle) : null,
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
+      titleColor: titleColor,
     );
   }
 
@@ -320,6 +322,7 @@ class SettingsScreen extends ConsumerWidget {
   /// Profile control uses. On failure the notifier leaves state alone, so the
   /// switch snaps back on its own — the SnackBar is there so that snap-back
   /// reads as a failed save rather than an unresponsive control.
+
   /// Writes preferences.showDistance.
   ///
   /// On failure the switch reverts, because the control reflects server state

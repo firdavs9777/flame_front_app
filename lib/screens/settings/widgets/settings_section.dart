@@ -54,6 +54,7 @@ class SettingsRow extends StatelessWidget {
     this.leading,
     this.trailing,
     this.onTap,
+    this.titleColor,
   });
 
   final String title;
@@ -61,6 +62,10 @@ class SettingsRow extends StatelessWidget {
   final Widget? leading;
   final Widget? trailing;
   final VoidCallback? onTap;
+
+  /// Overrides the title colour. Exists for destructive rows — delete account —
+  /// which must read as destructive; null keeps the ordinary onSurface.
+  final Color? titleColor;
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +82,12 @@ class SettingsRow extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(fontSize: 16, color: context.onSurface),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: titleColor ?? context.onSurface,
+                    fontWeight:
+                        titleColor != null ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
                 if (subtitle != null)
                   Padding(
