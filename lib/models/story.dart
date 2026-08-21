@@ -89,6 +89,21 @@ class UserStories {
     required this.stories,
   });
 
+  factory UserStories.fromJson(Map<String, dynamic> json) {
+    final raw = json['stories'];
+    return UserStories(
+      userId: json['user_id'] ?? '',
+      name: json['name'] ?? '',
+      avatarUrl: json['avatar_url'] ?? '',
+      stories: raw is List
+          ? raw
+              .whereType<Map>()
+              .map((s) => Story.fromJson(Map<String, dynamic>.from(s)))
+              .toList()
+          : const [],
+    );
+  }
+
   /// Only the stories still within their 24h window, oldest first (viewer order).
   List<Story> get activeStories {
     final active = stories.where((s) => s.isActive).toList()
