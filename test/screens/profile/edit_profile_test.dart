@@ -13,6 +13,7 @@ import 'package:flame/screens/profile/edit_profile_screen.dart';
 import 'package:flame/services/user_service.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/core/date/age.dart';
+import 'package:flame/l10n/gen/app_localizations.dart';
 
 // Never actually invoked: the screen reads its initial data off
 // currentUserProvider (seeded below via setUser) and every save in these
@@ -70,6 +71,11 @@ Widget _host(
       ),
     ],
     child: MaterialApp(
+      // Interest chips read their labels from the ARBs now, so the section needs
+      // localizations to build.
+      locale: const Locale('en'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: theme,
       home: EditProfileScreen(
         saveAbout: saveAbout,
