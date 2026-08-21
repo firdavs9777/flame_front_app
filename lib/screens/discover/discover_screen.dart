@@ -7,6 +7,8 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/profile_card.dart';
 import 'package:flame/widgets/action_buttons.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
+import 'package:flame/screens/discover/widgets/deck_states.dart';
+import 'package:flame/core/layout/breakpoints.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -36,7 +38,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     super.dispose();
   }
 
-  void _onSwipe(int previousIndex, int? currentIndex, CardSwiperDirection direction) {
+  void _onSwipe(
+    int previousIndex,
+    int? currentIndex,
+    CardSwiperDirection direction,
+  ) {
     final usersState = ref.read(discoveryProvider);
     final users = usersState.valueOrNull ?? [];
     if (previousIndex >= users.length) return;
@@ -111,10 +117,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                AppTheme.primaryColor,
-                AppTheme.secondaryColor,
-              ],
+              colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
             ),
             borderRadius: BorderRadius.circular(20),
           ),
@@ -132,10 +135,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               const SizedBox(height: 10),
               Text(
                 'You and ${user.name} liked each other',
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 16,
-                ),
+                style: const TextStyle(color: Colors.white70, fontSize: 16),
               ),
               const SizedBox(height: 20),
               CircleAvatar(
@@ -165,7 +165,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         ref.read(swipeProvider.notifier).clearNewMatch();
                         Navigator.pop(context);
                         // Navigate to chat - load conversations first
-                        ref.read(conversationsProvider.notifier).loadConversations(refresh: true);
+                        ref
+                            .read(conversationsProvider.notifier)
+                            .loadConversations(refresh: true);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
@@ -181,6 +183,23 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         ),
       ),
     );
+  }
+
+  void _reload() => ref.read(discoveryProvider.notifier).load(refresh: true);
+
+  void _openFilters() => Navigator.pushNamed(context, '/discover/filters');
+
+  /// Whether the user has narrowed the deck themselves.
+  ///
+  /// Decides between "no one matches these filters" and "you've seen everyone":
+  /// offering to relax filters that are not set would be nonsense.
+  bool get _filtersActive {
+    final user = ref.read(currentUserProvider).valueOrNull;
+    if (user == null) return false;
+    return user.minAgePreference != 18 ||
+        user.maxAgePreference != 50 ||
+        user.interestsFilter.isNotEmpty ||
+        user.lookingFor != Gender.other;
   }
 
   @override
@@ -201,10 +220,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             const SizedBox(width: 8),
             const Text(
               'Flame',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
             ),
           ],
         ),
@@ -212,94 +228,88 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           IconButton(
             icon: const Icon(Icons.tune),
             onPressed: () {
-              Navigator.pushNamed(context, '/discover/filters');
+              _openFilters();
             },
           ),
         ],
       ),
       body: usersState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 60, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                Text('Failed to load profiles', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[600])),
-                const SizedBox(height: 8),
-                Text(
-                  error.toString(),
-                  style: TextStyle(color: Colors.grey[500], fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () {
-                    ref.read(discoveryProvider.notifier).load(refresh: true);
-                  },
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-        ),
+        error: (error, stack) =>
+            DeckError(error: error.toString(), onRetry: _reload),
         data: (users) {
           if (users.isEmpty) {
-            return _buildEmptyState();
+            // Which fact is true matters: one is actionable and one is not.
+            return _filtersActive
+                ? DeckEmptyForFilters(onRelaxFilters: _openFilters)
+                : DeckSeenEveryone(onRefresh: _reload);
           }
           return Stack(
             children: [
               Column(
                 children: [
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: CardSwiper(
-                        controller: _swiperController,
-                        cardsCount: users.length,
-                        numberOfCardsDisplayed: users.length > 2 ? 3 : users.length,
-                        backCardOffset: const Offset(0, 40),
-                        padding: EdgeInsets.zero,
-                        onSwipe: (prev, curr, dir) {
-                          _onSwipe(prev, curr, dir);
-                          return true;
-                        },
-                        onEnd: () {
-                          // Load more when cards run out
-                          ref.read(discoveryProvider.notifier).refill();
-                        },
-                        cardBuilder: (context, index, percentX, percentY) {
-                          // CardSwiper holds its own index; when the deck shrinks
-                          // (Discover now excludes swiped users, so it genuinely
-                          // empties) that index can outrun the list. Render
-                          // nothing rather than throwing RangeError.
-                          if (index < 0 || index >= users.length) {
-                            return const SizedBox.shrink();
-                          }
-                          final user = users[index];
-                          return ProfileCard(
-                            user: user,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ProfileDetailScreen(user: user),
-                                ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        // A full-bleed swipe card on a tablet is absurd; the deck
+                        // stays phone-sized and centres itself.
+                        constraints: const BoxConstraints(
+                          maxWidth: kDeckMaxWidth,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: CardSwiper(
+                            controller: _swiperController,
+                            cardsCount: users.length,
+                            numberOfCardsDisplayed: users.length > 2
+                                ? 3
+                                : users.length,
+                            backCardOffset: const Offset(0, 40),
+                            padding: EdgeInsets.zero,
+                            onSwipe: (prev, curr, dir) {
+                              _onSwipe(prev, curr, dir);
+                              return true;
+                            },
+                            onEnd: () {
+                              // Load more when cards run out
+                              ref.read(discoveryProvider.notifier).refill();
+                            },
+                            cardBuilder: (context, index, percentX, percentY) {
+                              // CardSwiper holds its own index; when the deck shrinks
+                              // (Discover now excludes swiped users, so it genuinely
+                              // empties) that index can outrun the list. Render
+                              // nothing rather than throwing RangeError.
+                              if (index < 0 || index >= users.length) {
+                                return const SizedBox.shrink();
+                              }
+                              final user = users[index];
+                              return ProfileCard(
+                                user: user,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          ProfileDetailScreen(user: user),
+                                    ),
+                                  );
+                                },
                               );
                             },
-                          );
-                        },
+                          ),
+                        ),
                       ),
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 20),
                     child: ActionButtons(
-                      onDislike: () => _swiperController.swipe(CardSwiperDirection.left),
-                      onSuperLike: () => _swiperController.swipe(CardSwiperDirection.top),
-                      onLike: () => _swiperController.swipe(CardSwiperDirection.right),
+                      onDislike: () =>
+                          _swiperController.swipe(CardSwiperDirection.left),
+                      onSuperLike: () =>
+                          _swiperController.swipe(CardSwiperDirection.top),
+                      onLike: () =>
+                          _swiperController.swipe(CardSwiperDirection.right),
                     ),
                   ),
                 ],
@@ -312,45 +322,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             ],
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.people_outline,
-            size: 100,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'No more profiles',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Check back later or adjust your filters',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[500],
-            ),
-          ),
-          const SizedBox(height: 30),
-          ElevatedButton(
-            onPressed: () {
-              ref.read(discoveryProvider.notifier).load(refresh: true);
-            },
-            child: const Text('Refresh'),
-          ),
-        ],
       ),
     );
   }
