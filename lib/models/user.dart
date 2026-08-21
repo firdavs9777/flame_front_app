@@ -1,3 +1,10 @@
+/// Null for a missing, null, or zero distance — see [User.distance].
+double? _parseDistance(Object? raw) {
+  final value = (raw as num?)?.toDouble();
+  if (value == null || value == 0) return null;
+  return value;
+}
+
 class User {
   final String id;
   final String? email;
@@ -9,7 +16,13 @@ class User {
   /// that arrived as a bare URL (no id). Used for delete/reorder by id.
   final List<String> photoIds;
   final String location;
-  final double distance;
+  /// Kilometres to this user, or null when unknown — either side missing a
+  /// location, or this user having turned `showDistance` off.
+  ///
+  /// No formatter here on purpose: rendering it needs localisations and a locale,
+  /// which are a widget's business, not a model's. Callers use
+  /// `formatDistanceAway` from core/format/distance_display.dart.
+  final double? distance;
   final List<String> interests;
   final Gender gender;
   final Gender lookingFor;
@@ -17,6 +30,10 @@ class User {
   final int maxAgePreference;
   final double maxDistancePreference;
   final bool showDistance;
+
+  /// The tokens this user filters Discover by — NOT their own [interests].
+  /// Empty means no interest filter.
+  final List<String> interestsFilter;
   final bool showOnlineStatus;
   final DateTime lastActive;
   final bool isOnline;
@@ -43,7 +60,7 @@ class User {
     required this.photos,
     this.photoIds = const [],
     required this.location,
-    this.distance = 0,
+    this.distance,
     required this.interests,
     required this.gender,
     required this.lookingFor,
@@ -51,6 +68,7 @@ class User {
     this.maxAgePreference = 50,
     this.maxDistancePreference = 50,
     this.showDistance = true,
+    this.interestsFilter = const [],
     this.showOnlineStatus = true,
     required this.lastActive,
     this.isOnline = false,
@@ -131,7 +149,11 @@ class User {
       photos: photoUrls,
       photoIds: photoIdList,
       location: parseLocation(json['location']),
-      distance: (json['distance'] ?? 0).toDouble(),
+      // Zero counts as unknown. A server that has not deployed the real
+      // computation still sends 0, and a genuine 0 km means standing on the exact
+      // same point — so reading it as unknown removes "0 km away" without waiting
+      // for the deploy.
+      distance: _parseDistance(json['distance']),
       interests: List<String>.from(json['interests'] ?? []),
       gender: _parseGender(json['gender']),
       lookingFor: _parseGender(json['looking_for'] ?? json['lookingFor']),
@@ -142,6 +164,8 @@ class User {
               .toDouble(),
       showDistance:
           preferences['show_distance'] ?? preferences['showDistance'] ?? true,
+      interestsFilter: List<String>.from(
+          preferences['interests_filter'] ?? preferences['interestsFilter'] ?? []),
       showOnlineStatus: preferences['show_online_status'] ??
           preferences['showOnlineStatus'] ??
           true,
@@ -189,6 +213,7 @@ class User {
         'min_age': minAgePreference,
         'max_age': maxAgePreference,
         'max_distance': maxDistancePreference,
+        'interests_filter': interestsFilter,
         'show_distance': showDistance,
         'show_online_status': showOnlineStatus,
       },
@@ -217,6 +242,7 @@ class User {
     int? minAgePreference,
     int? maxAgePreference,
     double? maxDistancePreference,
+    List<String>? interestsFilter,
     bool? showDistance,
     bool? showOnlineStatus,
     DateTime? lastActive,
@@ -246,6 +272,7 @@ class User {
       minAgePreference: minAgePreference ?? this.minAgePreference,
       maxAgePreference: maxAgePreference ?? this.maxAgePreference,
       maxDistancePreference: maxDistancePreference ?? this.maxDistancePreference,
+      interestsFilter: interestsFilter ?? this.interestsFilter,
       showDistance: showDistance ?? this.showDistance,
       showOnlineStatus: showOnlineStatus ?? this.showOnlineStatus,
       lastActive: lastActive ?? this.lastActive,
@@ -262,8 +289,6 @@ class User {
   }
 
   String get primaryPhoto => photos.isNotEmpty ? photos.first : '';
-
-  String get distanceText => '${distance.toStringAsFixed(0)} km away';
 
   String get lastActiveText {
     final now = DateTime.now();

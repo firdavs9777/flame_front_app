@@ -55,10 +55,6 @@ class EnvConfig {
   /// either affordance until that changes.
   final bool chatEnabled;
 
-  /// Whether the advanced Discover filters (gender / interests / online-only)
-  /// are shown. Off until the backend actually honors them — today only age +
-  /// distance are applied, so showing the others would be a no-op that lies.
-  final bool advancedFiltersEnabled;
 
   const EnvConfig._(
     this.env,
@@ -70,7 +66,6 @@ class EnvConfig {
     this.facebookSignInEnabled = false,
     this.forgotPasswordEnabled = false,
     this.chatEnabled = false,
-    this.advancedFiltersEnabled = false,
   });
 
   /// Test-only seam for exercising flag combinations that no real environment
@@ -85,8 +80,7 @@ class EnvConfig {
        wsBase = '',
        realtimeEnabled = false,
        forgotPasswordEnabled = false,
-       chatEnabled = false,
-       advancedFiltersEnabled = false;
+       chatEnabled = false;
 
   // For iOS Simulator use `localhost`; for a physical device use the Mac's LAN IP.
   // Switch by passing `--dart-define=LOCAL_HOST=192.168.100.114` at run time,
@@ -126,7 +120,6 @@ class EnvConfig {
     appleSignInEnabled: false,
     facebookSignInEnabled: false,
     forgotPasswordEnabled: false,
-    advancedFiltersEnabled: false,
   );
 
   /// The two shipped presets, exposed so tests can assert each one's flags

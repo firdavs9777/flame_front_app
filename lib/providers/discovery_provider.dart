@@ -1,87 +1,99 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flame/core/i18n/error_strings_for.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/services/discovery_service.dart';
-import 'package:flame/core/i18n/error_strings_for.dart';
 
 final discoveryServiceProvider = Provider<DiscoveryService>((ref) => DiscoveryService());
 
-// Discovery provider with async loading from API
-// Note: Filters are stored in user preferences and applied by the backend automatically
-final discoveryProvider = StateNotifierProvider<DiscoveryNotifier, AsyncValue<List<User>>>((ref) {
+// Filters live in user preferences and are applied by the backend.
+final discoveryProvider =
+    StateNotifierProvider<DiscoveryNotifier, AsyncValue<List<User>>>((ref) {
   return DiscoveryNotifier(ref.watch(discoveryServiceProvider));
 });
 
+/// The swipe deck.
+///
+/// There is no offset. The server excludes everyone already swiped, so the head
+/// of the filtered set is always the next unseen page — which is why [refill]
+/// dedupes rather than paging: the head necessarily re-includes anything already
+/// fetched but not yet swiped.
 class DiscoveryNotifier extends StateNotifier<AsyncValue<List<User>>> {
-  final DiscoveryService _discoveryService;
-  bool _hasMore = true;
-  int _offset = 0;
-  static const int _limit = 10;
+  DiscoveryNotifier(this._service) : super(const AsyncValue.loading());
 
-  DiscoveryNotifier(this._discoveryService) : super(const AsyncValue.loading());
+  final DiscoveryService _service;
+
+  static const int pageSize = 10;
+
+  /// Refill when the deck gets this short. A buffer, not a guarantee: a user
+  /// swiping faster than the round trip can still empty it, which renders as the
+  /// loading state — one reason loading, empty and error must stay distinct.
+  static const int refillThreshold = 3;
+
+  bool _hasMore = true;
+  bool _fetching = false;
 
   bool get hasMore => _hasMore;
 
-  Future<void> loadPotentialMatches({bool refresh = false}) async {
-    if (refresh) {
-      _offset = 0;
-      _hasMore = true;
-      state = const AsyncValue.loading();
+  /// Fetches the head, replacing the deck. Used on first open and on retry.
+  Future<void> load({bool refresh = false}) async {
+    if (refresh) state = const AsyncValue.loading();
+    _fetching = true;
+    final result = await _service.getPotentialMatches(limit: pageSize);
+    _fetching = false;
+
+    if (!mounted) return;
+    if (!result.success || result.data == null) {
+      // Distinct from an empty deck on purpose: an error must never render as
+      // "you have seen everyone".
+      state = AsyncValue.error(
+          ErrorStringsFor.fromString(result.error), StackTrace.current);
+      return;
     }
-
-    final result = await _discoveryService.getPotentialMatches(
-      limit: _limit,
-      offset: _offset,
-    );
-
-    if (result.success && result.data != null) {
-      final discoveryResult = result.data!;
-      _hasMore = discoveryResult.hasMore;
-
-      if (refresh || _offset == 0) {
-        state = AsyncValue.data(discoveryResult.users);
-      } else {
-        final current = state.valueOrNull ?? [];
-        state = AsyncValue.data([...current, ...discoveryResult.users]);
-      }
-      _offset += discoveryResult.users.length;
-    } else {
-      state = AsyncValue.error(ErrorStringsFor.fromString(result.error), StackTrace.current);
-    }
+    _hasMore = result.data!.hasMore;
+    state = AsyncValue.data(result.data!.users);
   }
 
-  Future<void> loadMore() async {
-    if (!_hasMore) return;
+  /// Tops the deck up. Keeps what is already held on failure.
+  Future<void> refill() async {
+    if (_fetching || !_hasMore) return;
+    _fetching = true;
+    final result = await _service.getPotentialMatches(limit: pageSize);
+    _fetching = false;
 
-    final result = await _discoveryService.getPotentialMatches(
-      limit: _limit,
-      offset: _offset,
-    );
+    if (!mounted) return;
+    if (!result.success || result.data == null) return;
 
-    if (result.success && result.data != null) {
-      final discoveryResult = result.data!;
-      _hasMore = discoveryResult.hasMore;
-      final current = state.valueOrNull ?? [];
-      state = AsyncValue.data([...current, ...discoveryResult.users]);
-      _offset += discoveryResult.users.length;
-    }
+    _hasMore = result.data!.hasMore;
+    final held = state.valueOrNull ?? const <User>[];
+    final heldIds = held.map((u) => u.id).toSet();
+    final fresh = result.data!.users.where((u) => !heldIds.contains(u.id));
+    state = AsyncValue.data([...held, ...fresh]);
+  }
+
+  /// Applies changed filters. Cannot merge — the cards already held were chosen
+  /// under the old predicate, so keeping them would show results the new filters
+  /// exclude, which reads as the filter not working.
+  Future<void> clearAndReload() async {
+    state = const AsyncValue.data(<User>[]);
+    _hasMore = true;
+    await load(refresh: true);
   }
 
   void removeUser(String userId) {
-    final current = state.valueOrNull ?? [];
+    final current = state.valueOrNull ?? const <User>[];
     state = AsyncValue.data(current.where((u) => u.id != userId).toList());
   }
 
   void undoRemove(User user) {
-    final current = state.valueOrNull ?? [];
-    // Add user back to the front
+    final current = state.valueOrNull ?? const <User>[];
     state = AsyncValue.data([user, ...current]);
   }
 
   User? get currentUser {
-    final users = state.valueOrNull ?? [];
-    return users.isNotEmpty ? users.first : null;
+    final users = state.valueOrNull ?? const <User>[];
+    return users.isEmpty ? null : users.first;
   }
 }
 
-// Current card index for swipe stack
+// Current card index for the swipe stack.
 final currentCardIndexProvider = StateProvider<int>((ref) => 0);

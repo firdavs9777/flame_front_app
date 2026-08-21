@@ -343,5 +343,168 @@
   "chatDelete": "Delete",
   "@chatDelete": {
     "description": "Message long-press action"
+  },
+  "interestTravel": "Travel",
+  "@interestTravel": {
+    "description": "Interest label: Travel"
+  },
+  "interestMusic": "Music",
+  "@interestMusic": {
+    "description": "Interest label: Music"
+  },
+  "interestMovies": "Movies",
+  "@interestMovies": {
+    "description": "Interest label: Movies"
+  },
+  "interestFood": "Food",
+  "@interestFood": {
+    "description": "Interest label: Food"
+  },
+  "interestFitness": "Fitness",
+  "@interestFitness": {
+    "description": "Interest label: Fitness"
+  },
+  "interestReading": "Reading",
+  "@interestReading": {
+    "description": "Interest label: Reading"
+  },
+  "interestGaming": "Gaming",
+  "@interestGaming": {
+    "description": "Interest label: Gaming"
+  },
+  "interestArt": "Art",
+  "@interestArt": {
+    "description": "Interest label: Art"
+  },
+  "interestPhotography": "Photography",
+  "@interestPhotography": {
+    "description": "Interest label: Photography"
+  },
+  "interestSports": "Sports",
+  "@interestSports": {
+    "description": "Interest label: Sports"
+  },
+  "interestCooking": "Cooking",
+  "@interestCooking": {
+    "description": "Interest label: Cooking"
+  },
+  "interestNature": "Nature",
+  "@interestNature": {
+    "description": "Interest label: Nature"
+  },
+  "interestCoffee": "Coffee",
+  "@interestCoffee": {
+    "description": "Interest label: Coffee"
+  },
+  "interestWine": "Wine",
+  "@interestWine": {
+    "description": "Interest label: Wine"
+  },
+  "interestDancing": "Dancing",
+  "@interestDancing": {
+    "description": "Interest label: Dancing"
+  },
+  "interestYoga": "Yoga",
+  "@interestYoga": {
+    "description": "Interest label: Yoga"
+  },
+  "interestPets": "Pets",
+  "@interestPets": {
+    "description": "Interest label: Pets"
+  },
+  "interestTech": "Tech",
+  "@interestTech": {
+    "description": "Interest label: Tech"
+  },
+  "interestHiking": "Hiking",
+  "@interestHiking": {
+    "description": "Interest label: Hiking"
+  },
+  "distanceAwayKm": "{value} km away",
+  "@distanceAwayKm": {
+    "description": "Distance to another user",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceAwayMiles": "{value} mi away",
+  "@distanceAwayMiles": {
+    "description": "Distance to another user",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "filterTitle": "Discovery filters",
+  "@filterTitle": {
+    "description": "Discover filter / deck state"
+  },
+  "filterReset": "Reset",
+  "@filterReset": {
+    "description": "Discover filter / deck state"
+  },
+  "filterApply": "Apply filters",
+  "@filterApply": {
+    "description": "Discover filter / deck state"
+  },
+  "filterAgeRange": "Age range",
+  "@filterAgeRange": {
+    "description": "Discover filter / deck state"
+  },
+  "filterDistance": "Maximum distance",
+  "@filterDistance": {
+    "description": "Discover filter / deck state"
+  },
+  "filterDistanceNeedsLocation": "Allow location access to filter by distance",
+  "@filterDistanceNeedsLocation": {
+    "description": "Discover filter / deck state"
+  },
+  "filterShowMe": "Show me",
+  "@filterShowMe": {
+    "description": "Discover filter / deck state"
+  },
+  "filterEveryone": "Everyone",
+  "@filterEveryone": {
+    "description": "Discover filter / deck state"
+  },
+  "filterInterests": "Interests",
+  "@filterInterests": {
+    "description": "Discover filter / deck state"
+  },
+  "filterInterestsHint": "Pick up to {count}",
+  "@filterInterestsHint": {
+    "description": "Discover filter / deck state",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "filterSaveFailed": "Couldn't save your filters",
+  "@filterSaveFailed": {
+    "description": "Discover filter / deck state"
+  },
+  "deckNoMatches": "No one matches these filters",
+  "@deckNoMatches": {
+    "description": "Discover filter / deck state"
+  },
+  "deckRelaxFilters": "Relax filters",
+  "@deckRelaxFilters": {
+    "description": "Discover filter / deck state"
+  },
+  "deckSeenEveryone": "You've seen everyone nearby",
+  "@deckSeenEveryone": {
+    "description": "Discover filter / deck state"
+  },
+  "deckRefresh": "Refresh",
+  "@deckRefresh": {
+    "description": "Discover filter / deck state"
+  },
+  "deckLoadFailed": "Couldn't load profiles",
+  "@deckLoadFailed": {
+    "description": "Discover filter / deck state"
   }
 }

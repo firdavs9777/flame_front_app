@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
-import 'package:flame/config/env.dart';
+import 'package:flame/widgets/profile_card.dart';
+import 'package:flame/widgets/action_buttons.dart';
+import 'package:flame/screens/profile/profile_detail_screen.dart';
+import 'package:flame/screens/discover/widgets/deck_states.dart';
+import 'package:flame/core/layout/breakpoints.dart';
+import 'package:flame/theme/app_tokens.dart';
+import 'package:flame/providers/location_provider.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -13,304 +20,320 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 }
 
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
-  bool _isSaving = false;
+  final CardSwiperController _swiperController = CardSwiperController();
+  bool _initialized = false;
 
-  Future<void> _applyFilters() async {
-    setState(() => _isSaving = true);
-
-    // Save preferences to API
-    final success = await ref.read(filterProvider.notifier).savePreferencesToApi();
-
-    setState(() => _isSaving = false);
-
-    if (mounted) {
-      if (success) {
-        // Refresh discovery with new filters
-        ref.read(discoveryProvider.notifier).loadPotentialMatches(refresh: true);
-        Navigator.pop(context);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to save preferences. Please try again.'),
-            backgroundColor: Colors.red[400],
-          ),
-        );
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_initialized) {
+        _initialized = true;
+        // Not awaited, and deliberately started before the deck loads: location
+        // is enrichment, so the deck must never wait on it. refreshOnce no-ops
+        // after the first call in a session.
+        ref.read(locationRefresherProvider).refreshOnce();
+        ref.read(discoveryProvider.notifier).load(refresh: true);
       }
+    });
+  }
+
+  @override
+  void dispose() {
+    _swiperController.dispose();
+    super.dispose();
+  }
+
+  void _onSwipe(
+    int previousIndex,
+    int? currentIndex,
+    CardSwiperDirection direction,
+  ) {
+    final usersState = ref.read(discoveryProvider);
+    final users = usersState.valueOrNull ?? [];
+    if (previousIndex >= users.length) return;
+
+    final user = users[previousIndex];
+
+    if (direction == CardSwiperDirection.right) {
+      _handleLike(user);
+    } else if (direction == CardSwiperDirection.left) {
+      _handleDislike(user);
+    } else if (direction == CardSwiperDirection.top) {
+      _handleSuperLike(user);
+    }
+
+    // Top up before the deck visibly empties. onEnd alone fires only once the
+    // last card is gone, which shows the user a loading state they did not need
+    // to see. `refill` no-ops while a fetch is in flight or the server has said
+    // there is no more, so calling it on every swipe is cheap.
+    final remaining = previousIndex >= 0 ? users.length - previousIndex - 1 : 0;
+    if (remaining <= DiscoveryNotifier.refillThreshold) {
+      ref.read(discoveryProvider.notifier).refill();
     }
   }
 
+  Future<void> _handleLike(User user) async {
+    final error = await ref.read(swipeProvider.notifier).like(user);
+    if (error != null) {
+      _showSwipeError(error);
+      return;
+    }
+    final swipeState = ref.read(swipeProvider);
+    if (swipeState.newMatch != null) {
+      _showMatchDialog(user, swipeState.newMatch!);
+    }
+  }
+
+  Future<void> _handleDislike(User user) async {
+    final error = await ref.read(swipeProvider.notifier).pass(user);
+    if (error != null) {
+      _showSwipeError(error);
+    }
+  }
+
+  Future<void> _handleSuperLike(User user) async {
+    final error = await ref.read(swipeProvider.notifier).superLike(user);
+    if (error != null) {
+      _showSwipeError(error);
+      return;
+    }
+    final swipeState = ref.read(swipeProvider);
+    if (swipeState.newMatch != null) {
+      _showMatchDialog(user, swipeState.newMatch!);
+    }
+  }
+
+  void _showSwipeError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red[400]),
+    );
+  }
+
+  void _showMatchDialog(User user, Match match) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "It's a Match!",
+                style: TextStyle(
+                  color: context.onOverlay,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'You and ${user.name} liked each other',
+                style: TextStyle(
+                  color: context.onOverlay.withValues(alpha: 0.7),
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 20),
+              CircleAvatar(
+                radius: 50,
+                backgroundImage: NetworkImage(user.primaryPhoto),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Flexible(
+                    child: TextButton(
+                      onPressed: () {
+                        ref.read(swipeProvider.notifier).clearNewMatch();
+                        Navigator.pop(context);
+                      },
+                      child: Text(
+                        'Keep Swiping',
+                        style: TextStyle(
+                          color: context.onOverlay.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        ref.read(swipeProvider.notifier).clearNewMatch();
+                        Navigator.pop(context);
+                        // Navigate to chat - load conversations first
+                        ref
+                            .read(conversationsProvider.notifier)
+                            .loadConversations(refresh: true);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.onOverlay,
+                        foregroundColor: AppTheme.primaryColor,
+                      ),
+                      child: const Text('Send Message'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _reload() => ref.read(discoveryProvider.notifier).load(refresh: true);
+
+  void _openFilters() => Navigator.pushNamed(context, '/discover/filters');
+
+  /// Whether the user has narrowed the deck themselves.
+  ///
+  /// Decides between "no one matches these filters" and "you've seen everyone":
+  /// offering to relax filters that are not set would be nonsense.
+  bool get _filtersActive {
+    final user = ref.read(currentUserProvider).valueOrNull;
+    if (user == null) return false;
+    return user.minAgePreference != 18 ||
+        user.maxAgePreference != 50 ||
+        user.interestsFilter.isNotEmpty ||
+        user.lookingFor != Gender.other;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final filters = ref.watch(filterProvider);
+    final usersState = ref.watch(discoveryProvider);
+    final swipeState = ref.watch(swipeProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Discovery Settings'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              ref.read(filterProvider.notifier).reset();
-            },
-            child: Text(
-              'Reset',
-              style: TextStyle(color: AppTheme.primaryColor),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.local_fire_department,
+              color: AppTheme.primaryColor,
+              size: 32,
             ),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          // Age range
-          _buildSectionTitle('Age Range'),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${filters.minAge} - ${filters.maxAge}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          RangeSlider(
-            values: RangeValues(
-              filters.minAge.toDouble(),
-              filters.maxAge.toDouble(),
-            ),
-            min: 18,
-            max: 65,
-            divisions: 47,
-            activeColor: AppTheme.primaryColor,
-            labels: RangeLabels(
-              filters.minAge.toString(),
-              filters.maxAge.toString(),
-            ),
-            onChanged: (values) {
-              ref.read(filterProvider.notifier).setAgeRange(
-                    values.start.toInt(),
-                    values.end.toInt(),
-                  );
-            },
-          ),
-          const SizedBox(height: 24),
-
-          // Distance
-          _buildSectionTitle('Maximum Distance'),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${filters.maxDistance.toInt()} km',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          Slider(
-            value: filters.maxDistance,
-            min: 1,
-            max: 100,
-            divisions: 99,
-            activeColor: AppTheme.primaryColor,
-            label: '${filters.maxDistance.toInt()} km',
-            onChanged: (value) {
-              ref.read(filterProvider.notifier).setMaxDistance(value);
-            },
-          ),
-          const SizedBox(height: 24),
-
-          // Gender / online-only / interests filters are gated off until the
-          // backend honors them (today savePreferencesToApi only applies age +
-          // distance, so showing these would be a no-op). Flip
-          // EnvConfig.advancedFiltersEnabled once the backend filters on them.
-          if (EnvConfig.current.advancedFiltersEnabled) ...[
-            // Looking for
-            _buildSectionTitle('Show Me'),
-            const SizedBox(height: 12),
-            _GenderSelector(
-              selectedGender: filters.genderPreference,
-              onChanged: (gender) {
-                ref.read(filterProvider.notifier).setGenderPreference(gender);
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // Online only
-            _buildSectionTitle('Filters'),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              title: const Text('Only show online users'),
-              subtitle: const Text('See people who are currently active'),
-              value: filters.onlineOnly,
-              activeColor: AppTheme.primaryColor,
-              contentPadding: EdgeInsets.zero,
-              onChanged: (_) {
-                ref.read(filterProvider.notifier).toggleOnlineOnly();
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // Interests filter
-            _buildSectionTitle('Interests'),
-            const SizedBox(height: 12),
-            _InterestsSelector(
-              selectedInterests: filters.interests,
-              onChanged: (interests) {
-                ref.read(filterProvider.notifier).setInterests(interests);
-              },
+            const SizedBox(width: 8),
+            const Text(
+              'Flame',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
             ),
           ],
-          const SizedBox(height: 40),
-
-          // Apply button
-          ElevatedButton(
-            onPressed: _isSaving ? null : _applyFilters,
-            child: _isSaving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text('Apply Filters'),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.tune),
+            onPressed: () {
+              _openFilters();
+            },
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-}
-
-class _GenderSelector extends StatelessWidget {
-  final Gender? selectedGender;
-  final ValueChanged<Gender?> onChanged;
-
-  const _GenderSelector({
-    required this.selectedGender,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        _buildOption(null, 'Everyone'),
-        ...Gender.values.map((g) => _buildOption(g, g.displayName)),
-      ],
-    );
-  }
-
-  Widget _buildOption(Gender? gender, String label) {
-    final isSelected = selectedGender == gender;
-    return GestureDetector(
-      onTap: () => onChanged(gender),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor : Colors.grey[200],
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _InterestsSelector extends StatelessWidget {
-  final List<String> selectedInterests;
-  final ValueChanged<List<String>> onChanged;
-
-  const _InterestsSelector({
-    required this.selectedInterests,
-    required this.onChanged,
-  });
-
-  static const allInterests = [
-    'Travel',
-    'Music',
-    'Movies',
-    'Sports',
-    'Fitness',
-    'Food',
-    'Art',
-    'Gaming',
-    'Reading',
-    'Photography',
-    'Coffee',
-    'Hiking',
-    'Dancing',
-    'Cooking',
-    'Yoga',
-    'Nature',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: allInterests.map((interest) {
-        final isSelected = selectedInterests.contains(interest);
-        return GestureDetector(
-          onTap: () {
-            final newList = List<String>.from(selectedInterests);
-            if (isSelected) {
-              newList.remove(interest);
-            } else {
-              newList.add(interest);
-            }
-            onChanged(newList);
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppTheme.primaryColor.withValues(alpha: 0.1)
-                  : Colors.grey[100],
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected
-                    ? AppTheme.primaryColor
-                    : Colors.grey[300]!,
-                width: isSelected ? 2 : 1,
+      body: usersState.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) =>
+            DeckError(error: error.toString(), onRetry: _reload),
+        data: (users) {
+          if (users.isEmpty) {
+            // Which fact is true matters: one is actionable and one is not.
+            return _filtersActive
+                ? DeckEmptyForFilters(onRelaxFilters: _openFilters)
+                : DeckSeenEveryone(onRefresh: _reload);
+          }
+          return Stack(
+            children: [
+              Column(
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        // A full-bleed swipe card on a tablet is absurd; the deck
+                        // stays phone-sized and centres itself.
+                        constraints: const BoxConstraints(
+                          maxWidth: kDeckMaxWidth,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: CardSwiper(
+                            controller: _swiperController,
+                            cardsCount: users.length,
+                            numberOfCardsDisplayed: users.length > 2
+                                ? 3
+                                : users.length,
+                            backCardOffset: const Offset(0, 40),
+                            padding: EdgeInsets.zero,
+                            onSwipe: (prev, curr, dir) {
+                              _onSwipe(prev, curr, dir);
+                              return true;
+                            },
+                            onEnd: () {
+                              // Load more when cards run out
+                              ref.read(discoveryProvider.notifier).refill();
+                            },
+                            cardBuilder: (context, index, percentX, percentY) {
+                              // CardSwiper holds its own index; when the deck shrinks
+                              // (Discover now excludes swiped users, so it genuinely
+                              // empties) that index can outrun the list. Render
+                              // nothing rather than throwing RangeError.
+                              if (index < 0 || index >= users.length) {
+                                return const SizedBox.shrink();
+                              }
+                              final user = users[index];
+                              return ProfileCard(
+                                user: user,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          ProfileDetailScreen(user: user),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: ActionButtons(
+                      onDislike: () =>
+                          _swiperController.swipe(CardSwiperDirection.left),
+                      onSuperLike: () =>
+                          _swiperController.swipe(CardSwiperDirection.top),
+                      onLike: () =>
+                          _swiperController.swipe(CardSwiperDirection.right),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            child: Text(
-              interest,
-              style: TextStyle(
-                color: isSelected ? AppTheme.primaryColor : Colors.black87,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
+              if (swipeState.isLoading)
+                Container(
+                  color: context.viewerScrim.withValues(alpha: 0.15),
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

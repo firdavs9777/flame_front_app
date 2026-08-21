@@ -9,6 +9,8 @@ import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/core/format/distance_format.dart';
 import 'package:flame/core/date/age.dart';
+import 'package:flame/core/interests/interest_catalogue.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 /// Saves the About section (name, age, bio) — nothing else. The signature is
 /// the independence guarantee: this function has no parameter through which
@@ -673,11 +675,13 @@ class _InterestsSection extends StatefulWidget {
 }
 
 class _InterestsSectionState extends State<_InterestsSection> {
-  static const _allInterests = [
-    'Travel', 'Music', 'Movies', 'Sports', 'Fitness', 'Food',
-    'Art', 'Gaming', 'Reading', 'Photography', 'Coffee', 'Hiking',
-    'Dancing', 'Cooking', 'Yoga', 'Nature',
-  ];
+  /// The shared catalogue, not a third local copy.
+  ///
+  /// This was the third hardcoded interest list in the app, and the most
+  /// consequential: it writes `user.interests`, so anything it offered that the
+  /// discovery filter did not know about could never be matched, and anything it
+  /// omitted could never be picked.
+  static const _allInterests = kInterests;
 
   /// The route's own bounds on `interests`.
   static const _minInterests = 1;
@@ -794,14 +798,14 @@ class _InterestsSectionState extends State<_InterestsSection> {
       spacing: 8,
       runSpacing: 8,
       children: _allInterests.map((interest) {
-        final isSelected = _selectedInterests.contains(interest);
+        final isSelected = _selectedInterests.contains(interest.token);
         return GestureDetector(
           onTap: () {
             setState(() {
               if (isSelected) {
-                _selectedInterests.remove(interest);
+                _selectedInterests.remove(interest.token);
               } else {
-                _selectedInterests.add(interest);
+                _selectedInterests.add(interest.token);
               }
               // Re-evaluate a message already on screen so it tracks the
               // selection instead of going stale, but don't surface one before
@@ -822,7 +826,7 @@ class _InterestsSectionState extends State<_InterestsSection> {
               ),
             ),
             child: Text(
-              interest,
+              interest.label(context.l10n),
               style: TextStyle(
                 color: isSelected ? AppTheme.primaryColor : context.onSurface,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,

@@ -8,7 +8,7 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'chat/matches_screen.dart';
-import 'home/home_screen.dart';
+import 'discover/discover_screen.dart';
 import 'profile/my_profile_screen.dart';
 import 'settings/settings_screen.dart';
 
@@ -27,7 +27,7 @@ class _MainShellState extends ConsumerState<MainShell>
 
   // Create screens once to avoid GlobalKey conflicts
   late final List<Widget> _screens = [
-    const HomeScreen(),
+    const DiscoverScreen(),
     if (EnvConfig.current.chatEnabled) const MatchesScreen(),
     const MyProfileScreen(),
     const SettingsScreen(),

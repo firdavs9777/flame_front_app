@@ -14,6 +14,7 @@ import 'package:flame/theme/app_theme.dart';
 // token references, not literals. This test pins onOverlay to a value that
 // does not move when onPrimary does.
 void main() {
+  _discoverTokenResolution();
   _chatTokenResolution();
   Future<Map<String, Color>> readTokens(
     WidgetTester tester,
@@ -154,5 +155,41 @@ void _chatTokenResolution() {
       expect(scheme.onPrimary, isNot(AppColors.readReceipt),
           reason: 'a read tick must be tellable from a delivered one ($label)');
     }
+  });
+}
+
+
+// Appended by the Discover sweep. Banning literals proves nothing about what the
+// replacement resolves to — that is how context.fill once shipped equal to
+// context.surface and made six edit-profile fields invisible.
+void _discoverTokenResolution() {
+  test('Discover tokens resolve to distinguishable colours in both themes', () {
+    for (final theme in [AppTheme.lightTheme, AppTheme.darkTheme]) {
+      final scheme = theme.colorScheme;
+      final label = theme.brightness.name;
+
+      expect(scheme.surfaceContainerHighest, isNot(scheme.surface),
+          reason: 'an interest chip sits on the sheet: fill must differ from '
+              'surface ($label)');
+      expect(scheme.onSurfaceVariant, isNot(scheme.onSurface),
+          reason: 'a filter hint must read as quieter than its label ($label)');
+      expect(theme.dividerTheme.color, isNot(scheme.surfaceContainerHighest),
+          reason: 'an unselected chip border is drawn on a fill ($label)');
+    }
+  });
+
+  test('overlay chrome is legible against the scrim it sits on', () {
+    // profile_card draws text over a user photo behind a scrim. If these two ever
+    // resolved to the same colour the card would go blank, and no literal-banning
+    // lint could see it.
+    expect(AppColors.white, isNot(AppColors.black));
+  });
+
+  test('fixed accents on a photo stay distinct from the scrim under them', () {
+    // verifiedBadge and superLike sit on a user photo behind a scrim rather than
+    // on a theme surface, which is why they are constants and not tokens. What
+    // matters is that they are not the scrim.
+    expect(AppColors.verifiedBadge, isNot(AppColors.black));
+    expect(AppColors.superLike, isNot(AppColors.black));
   });
 }

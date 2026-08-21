@@ -100,6 +100,7 @@ class UserService {
     double? maxDistance,
     bool? showDistance,
     bool? showOnlineStatus,
+    List<String>? interestsFilter,
   }) async {
     final body = <String, dynamic>{};
     if (minAge != null) body['min_age'] = minAge;
@@ -107,6 +108,7 @@ class UserService {
     if (maxDistance != null) body['max_distance'] = maxDistance;
     if (showDistance != null) body['show_distance'] = showDistance;
     if (showOnlineStatus != null) body['show_online_status'] = showOnlineStatus;
+    if (interestsFilter != null) body['interests_filter'] = interestsFilter;
 
     final response = await _apiClient.patch('/users/me/preferences', body: body);
 

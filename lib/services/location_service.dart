@@ -90,20 +90,41 @@ class LocationResult {
   final Position? position;
   final String? error;
 
+  /// Set only by [LocationResult.successAt], for callers that have coordinates
+  /// but no Position.
+  final double? _latitude;
+  final double? _longitude;
+
   LocationResult._({
     required this.success,
     this.position,
     this.error,
-  });
+    double? latitude,
+    double? longitude,
+  })  : _latitude = latitude,
+        _longitude = longitude;
 
   factory LocationResult.success(Position position) {
     return LocationResult._(success: true, position: position);
+  }
+
+  /// Coordinates without a Position.
+  ///
+  /// A Position cannot be constructed in a unit test without a platform channel,
+  /// so a fake location source has no way to report success through
+  /// [LocationResult.success]. Callers that only need the pair use this.
+  factory LocationResult.successAt(double latitude, double longitude) {
+    return LocationResult._(
+      success: true,
+      latitude: latitude,
+      longitude: longitude,
+    );
   }
 
   factory LocationResult.failure(String error) {
     return LocationResult._(success: false, error: error);
   }
 
-  double? get latitude => position?.latitude;
-  double? get longitude => position?.longitude;
+  double? get latitude => position?.latitude ?? _latitude;
+  double? get longitude => position?.longitude ?? _longitude;
 }

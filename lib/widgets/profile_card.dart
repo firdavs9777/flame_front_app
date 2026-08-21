@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/smart_image.dart';
+import 'package:flame/core/format/distance_display.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/theme/app_tokens.dart';
 
 class ProfileCard extends StatefulWidget {
   final User user;
   final VoidCallback? onTap;
 
-  const ProfileCard({
-    super.key,
-    required this.user,
-    this.onTap,
-  });
+  const ProfileCard({super.key, required this.user, this.onTap});
 
   @override
   State<ProfileCard> createState() => _ProfileCardState();
@@ -34,6 +33,17 @@ class _ProfileCardState extends State<ProfileCard> {
 
   @override
   Widget build(BuildContext context) {
+    // Formatted here rather than on the model: rendering a distance needs
+    // localisations and a locale, which are a widget's business.
+    final km = widget.user.distance;
+    final distanceAway = km == null
+        ? null
+        : formatDistanceAway(
+            km,
+            context.l10n,
+            Localizations.localeOf(context).toString(),
+          );
+
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
@@ -41,7 +51,7 @@ class _ProfileCardState extends State<ProfileCard> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
+              color: context.viewerScrim.withValues(alpha: 0.2),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -64,24 +74,35 @@ class _ProfileCardState extends State<ProfileCard> {
                 },
                 child: widget.user.photos.isEmpty
                     ? Container(
-                        color: Colors.grey[300],
-                        child: const Center(
-                          child: Icon(Icons.person, size: 100, color: Colors.grey),
+                        color: context.fill,
+                        child: Center(
+                          child: Icon(
+                            Icons.person,
+                            size: 100,
+                            color: context.secondaryText,
+                          ),
                         ),
                       )
                     : SmartImage(
-                        imageSource: widget.user.photos[
-                            _currentPhotoIndex.clamp(0, widget.user.photos.length - 1)],
+                        imageSource:
+                            widget.user.photos[_currentPhotoIndex.clamp(
+                              0,
+                              widget.user.photos.length - 1,
+                            )],
                         fit: BoxFit.cover,
                         placeholder: Container(
-                          color: Colors.grey[300],
+                          color: context.fill,
                           child: const Center(
                             child: CircularProgressIndicator(),
                           ),
                         ),
                         errorWidget: Container(
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.person, size: 100, color: Colors.grey),
+                          color: context.fill,
+                          child: Icon(
+                            Icons.person,
+                            size: 100,
+                            color: context.secondaryText,
+                          ),
                         ),
                       ),
               ),
@@ -102,8 +123,8 @@ class _ProfileCardState extends State<ProfileCard> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(2),
                             color: index == _currentPhotoIndex
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.4),
+                                ? context.onOverlay
+                                : context.onOverlay.withValues(alpha: 0.4),
                           ),
                         ),
                       ),
@@ -117,20 +138,23 @@ class _ProfileCardState extends State<ProfileCard> {
                   top: 20,
                   right: 20,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.successColor,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.circle, size: 8, color: Colors.white),
+                        Icon(Icons.circle, size: 8, color: context.onOverlay),
                         SizedBox(width: 5),
                         Text(
                           'Online',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: context.onOverlay,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -153,7 +177,7 @@ class _ProfileCardState extends State<ProfileCard> {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withValues(alpha: 0.8),
+                        context.viewerScrim.withValues(alpha: 0.8),
                       ],
                     ),
                   ),
@@ -172,8 +196,8 @@ class _ProfileCardState extends State<ProfileCard> {
                       children: [
                         Text(
                           '${widget.user.name}, ${widget.user.age}',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: context.onOverlay,
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                           ),
@@ -181,36 +205,40 @@ class _ProfileCardState extends State<ProfileCard> {
                         const SizedBox(width: 8),
                         const Icon(
                           Icons.verified,
-                          color: Colors.blue,
+                          color: AppColors.verifiedBadge,
                           size: 24,
                         ),
                       ],
                     ),
                     const SizedBox(height: 5),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on,
-                          color: Colors.white70,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          widget.user.distanceText,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
+                    // Omitted entirely when there is no distance to show. The
+                    // old code could only render a number, which is why every
+                    // card said "0 km away".
+                    if (distanceAway != null) ...[
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            color: context.onOverlay.withValues(alpha: 0.7),
+                            size: 16,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              distanceAway,
+                              style: TextStyle(
+                                color: context.onOverlay.withValues(alpha: 0.7),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                     Text(
                       widget.user.bio,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: context.onOverlay, fontSize: 14),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -225,13 +253,13 @@ class _ProfileCardState extends State<ProfileCard> {
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: context.onOverlay.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             interest,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: context.onOverlay,
                               fontSize: 12,
                             ),
                           ),

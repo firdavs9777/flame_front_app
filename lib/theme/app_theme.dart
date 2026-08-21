@@ -63,6 +63,10 @@ class AppColors {
   /// `// Handle super like`). Its colour is the least of its problems; that
   /// belongs to the swipe surface, not to this sweep.
   static const Color superLike = Color(0xFF2196F3);
+
+  /// The verified checkmark on a profile card. Sits on a user photo, not on a
+  /// theme surface, so it is fixed in both themes like [readReceipt].
+  static const Color verifiedBadge = Color(0xFF2196F3);
   static const Color gray900 = Color(0xFF2C3E50);
   static const Color gray800 = Color(0xFF34495E);
   static const Color gray700 = Color(0xFF5D6D7E);
