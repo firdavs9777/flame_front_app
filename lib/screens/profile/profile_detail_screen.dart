@@ -6,17 +6,30 @@ import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/widgets/report_block_menu.dart';
 import 'package:flame/core/format/distance_display.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flame/providers/swipe_provider.dart';
+import 'package:flame/screens/settings/widgets/settings_snackbar.dart';
 
-class ProfileDetailScreen extends StatefulWidget {
+class ProfileDetailScreen extends ConsumerStatefulWidget {
   final User user;
 
-  const ProfileDetailScreen({super.key, required this.user});
+  /// True when the viewer is looking at their own profile as others see it.
+  ///
+  /// Hides like, super-like and report: none of them are things you can do to
+  /// yourself. Defaults false, so every existing call site is unchanged.
+  final bool isPreview;
+
+  const ProfileDetailScreen({
+    super.key,
+    required this.user,
+    this.isPreview = false,
+  });
 
   @override
-  State<ProfileDetailScreen> createState() => _ProfileDetailScreenState();
+  ConsumerState<ProfileDetailScreen> createState() => _ProfileDetailScreenState();
 }
 
-class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
+class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -51,10 +64,12 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
-              ReportBlockMenu(
-                userId: widget.user.id,
-                userName: widget.user.name,
-              ),
+              // You cannot report or block yourself.
+              if (!widget.isPreview)
+                ReportBlockMenu(
+                  userId: widget.user.id,
+                  userName: widget.user.name,
+                ),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
@@ -248,7 +263,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           ),
         ],
       ),
-      bottomSheet: Container(
+      bottomSheet: widget.isPreview ? null : Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: context.surface,
@@ -272,24 +287,41 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               _buildActionButton(
                 icon: Icons.star,
                 color: AppColors.superLike,
-                onTap: () {
-                  Navigator.pop(context);
-                  // Handle super like
-                },
+                onTap: _superLike,
               ),
               _buildActionButton(
                 icon: Icons.favorite,
                 color: AppTheme.successColor,
-                onTap: () {
-                  Navigator.pop(context);
-                  // Handle like
-                },
+                onTap: _like,
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// Likes this profile through the same notifier the deck uses, so a like from a
+  /// profile and a like from a swipe are the same operation.
+  ///
+  /// Deliberately does NOT call discoveryProvider.removeUser: swipeProvider.like
+  /// already does that internally, and a second call would be a no-op today and a
+  /// bug the moment that provider changes.
+  Future<void> _like() => _swipe(
+      (notifier) => notifier.like(widget.user));
+
+  Future<void> _superLike() => _swipe(
+      (notifier) => notifier.superLike(widget.user));
+
+  Future<void> _swipe(Future<String?> Function(SwipeNotifier) action) async {
+    final error = await action(ref.read(swipeProvider.notifier));
+    if (!mounted) return;
+    if (error != null) {
+      showSettingsSnackBar(context,
+          message: error, type: SettingsSnackBarType.error);
+      return;
+    }
+    Navigator.pop(context);
   }
 
   Widget _buildActionButton({
