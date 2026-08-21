@@ -34,6 +34,7 @@ class _RecordingUserService extends UserService {
     double? maxDistance,
     bool? showDistance,
     bool? showOnlineStatus,
+    List<String>? interestsFilter,
   }) async {
     preferenceCalls++;
     lastShowOnlineStatus = showOnlineStatus;

@@ -3,36 +3,28 @@ import 'package:flame/services/api_client.dart';
 import 'package:flame/services/user_service.dart';
 
 class DiscoveryService {
-  final ApiClient _apiClient = ApiClient();
+  DiscoveryService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
-  // Get potential matches for discovery
-  // Note: Filters (min_age, max_age, max_distance) are stored in user preferences
-  // and automatically applied by the backend
-  Future<ServiceResult<DiscoveryResult>> getPotentialMatches({
-    int limit = 10,
-    int offset = 0,
-  }) async {
-    final queryParams = <String, String>{
-      'limit': limit.toString(),
-      'offset': offset.toString(),
-    };
+  final ApiClient _apiClient;
 
+  /// The next unseen profiles.
+  ///
+  /// Sends no offset. The server excludes everyone already swiped, so the head of
+  /// the filtered set IS the next page — and paging it with an offset made the
+  /// deck step over profiles as that excluded set grew. Filters live in user
+  /// preferences and are applied server-side.
+  Future<ServiceResult<DiscoveryResult>> getPotentialMatches({int limit = 10}) async {
     final response = await _apiClient.get(
       '/discover',
-      queryParams: queryParams,
+      queryParams: {'limit': limit.toString()},
     );
 
     if (response.success && response.data != null) {
       final usersData = response.data['users'] as List? ?? [];
-      final users = usersData.map((u) => User.fromJson(u)).toList();
-
       final pagination = response.data['pagination'] as Map<String, dynamic>? ?? {};
 
       return ServiceResult.success(DiscoveryResult(
-        users: users,
-        total: pagination['total'] ?? users.length,
-        limit: pagination['limit'] ?? limit,
-        offset: pagination['offset'] ?? offset,
+        users: usersData.map((u) => User.fromJson(u)).toList(),
         hasMore: pagination['has_more'] ?? false,
       ));
     }
@@ -41,18 +33,13 @@ class DiscoveryService {
   }
 }
 
+/// `total` and `offset` are deliberately absent: both existed only to serve
+/// offset paging, the head path does not compute them, and keeping them as
+/// `?? users.length` fallbacks would let a caller read a plausible-looking number
+/// that means nothing.
 class DiscoveryResult {
-  final List<User> users;
-  final int total;
-  final int limit;
-  final int offset;
-  final bool hasMore;
+  const DiscoveryResult({required this.users, required this.hasMore});
 
-  DiscoveryResult({
-    required this.users,
-    required this.total,
-    required this.limit,
-    required this.offset,
-    required this.hasMore,
-  });
+  final List<User> users;
+  final bool hasMore;
 }
