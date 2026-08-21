@@ -10,6 +10,7 @@ import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/screens/discover/widgets/deck_states.dart';
 import 'package:flame/core/layout/breakpoints.dart';
 import 'package:flame/theme/app_tokens.dart';
+import 'package:flame/providers/location_provider.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -28,6 +29,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_initialized) {
         _initialized = true;
+        // Not awaited, and deliberately started before the deck loads: location
+        // is enrichment, so the deck must never wait on it. refreshOnce no-ops
+        // after the first call in a session.
+        ref.read(locationRefresherProvider).refreshOnce();
         ref.read(discoveryProvider.notifier).load(refresh: true);
       }
     });
