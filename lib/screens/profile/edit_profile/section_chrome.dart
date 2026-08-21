@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 class SectionCard extends StatelessWidget {
   final String title;
@@ -93,7 +94,7 @@ class SaveButton extends StatelessWidget {
                   color: context.onPrimary,
                 ),
               )
-            : const Text('Save'),
+            : Text(context.l10n.commonSave),
       ),
     );
   }

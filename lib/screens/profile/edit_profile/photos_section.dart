@@ -164,7 +164,7 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
               ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete photo', style: TextStyle(color: Colors.red)),
+              title: Text(context.l10n.profileDeletePhoto, style: TextStyle(color: Colors.red)),
               onTap: () async {
                 Navigator.pop(context);
                 final ok = await ref
@@ -195,7 +195,7 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text('Take a photo'),
+              title: Text(context.l10n.profileTakePhoto),
               onTap: () async {
                 Navigator.pop(context);
                 final photo = await picker.pickImage(
@@ -211,7 +211,7 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from gallery'),
+              title: Text(context.l10n.profileChooseFromGallery),
               onTap: () async {
                 Navigator.pop(context);
                 final photo = await picker.pickImage(

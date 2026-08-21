@@ -33,7 +33,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildListTile(
             context: context,
             icon: Icons.email_outlined,
-            title: 'Email',
+            title: context.l10n.settingsEmail,
             subtitle: user?.email ?? 'Not set',
             onTap: () {
               _showChangeEmailDialog(context);
@@ -45,7 +45,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildListTile(
               context: context,
               icon: Icons.lock_outline,
-              title: 'Change Password',
+              title: context.l10n.settingsChangePassword,
               onTap: () {
                 _showChangePasswordDialog(context, ref);
               },
@@ -55,7 +55,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildListTile(
             context: context,
             icon: Icons.block,
-            title: 'Blocked Users',
+            title: context.l10n.settingsBlockedUsers,
             onTap: () {
               Navigator.push(
                 context,
@@ -76,8 +76,8 @@ class SettingsScreen extends ConsumerWidget {
             key: const Key('settings_show_online_switch'),
             context: context,
             icon: Icons.circle_outlined,
-            title: 'Show Online Status',
-            subtitle: 'Let others know when you\'re online',
+            title: context.l10n.settingsShowOnlineStatus,
+            subtitle: context.l10n.settingsShowOnlineStatusSubtitle,
             value: user?.showOnlineStatus ?? true,
             onChanged: user == null
                 ? null
@@ -104,8 +104,8 @@ class SettingsScreen extends ConsumerWidget {
           _buildListTile(
             context: context,
             icon: Icons.notifications_outlined,
-            title: 'Notifications',
-            subtitle: 'Manage what you get notified about',
+            title: context.l10n.settingsNotifications,
+            subtitle: context.l10n.settingsNotificationsSubtitle,
             onTap: () {
               Navigator.push(
                 context,
@@ -198,19 +198,19 @@ class SettingsScreen extends ConsumerWidget {
           _buildListTile(
             context: context,
             icon: Icons.description_outlined,
-            title: 'Terms of Service',
+            title: context.l10n.settingsTermsOfService,
             onTap: () => showLegalDocumentSheet(context, LegalDoc.terms),
           ),
           _buildListTile(
             context: context,
             icon: Icons.privacy_tip_outlined,
-            title: 'Privacy Policy',
+            title: context.l10n.settingsPrivacyPolicy,
             onTap: () => showLegalDocumentSheet(context, LegalDoc.privacy),
           ),
           _buildListTile(
             context: context,
             icon: Icons.gavel_outlined,
-            title: 'Licenses',
+            title: context.l10n.settingsLicenses,
             onTap: () => showLicensePage(
               context: context,
               applicationName: 'Flame',
@@ -350,7 +350,7 @@ class SettingsScreen extends ConsumerWidget {
         .updatePreferences(showOnlineStatus: value);
     if (!ok) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Could not save — try again')),
+        SnackBar(content: Text(context.l10n.settingsSaveFailed)),
       );
     }
   }
@@ -419,8 +419,8 @@ class SettingsScreen extends ConsumerWidget {
             TextField(
               controller: passwordController,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsPassword,
                 border: OutlineInputBorder(),
               ),
             ),
@@ -441,13 +441,13 @@ class SettingsScreen extends ConsumerWidget {
                   .deleteAccount(password: password);
               if (ok) {
                 messenger.showSnackBar(
-                  const SnackBar(content: Text('Account deleted')),
+                  SnackBar(content: Text(context.l10n.settingsAccountDeleted)),
                 );
                 await ref.read(authProvider.notifier).logout();
               } else {
                 messenger.showSnackBar(
-                  const SnackBar(
-                    content: Text('Could not delete account. Check your password.'),
+                  SnackBar(
+                    content: Text(context.l10n.settingsAccountDeleteFailed),
                   ),
                 );
               }
@@ -464,12 +464,12 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Change Email'),
-        content: const Text('To change your email, please contact support.'),
+        title: Text(context.l10n.settingsChangeEmail),
+        content: Text(context.l10n.settingsChangeEmailContactSupport),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text(context.l10n.commonOk),
           ),
         ],
       ),
@@ -484,7 +484,7 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Change Password'),
+        title: Text(context.l10n.settingsChangePassword),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -492,8 +492,8 @@ class SettingsScreen extends ConsumerWidget {
               TextField(
                 controller: currentPasswordController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Current Password',
+                decoration: InputDecoration(
+                  labelText: context.l10n.settingsCurrentPassword,
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -501,8 +501,8 @@ class SettingsScreen extends ConsumerWidget {
               TextField(
                 controller: newPasswordController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'New Password',
+                decoration: InputDecoration(
+                  labelText: context.l10n.settingsNewPassword,
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -510,8 +510,8 @@ class SettingsScreen extends ConsumerWidget {
               TextField(
                 controller: confirmPasswordController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm New Password',
+                decoration: InputDecoration(
+                  labelText: context.l10n.settingsConfirmNewPassword,
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -521,14 +521,14 @@ class SettingsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () async {
               if (newPasswordController.text !=
                   confirmPasswordController.text) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Passwords do not match')),
+                  SnackBar(content: Text(context.l10n.settingsPasswordsDoNotMatch)),
                 );
                 return;
               }
@@ -541,8 +541,8 @@ class SettingsScreen extends ConsumerWidget {
                   );
               if (success) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Password changed successfully'),
+                  SnackBar(
+                    content: Text(context.l10n.settingsPasswordChanged),
                   ),
                 );
               }

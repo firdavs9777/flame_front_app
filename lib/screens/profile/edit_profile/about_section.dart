@@ -5,6 +5,7 @@ import 'package:flame/models/models.dart';
 import 'package:flame/screens/profile/edit_profile/edit_profile_screen.dart';
 import 'package:flame/screens/profile/edit_profile/section_chrome.dart';
 import 'package:flame/theme/app_tokens.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 class AboutSection extends StatefulWidget {
   final User user;
@@ -63,7 +64,7 @@ class AboutSectionState extends State<AboutSection> {
       initialDate: birthDateForAge(_age, now: now),
       firstDate: earliestBirthDateFor(_maximumAge, now: now),
       lastDate: latestBirthDateFor(_minimumAge, now: now),
-      helpText: 'Select your date of birth',
+      helpText: context.l10n.profileSelectBirthDate,
     );
     if (picked == null) return;
     setState(() => _age = ageOn(picked, now: DateTime.now()));

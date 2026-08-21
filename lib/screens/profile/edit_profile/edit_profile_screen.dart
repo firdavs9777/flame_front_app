@@ -6,6 +6,7 @@ import 'package:flame/screens/profile/edit_profile/about_section.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/models/models.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 /// Saves the About section (name, age, bio) — nothing else. The signature is
 /// the independence guarantee: this function has no parameter through which
@@ -76,13 +77,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final userState = ref.watch(currentUserProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Profile')),
+      appBar: AppBar(title: Text(context.l10n.profileEditProfile)),
       body: userState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('Error: $error')),
         data: (user) {
           if (user == null) {
-            return const Center(child: Text('No user data'));
+            return Center(child: Text(context.l10n.profileNoUserData));
           }
 
           return SingleChildScrollView(
@@ -91,12 +92,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SectionCard(
-                  title: 'Photos',
+                  title: context.l10n.profilePhotos,
                   child: PhotosSection(user: user),
                 ),
                 const SizedBox(height: 20),
                 SectionCard(
-                  title: 'About',
+                  title: context.l10n.profileAbout,
                   child: AboutSection(
                     user: user,
                     onSave: widget.saveAbout ?? _defaultSaveAbout,
@@ -104,7 +105,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 const SizedBox(height: 20),
                 SectionCard(
-                  title: 'Interests',
+                  title: context.l10n.profileInterests,
                   child: InterestsSection(
                     user: user,
                     onSave: widget.saveInterests ?? _defaultSaveInterests,

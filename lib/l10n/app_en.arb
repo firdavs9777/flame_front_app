@@ -530,5 +530,203 @@
   "profileSetMainPhoto": "Set as main photo",
   "@profileSetMainPhoto": {
     "description": "Profile / settings"
+  },
+  "profileMyProfile": "My Profile",
+  "@profileMyProfile": {
+    "description": "Profile / settings"
+  },
+  "profileAboutMe": "About Me",
+  "@profileAboutMe": {
+    "description": "Profile / settings"
+  },
+  "profileAbout": "About",
+  "@profileAbout": {
+    "description": "Profile / settings"
+  },
+  "profilePhotos": "Photos",
+  "@profilePhotos": {
+    "description": "Profile / settings"
+  },
+  "profileInterests": "Interests",
+  "@profileInterests": {
+    "description": "Profile / settings"
+  },
+  "profileDiscoveryPreferences": "Discovery Preferences",
+  "@profileDiscoveryPreferences": {
+    "description": "Profile / settings"
+  },
+  "profileEditProfile": "Edit Profile",
+  "@profileEditProfile": {
+    "description": "Profile / settings"
+  },
+  "profileNoUserData": "No user data",
+  "@profileNoUserData": {
+    "description": "Profile / settings"
+  },
+  "profileTakePhoto": "Take a photo",
+  "@profileTakePhoto": {
+    "description": "Profile / settings"
+  },
+  "profileChooseFromGallery": "Choose from gallery",
+  "@profileChooseFromGallery": {
+    "description": "Profile / settings"
+  },
+  "profileDeletePhoto": "Delete photo",
+  "@profileDeletePhoto": {
+    "description": "Profile / settings"
+  },
+  "profilePhotoUploaded": "Photo uploaded",
+  "@profilePhotoUploaded": {
+    "description": "Profile / settings"
+  },
+  "profilePhotoUploadFailed": "Failed to upload photo",
+  "@profilePhotoUploadFailed": {
+    "description": "Profile / settings"
+  },
+  "profileSelectBirthDate": "Select your date of birth",
+  "@profileSelectBirthDate": {
+    "description": "Profile / settings"
+  },
+  "settingsShowOnlineStatus": "Show Online Status",
+  "@settingsShowOnlineStatus": {
+    "description": "Profile / settings"
+  },
+  "settingsShowOnlineStatusSubtitle": "Let others know when you're online",
+  "@settingsShowOnlineStatusSubtitle": {
+    "description": "Profile / settings"
+  },
+  "settingsEmail": "Email",
+  "@settingsEmail": {
+    "description": "Profile / settings"
+  },
+  "settingsChangeEmail": "Change Email",
+  "@settingsChangeEmail": {
+    "description": "Profile / settings"
+  },
+  "settingsChangeEmailContactSupport": "To change your email, please contact support.",
+  "@settingsChangeEmailContactSupport": {
+    "description": "Profile / settings"
+  },
+  "settingsChangePassword": "Change Password",
+  "@settingsChangePassword": {
+    "description": "Profile / settings"
+  },
+  "settingsCurrentPassword": "Current Password",
+  "@settingsCurrentPassword": {
+    "description": "Profile / settings"
+  },
+  "settingsNewPassword": "New Password",
+  "@settingsNewPassword": {
+    "description": "Profile / settings"
+  },
+  "settingsConfirmNewPassword": "Confirm New Password",
+  "@settingsConfirmNewPassword": {
+    "description": "Profile / settings"
+  },
+  "settingsPasswordsDoNotMatch": "Passwords do not match",
+  "@settingsPasswordsDoNotMatch": {
+    "description": "Profile / settings"
+  },
+  "settingsPasswordChanged": "Password changed",
+  "@settingsPasswordChanged": {
+    "description": "Profile / settings"
+  },
+  "settingsPassword": "Password",
+  "@settingsPassword": {
+    "description": "Profile / settings"
+  },
+  "settingsBlockedUsers": "Blocked Users",
+  "@settingsBlockedUsers": {
+    "description": "Profile / settings"
+  },
+  "settingsNotificationsSubtitle": "Manage what you get notified about",
+  "@settingsNotificationsSubtitle": {
+    "description": "Profile / settings"
+  },
+  "settingsTermsOfService": "Terms of Service",
+  "@settingsTermsOfService": {
+    "description": "Profile / settings"
+  },
+  "settingsPrivacyPolicy": "Privacy Policy",
+  "@settingsPrivacyPolicy": {
+    "description": "Profile / settings"
+  },
+  "settingsLicenses": "Licenses",
+  "@settingsLicenses": {
+    "description": "Profile / settings"
+  },
+  "settingsAccountDeleted": "Account deleted",
+  "@settingsAccountDeleted": {
+    "description": "Profile / settings"
+  },
+  "settingsAccountDeleteFailed": "Could not delete account. Check your password.",
+  "@settingsAccountDeleteFailed": {
+    "description": "Profile / settings"
+  },
+  "notifAll": "All notifications",
+  "@notifAll": {
+    "description": "Profile / settings"
+  },
+  "notifAllSubtitle": "Turn all notifications on or off",
+  "@notifAllSubtitle": {
+    "description": "Profile / settings"
+  },
+  "notifNewMatches": "New matches",
+  "@notifNewMatches": {
+    "description": "Profile / settings"
+  },
+  "notifNewMatchesSubtitle": "Notify me when I get a new match",
+  "@notifNewMatchesSubtitle": {
+    "description": "Profile / settings"
+  },
+  "notifMessages": "Chat messages",
+  "@notifMessages": {
+    "description": "Profile / settings"
+  },
+  "notifMessagesSubtitle": "Notify me about new messages",
+  "@notifMessagesSubtitle": {
+    "description": "Profile / settings"
+  },
+  "notifLoadFailed": "Could not load notification settings",
+  "@notifLoadFailed": {
+    "description": "Profile / settings"
+  },
+  "notifUpdateFailed": "Could not update notification settings",
+  "@notifUpdateFailed": {
+    "description": "Profile / settings"
+  },
+  "blockedLoadFailed": "Could not load blocked users",
+  "@blockedLoadFailed": {
+    "description": "Profile / settings"
+  },
+  "blockedUnblock": "Unblock",
+  "@blockedUnblock": {
+    "description": "Profile / settings"
+  },
+  "blockedUnblockConfirm": "Unblock user?",
+  "@blockedUnblockConfirm": {
+    "description": "Profile / settings"
+  },
+  "commonOk": "OK",
+  "@commonOk": {
+    "description": "Profile / settings"
+  },
+  "blockedOnDate": "Blocked {date}",
+  "@blockedOnDate": {
+    "description": "Profile / settings",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "errorWithDetail": "Error: {detail}",
+  "@errorWithDetail": {
+    "description": "Profile / settings",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
   }
 }

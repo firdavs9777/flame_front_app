@@ -41,7 +41,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Profile'),
+        title: Text(context.l10n.profileMyProfile),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -79,14 +79,14 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 onPressed: () {
                   ref.read(currentUserProvider.notifier).loadUser();
                 },
-                child: const Text('Retry'),
+                child: Text(context.l10n.retry),
               ),
             ],
           ),
         ),
         data: (user) {
           if (user == null) {
-            return const Center(child: Text('No user data'));
+            return Center(child: Text(context.l10n.profileNoUserData));
           }
 
           final matchCount = matchesState.maybeWhen(
@@ -210,7 +210,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
 
                 // Photos grid
                 _buildSection(
-                  title: 'Photos',
+                  title: context.l10n.profilePhotos,
                   child: GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -233,7 +233,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
 
                 // Bio
                 _buildSection(
-                  title: 'About Me',
+                  title: context.l10n.profileAboutMe,
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -251,7 +251,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
 
                 // Interests
                 _buildSection(
-                  title: 'Interests',
+                  title: context.l10n.profileInterests,
                   child: Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -292,7 +292,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                   onTap: () =>
                       Navigator.pushNamed(context, '/discover/filters'),
                   child: _buildSection(
-                    title: 'Discovery Preferences',
+                    title: context.l10n.profileDiscoveryPreferences,
                     child: Column(
                       children: [
                         _buildPreferenceRow(
@@ -401,7 +401,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text('Take a photo'),
+              title: Text(context.l10n.profileTakePhoto),
               onTap: () async {
                 Navigator.pop(context);
                 final photo = await picker.pickImage(
@@ -417,7 +417,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from gallery'),
+              title: Text(context.l10n.profileChooseFromGallery),
               onTap: () async {
                 Navigator.pop(context);
                 final photo = await picker.pickImage(
@@ -448,12 +448,12 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     if (mounted) {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Photo uploaded successfully')),
+          SnackBar(content: Text(context.l10n.profilePhotoUploaded)),
         );
       } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Failed to upload photo')));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.profilePhotoUploadFailed)));
       }
     }
   }

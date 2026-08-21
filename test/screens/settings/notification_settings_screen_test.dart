@@ -6,6 +6,7 @@ import 'package:flame/services/notification_settings_service.dart';
 import 'package:flame/services/user_service.dart' show ServiceResult;
 import 'package:flame/providers/notification_settings_provider.dart';
 import 'package:flame/screens/settings/notification_settings_screen.dart';
+import 'package:flame/l10n/gen/app_localizations.dart';
 
 class _FakeNotificationSettingsService extends NotificationSettingsService {
   bool updateCalled = false;
@@ -54,7 +55,13 @@ Widget _wrap(_FakeNotificationSettingsService fake) {
     overrides: [
       notificationSettingsServiceProvider.overrideWithValue(fake),
     ],
-    child: const MaterialApp(home: NotificationSettingsScreen()),
+    // The screen reads its labels from the ARBs now.
+    child: MaterialApp(
+      locale: const Locale('en'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: const NotificationSettingsScreen(),
+    ),
   );
 }
 
