@@ -432,20 +432,22 @@ void main() {
     );
   });
 
-  // "Set as main photo" called setMainPhotoAt -> reorderPhotos ->
-  // PATCH /users/me/photos/reorder. The route exists and persists, but its
-  // response serialises photos as {id, order, is_primary} with no `url`, and
-  // Photo.fromJson defaults a missing url to ''. So the tap reported success
-  // and then blanked every photo url in local state.
+  // "Set as main photo" calls setMainPhotoAt -> reorderPhotos ->
+  // PATCH /users/me/photos/reorder.
+  //
+  // It was previously removed because that response serialised photos as
+  // {id, order, is_primary} with NO `url`, and Photo.fromJson defaults a missing
+  // url to '' — so the tap reported success and then blanked every photo in local
+  // state. userService.toPhoto includes url, which is why the item is back, and the
+  // second test below is what stops it regressing.
   group('photo options', () {
-    testWidgets('offer no "Set as main photo" action', (tester) async {
+    testWidgets('offer "Set as main photo" on a non-primary photo',
+        (tester) async {
       await tester.pumpWidget(_host(
         _user(photos: const [_tinyPng, _tinyPng]),
       ));
       await tester.pumpAndSettle();
 
-      // The second tile's menu — the only one the item was ever shown on,
-      // since it was hidden for index 0.
       await tester.tap(find.byIcon(Icons.more_vert).at(1));
       await tester.pumpAndSettle();
 
@@ -455,7 +457,23 @@ void main() {
         reason: 'the sheet must actually be open, or the assertion below '
             'passes for the wrong reason',
       );
-      expect(find.text('Set as main photo'), findsNothing);
+      expect(find.text('Set as main photo'), findsOneWidget);
+    });
+
+    testWidgets('do not offer it on the photo that is already main',
+        (tester) async {
+      await tester.pumpWidget(_host(
+        _user(photos: const [_tinyPng, _tinyPng]),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.more_vert).at(0));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete photo'), findsOneWidget);
+      expect(find.text('Set as main photo'), findsNothing,
+          reason: 'the route rejects a no-op reorder, so offering it would be '
+              'offering a failure');
     });
   });
 }
