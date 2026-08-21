@@ -25,7 +25,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_initialized) {
         _initialized = true;
-        ref.read(discoveryProvider.notifier).loadPotentialMatches(refresh: true);
+        ref.read(discoveryProvider.notifier).load(refresh: true);
       }
     });
   }
@@ -49,6 +49,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _handleDislike(user);
     } else if (direction == CardSwiperDirection.top) {
       _handleSuperLike(user);
+    }
+
+    // Top up before the deck visibly empties. onEnd alone fires only once the
+    // last card is gone, which shows the user a loading state they did not need
+    // to see. `refill` no-ops while a fetch is in flight or the server has said
+    // there is no more, so calling it on every swipe is cheap.
+    final remaining = previousIndex >= 0 ? users.length - previousIndex - 1 : 0;
+    if (remaining <= DiscoveryNotifier.refillThreshold) {
+      ref.read(discoveryProvider.notifier).refill();
     }
   }
 
@@ -228,7 +237,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () {
-                    ref.read(discoveryProvider.notifier).loadPotentialMatches(refresh: true);
+                    ref.read(discoveryProvider.notifier).load(refresh: true);
                   },
                   child: const Text('Retry'),
                 ),
@@ -259,7 +268,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         },
                         onEnd: () {
                           // Load more when cards run out
-                          ref.read(discoveryProvider.notifier).loadMore();
+                          ref.read(discoveryProvider.notifier).refill();
                         },
                         cardBuilder: (context, index, percentX, percentY) {
                           // CardSwiper holds its own index; when the deck shrinks
@@ -337,7 +346,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 30),
           ElevatedButton(
             onPressed: () {
-              ref.read(discoveryProvider.notifier).loadPotentialMatches(refresh: true);
+              ref.read(discoveryProvider.notifier).load(refresh: true);
             },
             child: const Text('Refresh'),
           ),

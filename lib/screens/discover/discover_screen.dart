@@ -26,7 +26,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     if (mounted) {
       if (success) {
         // Refresh discovery with new filters
-        ref.read(discoveryProvider.notifier).loadPotentialMatches(refresh: true);
+        ref.read(discoveryProvider.notifier).load(refresh: true);
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
