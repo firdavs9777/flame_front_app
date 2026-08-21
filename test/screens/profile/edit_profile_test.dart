@@ -61,7 +61,6 @@ Widget _host(
   User user, {
   AboutSave? saveAbout,
   InterestsSave? saveInterests,
-  PreferencesSave? savePreferences,
   ThemeData? theme,
 }) {
   return ProviderScope(
@@ -80,7 +79,6 @@ Widget _host(
       home: EditProfileScreen(
         saveAbout: saveAbout,
         saveInterests: saveInterests,
-        savePreferences: savePreferences,
       ),
     ),
   );
@@ -160,7 +158,6 @@ void main() {
         int? capturedAge;
         String? capturedBio;
         var interestsCalls = 0;
-        var preferencesCalls = 0;
         await tester.pumpWidget(_host(
           _user(minAge: 21, maxAge: 40),
           saveAbout: ({required name, required age, required bio}) async {
@@ -179,10 +176,6 @@ void main() {
           // make this assertion pass for the wrong reason.
           saveInterests: ({required lookingFor, required interests}) async {
             interestsCalls++;
-            return true;
-          },
-          savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
-            preferencesCalls++;
             return true;
           },
         ));
@@ -209,11 +202,6 @@ void main() {
           interestsCalls,
           0,
           reason: 'saving About must never touch the Interests save path',
-        );
-        expect(
-          preferencesCalls,
-          0,
-          reason: 'saving About must never touch the Preferences save path',
         );
       },
     );
@@ -264,146 +252,12 @@ void main() {
         // The section card title and the in-section field label are both
         // literally "Interests".
         expect(find.text('Interests'), findsNWidgets(2));
-        expect(find.text('Preferences'), findsOneWidget);
+        // No Preferences card: the Discover filter sheet owns those now.
+        expect(find.text('Preferences'), findsNothing);
       });
     }
   });
 
-  group('Preferences section', () {
-    testWidgets(
-      'min age above max age is rejected before any request',
-      (tester) async {
-        var calls = 0;
-        await tester.pumpWidget(_host(
-          _user(minAge: 21, maxAge: 40),
-          savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
-            calls++;
-            return true;
-          },
-        ));
-
-        await tester.enterText(
-          find.byKey(const Key('preferences_min_age_field')),
-          '45',
-        );
-        await tester.enterText(
-          find.byKey(const Key('preferences_max_age_field')),
-          '40',
-        );
-        await tester.ensureVisible(
-          find.byKey(const Key('preferences_save_button')),
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const Key('preferences_save_button')));
-        await tester.pump();
-
-        expect(
-          calls,
-          0,
-          reason:
-              'the route rejects min_age > max_age with a 422; catch it '
-              'client-side and save the round trip',
-        );
-      },
-    );
-
-    testWidgets(
-      'a fractional max distance is not rounded away by an unrelated save',
-      (tester) async {
-        double? capturedDistance;
-        await tester.pumpWidget(_host(
-          _user(maxDistance: 24.6),
-          savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
-            capturedDistance = maxDistance;
-            return true;
-          },
-        ));
-
-        // Never touch the distance field — only saving, as if the user only
-        // meant to flip the online-status switch.
-        await tester.ensureVisible(
-          find.byKey(const Key('preferences_save_button')),
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const Key('preferences_save_button')));
-        await tester.pump();
-
-        expect(
-          capturedDistance,
-          24.6,
-          reason:
-              'rounding the field on load would silently rewrite the '
-              "user's stored 24.6 to 25 on their next save",
-        );
-      },
-    );
-
-    // Distance is a slider now, so the route's bounds
-    // (`max_distance: z.number().min(0).max(500).optional()`,
-    // flame/routes/users.js:39) are enforced by construction: a slider cannot
-    // leave its own track. The old tests typed 5000 and -5 and asserted the
-    // error messages; those values are no longer reachable, so what needs
-    // asserting is that the track itself matches the route.
-    testWidgets('the slider track is exactly the route\'s range', (tester) async {
-      await tester.pumpWidget(_host(_user()));
-
-      final slider = tester.widget<Slider>(
-        find.byKey(const Key('preferences_max_distance_slider')),
-      );
-
-      expect(slider.min, 0, reason: 'min(0) — the route accepts zero');
-      expect(slider.max, 500, reason: 'max(500), inclusive');
-      expect(
-        slider.divisions,
-        100,
-        reason: '5 km steps across 0-500; a value a person would say out loud',
-      );
-    });
-
-    testWidgets('dragging the slider changes what is saved and what is shown',
-        (tester) async {
-      double? captured;
-      await tester.pumpWidget(_host(
-        _user(maxDistance: 25),
-        savePreferences: ({minAge, maxAge, maxDistance, showOnlineStatus}) async {
-          captured = maxDistance;
-          return true;
-        },
-      ));
-
-      final slider = find.byKey(const Key('preferences_max_distance_slider'));
-      await tester.ensureVisible(slider);
-      await tester.pumpAndSettle();
-
-      // Drag to the far right: the track's own maximum, wherever that is.
-      await tester.drag(slider, const Offset(1000, 0));
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('500 km'),
-        findsOneWidget,
-        reason: 'a slider with no readout only says "somewhere around here"',
-      );
-
-      await tester.tap(find.byKey(const Key('preferences_save_button')));
-      await tester.pump();
-
-      expect(captured, 500);
-    });
-
-    testWidgets('a stored value outside the track does not throw',
-        (tester) async {
-      // Nothing should write one, but the slider throws rather than clamping if
-      // handed a value off its track, which would break the whole screen.
-      await tester.pumpWidget(_host(_user(maxDistance: 5000)));
-
-      expect(tester.takeException(), isNull);
-      final slider = tester.widget<Slider>(
-        find.byKey(const Key('preferences_max_distance_slider')),
-      );
-      expect(slider.value, 500);
-    });
-  });
 
   group('About section length ceiling', () {
     testWidgets(

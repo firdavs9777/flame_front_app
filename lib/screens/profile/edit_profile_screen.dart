@@ -7,7 +7,6 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/models/models.dart';
-import 'package:flame/core/format/distance_format.dart';
 import 'package:flame/core/date/age.dart';
 import 'package:flame/core/interests/interest_catalogue.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
@@ -27,15 +26,6 @@ typedef InterestsSave = Future<bool> Function({
   required List<String> interests,
 });
 
-/// Saves discovery preferences. `showDistance` is deliberately not a
-/// parameter: the Preferences section renders no control for it (see
-/// `_PreferencesSection`), so nothing here ever needs to carry it.
-typedef PreferencesSave = Future<bool> Function({
-  int? minAge,
-  int? maxAge,
-  double? maxDistance,
-  bool? showOnlineStatus,
-});
 
 /// A form split into independently-saving section cards — Photos, About,
 /// Interests, Preferences — each validating before it calls its save
@@ -50,13 +40,11 @@ typedef PreferencesSave = Future<bool> Function({
 class EditProfileScreen extends ConsumerStatefulWidget {
   final AboutSave? saveAbout;
   final InterestsSave? saveInterests;
-  final PreferencesSave? savePreferences;
 
   const EditProfileScreen({
     super.key,
     this.saveAbout,
     this.saveInterests,
-    this.savePreferences,
   });
 
   @override
@@ -86,19 +74,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         );
   }
 
-  Future<bool> _defaultSavePreferences({
-    int? minAge,
-    int? maxAge,
-    double? maxDistance,
-    bool? showOnlineStatus,
-  }) {
-    return ref.read(currentUserProvider.notifier).updatePreferences(
-          minAge: minAge,
-          maxAge: maxAge,
-          maxDistance: maxDistance,
-          showOnlineStatus: showOnlineStatus,
-        );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -137,14 +112,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   child: _InterestsSection(
                     user: user,
                     onSave: widget.saveInterests ?? _defaultSaveInterests,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _SectionCard(
-                  title: 'Preferences',
-                  child: _PreferencesSection(
-                    user: user,
-                    onSave: widget.savePreferences ?? _defaultSavePreferences,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -848,176 +815,3 @@ class _InterestsSectionState extends State<_InterestsSection> {
 ///
 /// Validates min age <= max age before calling [onSave], matching the
 /// route's own refine — catching it here saves a round trip and a 422.
-class _PreferencesSection extends StatefulWidget {
-  final User user;
-  final PreferencesSave onSave;
-
-  const _PreferencesSection({required this.user, required this.onSave});
-
-  @override
-  State<_PreferencesSection> createState() => _PreferencesSectionState();
-}
-
-class _PreferencesSectionState extends State<_PreferencesSection> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _minAgeController;
-  late final TextEditingController _maxAgeController;
-  late bool _showOnlineStatus;
-  bool _isSaving = false;
-
-  /// Max distance in km, held as a number for the slider.
-  ///
-  /// It was a text field, which made 5000 and "abc" reachable and left them to
-  /// be rejected afterwards. A slider cannot leave its own track, so the route's
-  /// bounds are enforced by construction rather than by a validator.
-  late double _maxDistance;
-
-  // The route's own bounds: `max_distance: z.number().min(0).max(500)`
-  // (flame/routes/users.js:39).
-  static const _minDistance = 0.0;
-  static const _maxDistanceKm = 500.0;
-
-  // 5 km steps. Fine enough to feel continuous, coarse enough that the value
-  // lands somewhere a person would actually say out loud.
-  static const _distanceStep = 5.0;
-
-  @override
-  void initState() {
-    super.initState();
-    _minAgeController =
-        TextEditingController(text: widget.user.minAgePreference.toString());
-    _maxAgeController =
-        TextEditingController(text: widget.user.maxAgePreference.toString());
-    // Clamped rather than trusted: a value stored outside the route's range
-    // would otherwise throw when handed to the slider.
-    _maxDistance = widget.user.maxDistancePreference
-        .clamp(_minDistance, _maxDistanceKm)
-        .toDouble();
-    _showOnlineStatus = widget.user.showOnlineStatus;
-  }
-
-  @override
-  void dispose() {
-    _minAgeController.dispose();
-    _maxAgeController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isSaving = true);
-    final ok = await widget.onSave(
-      minAge: int.parse(_minAgeController.text),
-      maxAge: int.parse(_maxAgeController.text),
-      maxDistance: _maxDistance,
-      showOnlineStatus: _showOnlineStatus,
-    );
-    if (!mounted) return;
-    setState(() => _isSaving = false);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(ok ? 'Preferences updated' : 'Could not save — try again'),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _fieldLabel(context, 'Minimum Age'),
-          const SizedBox(height: 8),
-          TextFormField(
-            key: const Key('preferences_min_age_field'),
-            controller: _minAgeController,
-            keyboardType: TextInputType.number,
-            decoration: _fieldDecoration(context, 'Minimum age'),
-            validator: (value) {
-              final age = int.tryParse(value ?? '');
-              if (age == null || age < 18 || age > 100) {
-                return 'Enter a valid age (18-100)';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          _fieldLabel(context, 'Maximum Age'),
-          const SizedBox(height: 8),
-          TextFormField(
-            key: const Key('preferences_max_age_field'),
-            controller: _maxAgeController,
-            keyboardType: TextInputType.number,
-            decoration: _fieldDecoration(context, 'Maximum age'),
-            validator: (value) {
-              final age = int.tryParse(value ?? '');
-              if (age == null || age < 18 || age > 100) {
-                return 'Enter a valid age (18-100)';
-              }
-              final minAge = int.tryParse(_minAgeController.text);
-              if (minAge != null && age < minAge) {
-                return 'Must be at least the minimum age';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          // The label carries the value, because a slider with no readout only
-          // tells you "somewhere around here".
-          Row(
-            children: [
-              _fieldLabel(context, 'Maximum Distance'),
-              const Spacer(),
-              Text(
-                '${formatDistance(_maxDistance)} km',
-                key: const Key('preferences_max_distance_value'),
-                style: TextStyle(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          // A slider, not a number field. The route's bounds are
-          // `max_distance: z.number().min(0).max(500).optional()`
-          // (flame/routes/users.js:39), and a slider cannot leave its own
-          // track — so 5000 and "abc", both previously reachable and both
-          // rejected only after the user had moved on, are now unreachable.
-          // The bounds are enforced by construction rather than by a message.
-          Slider(
-            key: const Key('preferences_max_distance_slider'),
-            value: _maxDistance,
-            min: _minDistance,
-            max: _maxDistanceKm,
-            divisions: ((_maxDistanceKm - _minDistance) / _distanceStep).round(),
-            label: '${formatDistance(_maxDistance)} km',
-            activeColor: AppTheme.primaryColor,
-            onChanged: (value) => setState(() => _maxDistance = value),
-          ),
-          SwitchListTile(
-            key: const Key('preferences_show_online_switch'),
-            contentPadding: EdgeInsets.zero,
-            title: Text('Show online status', style: TextStyle(color: context.onSurface)),
-            subtitle: Text(
-              'Let others see when you\'re active',
-              style: TextStyle(color: context.secondaryText),
-            ),
-            value: _showOnlineStatus,
-            activeColor: AppTheme.primaryColor,
-            onChanged: (value) => setState(() => _showOnlineStatus = value),
-          ),
-          const SizedBox(height: 8),
-          _SaveButton(
-            buttonKey: const Key('preferences_save_button'),
-            isSaving: _isSaving,
-            onPressed: _save,
-          ),
-        ],
-      ),
-    );
-  }
-}

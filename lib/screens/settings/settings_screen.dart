@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
-import 'package:flame/screens/profile/edit_profile_screen.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/settings/language_screen.dart';
 import 'package:flame/core/i18n/locale_provider.dart';
@@ -29,17 +28,8 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           const SizedBox(height: 20),
           _buildSectionHeader(context, context.l10n.settingsAccount),
-          _buildListTile(
-            context: context,
-            icon: Icons.person_outline,
-            title: 'Edit Profile',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const EditProfileScreen()),
-              );
-            },
-          ),
+          // No Edit Profile row: Settings is reached FROM Profile now, so
+          // pointing back at it is a loop.
           _buildListTile(
             context: context,
             icon: Icons.email_outlined,

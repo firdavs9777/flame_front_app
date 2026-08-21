@@ -68,7 +68,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             children: [
               Icon(Icons.error_outline, size: 60, color: context.secondaryText),
               const SizedBox(height: 16),
-              Text('Failed to load profile', style: TextStyle(color: context.secondaryText)),
+              Text(
+                'Failed to load profile',
+                style: TextStyle(color: context.secondaryText),
+              ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
@@ -115,7 +118,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                           decoration: BoxDecoration(
                             color: AppTheme.primaryColor,
                             shape: BoxShape.circle,
-                            border: Border.all(color: context.surface, width: 2),
+                            border: Border.all(
+                              color: context.surface,
+                              width: 2,
+                            ),
                           ),
                           child: Icon(
                             Icons.camera_alt,
@@ -152,10 +158,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 const SizedBox(height: 4),
                 Text(
                   user.location,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: context.secondaryText,
-                  ),
+                  style: TextStyle(fontSize: 16, color: context.secondaryText),
                 ),
                 if (user.isPremiumActive) ...[
                   const SizedBox(height: 10),
@@ -209,11 +212,12 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                   child: GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
                     itemCount: user.photos.length + 1,
                     itemBuilder: (context, index) {
                       if (index == user.photos.length) {
@@ -252,7 +256,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     children: user.interests.map((interest) {
                       return Chip(
                         label: Text(interest),
-                        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        backgroundColor: AppTheme.primaryColor.withValues(
+                          alpha: 0.1,
+                        ),
                         labelStyle: TextStyle(color: AppTheme.primaryColor),
                       );
                     }).toList(),
@@ -260,27 +266,33 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // Preferences
-                _buildSection(
-                  title: 'Discovery Preferences',
-                  child: Column(
-                    children: [
-                      _buildPreferenceRow(
-                        'Looking for',
-                        user.lookingFor.displayName,
-                      ),
-                      _buildPreferenceRow(
-                        'Age Range',
-                        '${user.minAgePreference} - ${user.maxAgePreference}',
-                      ),
-                      _buildPreferenceRow(
-                        'Max Distance',
-                        // Same formatter the editor seeds its field from, so
-                        // a stored 24.6 does not read "24 km" here and "24.6"
-                        // one tap away.
-                        '${formatDistance(user.maxDistancePreference)} km',
-                      ),
-                    ],
+                // Preferences — read-only here. Displaying a value edited
+                // elsewhere is not duplication; a second editor is. Tapping opens
+                // the Discover filter sheet, which owns them.
+                InkWell(
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/discover/filters'),
+                  child: _buildSection(
+                    title: 'Discovery Preferences',
+                    child: Column(
+                      children: [
+                        _buildPreferenceRow(
+                          'Looking for',
+                          user.lookingFor.displayName,
+                        ),
+                        _buildPreferenceRow(
+                          'Age Range',
+                          '${user.minAgePreference} - ${user.maxAgePreference}',
+                        ),
+                        _buildPreferenceRow(
+                          'Max Distance',
+                          // Same formatter the editor seeds its field from, so
+                          // a stored 24.6 does not read "24 km" here and "24.6"
+                          // one tap away.
+                          '${formatDistance(user.maxDistancePreference)} km',
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -306,10 +318,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 14,
-            color: context.secondaryText,
-          ),
+          style: TextStyle(fontSize: 14, color: context.secondaryText),
         ),
       ],
     );
@@ -321,10 +330,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         child,
@@ -360,11 +366,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             style: BorderStyle.solid,
           ),
         ),
-        child: Icon(
-          Icons.add,
-          size: 40,
-          color: context.secondaryText,
-        ),
+        child: Icon(Icons.add, size: 40, color: context.secondaryText),
       ),
     );
   }
@@ -420,10 +422,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     final user = ref.read(currentUserProvider).valueOrNull;
     final isPrimary = user?.photos.isEmpty ?? true;
 
-    final success = await ref.read(currentUserProvider.notifier).uploadPhoto(
-      photo,
-      isPrimary: isPrimary,
-    );
+    final success = await ref
+        .read(currentUserProvider.notifier)
+        .uploadPhoto(photo, isPrimary: isPrimary);
 
     if (mounted) {
       if (success) {
@@ -431,9 +432,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           const SnackBar(content: Text('Photo uploaded successfully')),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to upload photo')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to upload photo')));
       }
     }
   }
@@ -446,17 +447,11 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 16,
-              color: context.secondaryText,
-            ),
+            style: TextStyle(fontSize: 16, color: context.secondaryText),
           ),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
         ],
       ),
