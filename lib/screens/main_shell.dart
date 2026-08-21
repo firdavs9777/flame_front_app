@@ -10,7 +10,6 @@ import 'package:flame/core/i18n/build_context_ext.dart';
 import 'chat/matches_screen.dart';
 import 'discover/discover_screen.dart';
 import 'profile/my_profile_screen.dart';
-import 'settings/settings_screen.dart';
 
 final bottomNavIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -30,7 +29,6 @@ class _MainShellState extends ConsumerState<MainShell>
     const DiscoverScreen(),
     if (EnvConfig.current.chatEnabled) const MatchesScreen(),
     const MyProfileScreen(),
-    const SettingsScreen(),
   ];
 
   @override
@@ -115,7 +113,12 @@ class _MainShellState extends ConsumerState<MainShell>
 
   @override
   Widget build(BuildContext context) {
-    final currentIndex = ref.watch(bottomNavIndexProvider);
+    // bottomNavIndexProvider holds a raw int that outlives a release, and this
+    // list just got shorter when Settings stopped being a tab. An index written by
+    // the previous version would otherwise select the wrong screen or throw inside
+    // IndexedStack.
+    final currentIndex =
+        ref.watch(bottomNavIndexProvider).clamp(0, _screens.length - 1);
     final chatUnreadCount = ref.watch(chatUnreadCountProvider);
 
     // ApiClient refreshes the access token proactively, so a socket may be
@@ -188,14 +191,6 @@ class _FlameNavBar extends StatelessWidget {
       onTap: () => onTap(profileIndex),
     ));
 
-    final settingsIndex = index++;
-    items.add(_NavItem(
-      selected: currentIndex == settingsIndex,
-      icon: Icons.settings_outlined,
-      activeIcon: Icons.settings,
-      label: context.l10n.navSettings,
-      onTap: () => onTap(settingsIndex),
-    ));
 
     return items;
   }

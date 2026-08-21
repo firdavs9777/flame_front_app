@@ -8,6 +8,8 @@ import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/screens/profile/edit_profile_screen.dart';
 import 'package:flame/core/format/distance_format.dart';
+import 'package:flame/screens/settings/settings_screen.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 class MyProfileScreen extends ConsumerStatefulWidget {
   const MyProfileScreen({super.key});
@@ -39,6 +41,14 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
       appBar: AppBar(
         title: const Text('My Profile'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: context.l10n.navSettings,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
