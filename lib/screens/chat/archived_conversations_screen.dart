@@ -1,3 +1,4 @@
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flutter/material.dart';
 import 'package:flame/models/models.dart';
 
@@ -35,7 +36,9 @@ class _ArchivedConversationsScreenState
     extends State<ArchivedConversationsScreen> {
   List<Conversation> _conversations = [];
   bool _isLoading = true;
-  String? _error;
+  /// A flag, not a message: the copy is resolved at render time so it follows
+  /// the app's locale instead of freezing whichever one was active on failure.
+  bool _failed = false;
 
   @override
   void initState() {
@@ -49,13 +52,13 @@ class _ArchivedConversationsScreenState
       if (!mounted) return;
       setState(() {
         _conversations = conversations;
-        _error = null;
+        _failed = false;
         _isLoading = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = 'Could not load archived chats';
+        _failed = true;
         _isLoading = false;
       });
     }
@@ -77,23 +80,23 @@ class _ArchivedConversationsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Archived')),
+      appBar: AppBar(title: Text(context.l10n.archivedTitle)),
       body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) {
+    if (_failed) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(_error!, textAlign: TextAlign.center),
+          child: Text(context.l10n.archivedLoadFailed, textAlign: TextAlign.center),
         ),
       );
     }
     if (_conversations.isEmpty) {
-      return const Center(child: Text('No archived chats'));
+      return Center(child: Text(context.l10n.archivedEmpty));
     }
 
     return ListView.builder(
@@ -109,7 +112,7 @@ class _ArchivedConversationsScreenState
           ),
           trailing: IconButton(
             icon: const Icon(Icons.unarchive_outlined),
-            tooltip: 'Unarchive',
+            tooltip: context.l10n.unarchive,
             onPressed: () => _unarchive(c),
           ),
         );

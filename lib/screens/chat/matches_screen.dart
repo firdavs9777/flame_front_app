@@ -1,3 +1,4 @@
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,16 +56,16 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Messages'),
+        title: Text(context.l10n.messagesTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            tooltip: 'Search messages',
+            tooltip: context.l10n.searchMessages,
             onPressed: () => _openSearch(context),
           ),
           IconButton(
             icon: const Icon(Icons.archive_outlined),
-            tooltip: 'Archived',
+            tooltip: context.l10n.archivedTitle,
             onPressed: () => _openArchived(context, ref),
           ),
         ],
@@ -92,7 +93,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
               error: (error, stack) => SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Text('Error loading matches: $error'),
+                  child: Text(context.l10n.matchesLoadFailed),
                 ),
               ),
               data: (matches) {
@@ -103,11 +104,11 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.all(16),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
                         child: Text(
-                          'New Matches',
-                          style: TextStyle(
+                          context.l10n.newMatches,
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -154,14 +155,14 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
                     children: [
                       Icon(Icons.error_outline, size: 60, color: context.secondaryText),
                       const SizedBox(height: 16),
-                      Text('Failed to load messages',
+                      Text(context.l10n.conversationsLoadFailed,
                 style: TextStyle(color: context.secondaryText)),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () {
                           ref.read(conversationsProvider.notifier).loadConversations(refresh: true);
                         },
-                        child: const Text('Retry'),
+                        child: Text(context.l10n.retry),
                       ),
                     ],
                   ),
@@ -273,7 +274,7 @@ class _MatchCircle extends ConsumerWidget {
 
     if (conversation == null) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Could not open this chat. Please try again.')),
+        SnackBar(content: Text(context.l10n.chatLoadFailed)),
       );
       return;
     }
@@ -352,19 +353,17 @@ class _MatchCircle extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Unmatch?'),
-        content: Text(
-          'You will no longer be matched with ${match.user.name} and this cannot be undone.',
-        ),
+        title: Text(context.l10n.unmatchTitle),
+        content: Text(context.l10n.unmatchBody(match.user.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(
-              'Unmatch',
+              context.l10n.unmatchConfirm,
               style: TextStyle(color: AppTheme.errorColor),
             ),
           ),
@@ -381,7 +380,9 @@ class _MatchCircle extends ConsumerWidget {
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          ok ? 'Unmatched with ${match.user.name}' : 'Could not unmatch. Please try again.',
+          ok
+              ? context.l10n.unmatchedWith(match.user.name)
+              : context.l10n.unmatchFailed,
         ),
       ),
     );

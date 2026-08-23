@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flame/l10n/gen/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/screens/chat/archived_conversations_screen.dart';
@@ -15,6 +17,13 @@ void main() {
     required ArchivedLoader load,
     ArchivedAction? unarchive,
   }) => MaterialApp(
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    supportedLocales: AppLocalizations.supportedLocales,
     home: ArchivedConversationsScreen(
       load: load,
       unarchive: unarchive ?? (_) async => null,

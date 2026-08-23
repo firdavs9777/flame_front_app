@@ -1,3 +1,4 @@
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -36,7 +37,8 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
 
   List<Message> _results = [];
   bool _isLoading = false;
-  String? _error;
+  /// See the note in ArchivedConversationsScreen: a flag, resolved at render.
+  bool _failed = false;
   bool _searched = false;
 
   @override
@@ -55,7 +57,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
       // empty q, so spending the call to find that out is pure waste.
       setState(() {
         _results = [];
-        _error = null;
+        _failed = false;
         _isLoading = false;
         _searched = false;
       });
@@ -68,7 +70,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
   Future<void> _run(String query) async {
     setState(() {
       _isLoading = true;
-      _error = null;
+      _failed = false;
     });
 
     try {
@@ -84,7 +86,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = 'Search failed. Please try again.';
+        _failed = true;
         _isLoading = false;
         _searched = true;
       });
@@ -98,8 +100,8 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
         title: TextField(
           controller: _controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Search messages',
+          decoration: InputDecoration(
+            hintText: context.l10n.searchMessages,
             border: InputBorder.none,
           ),
           textInputAction: TextInputAction.search,
@@ -114,16 +116,16 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_error != null) {
+    if (_failed) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(_error!, textAlign: TextAlign.center),
+          child: Text(context.l10n.searchFailed, textAlign: TextAlign.center),
         ),
       );
     }
     if (_searched && _results.isEmpty) {
-      return const Center(child: Text('No messages found'));
+      return Center(child: Text(context.l10n.searchNoResults));
     }
 
     return ListView.builder(
