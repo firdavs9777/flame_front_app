@@ -9,12 +9,25 @@ import 'package:flutter_test/flutter_test.dart';
 /// is then unreachable by name: a push-notification handler cannot call a
 /// closure inside somebody's onTap.
 void main() {
+  /// welcome_screen builds two PageRouteBuilders by hand, for the slide
+  /// transition into login and registration. They stay: both are pre-auth, so
+  /// no notification or deep link can target them, and routing them would mean
+  /// either losing the animation or teaching the route table about transitions.
+  ///
+  /// Listed explicitly rather than left to a narrower pattern. An earlier version
+  /// of this test only looked for MaterialPageRoute, so it passed while these two
+  /// existed — a test that read as "nothing builds its own route" while two
+  /// things did.
+  const allowed = {'lib/screens/auth/welcome_screen.dart'};
+
   test('no screen builds its own route', () {
     final offenders = <String>[];
     for (final entity in Directory('lib/screens').listSync(recursive: true)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      if (allowed.contains(entity.path)) continue;
       final source = entity.readAsStringSync();
-      if (source.contains('MaterialPageRoute')) {
+      if (source.contains('MaterialPageRoute') ||
+          source.contains('PageRouteBuilder')) {
         offenders.add(entity.path);
       }
     }
@@ -22,6 +35,17 @@ void main() {
     expect(offenders, isEmpty,
         reason: 'these build routes directly instead of pushing a name:\n'
             '${offenders.join('\n')}');
+  });
+
+  test('the allowlist still describes reality', () {
+    // If welcome_screen stops hand-rolling routes, this exemption should go
+    // rather than sit here implying a constraint that no longer exists.
+    for (final path in allowed) {
+      final source = File(path).readAsStringSync();
+      expect(source.contains('PageRouteBuilder') ||
+              source.contains('MaterialPageRoute'), isTrue,
+          reason: '$path no longer builds its own route — drop it from allowed');
+    }
   });
 
   test('the router is the only place MaterialPageRoute appears', () {
