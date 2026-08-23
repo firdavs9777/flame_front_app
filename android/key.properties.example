@@ -1,0 +1,16 @@
+# Copy to android/key.properties and fill in. That file is gitignored: it holds
+# the passwords to the app's identity and must never be committed.
+#
+# Generate the keystore first:
+#
+#   keytool -genkey -v -keystore ~/flame-upload.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# Then back up BOTH the .jks and these passwords somewhere you will still have
+# in two years — a password manager, not only this laptop. With Play App Signing
+# a lost upload key can be reset by Google, but only after a support round-trip
+# during which you cannot ship anything.
+storeFile=/absolute/path/to/flame-upload.jks
+storePassword=
+keyAlias=upload
+keyPassword=
