@@ -82,6 +82,7 @@
   "chatDayToday": "今日",
   "chatDayYesterday": "昨日",
   "chatTyping": "入力中…",
+  "routeNotFound": "この画面は利用できません",
   "retry": "再試行",
   "chatMatchedWith": "{name}さんとマッチしました！",
   "chatSendFirstMessage": "メッセージを送って会話を始めましょう",

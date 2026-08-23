@@ -82,6 +82,7 @@
   "chatDayToday": "今天",
   "chatDayYesterday": "昨天",
   "chatTyping": "正在输入…",
+  "routeNotFound": "此页面不可用",
   "retry": "重试",
   "chatMatchedWith": "你和 {name} 配对成功！",
   "chatSendFirstMessage": "发送消息开始对话",

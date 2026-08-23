@@ -82,6 +82,7 @@
   "chatDayToday": "Bugün",
   "chatDayYesterday": "Dün",
   "chatTyping": "yazıyor…",
+  "routeNotFound": "Bu ekran kullanılamıyor",
   "retry": "Yeniden dene",
   "chatMatchedWith": "{name} ile eşleştin!",
   "chatSendFirstMessage": "Sohbeti başlatmak için bir mesaj gönder",

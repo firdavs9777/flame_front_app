@@ -6,9 +6,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'theme/app_theme.dart';
 import 'providers/providers.dart';
 import 'screens/main_shell.dart';
-import 'screens/discover/discover_filters_screen.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/registration/social_profile_completion_flow.dart';
+import 'core/navigation/app_router.dart';
 import 'screens/splash/splash_screen.dart';
 import 'core/i18n/locale_provider.dart';
 import 'core/i18n/supported_locales.dart';
@@ -92,7 +92,13 @@ class FlameApp extends ConsumerWidget {
             ? const SocialProfileCompletionFlow()
             : const WelcomeScreen(),
       ),
-      routes: {'/discover/filters': (context) => const DiscoverFiltersScreen()},
+      // `home:` keeps the auth gate above, deliberately. Moving it into the
+      // route table would mean routing owns the authenticated/unauthenticated
+      // decision, and MainShell — which holds the socket's token-refresh hook,
+      // the lifecycle resume that rebuilds it, and the initial load — would be
+      // rebuilt by navigation. A broken socket stops chat delivery silently.
+      navigatorKey: appNavigatorKey,
+      onGenerateRoute: AppRouter.onGenerateRoute,
     );
   }
 }

@@ -82,6 +82,7 @@
   "chatDayToday": "Сегодня",
   "chatDayYesterday": "Вчера",
   "chatTyping": "печатает…",
+  "routeNotFound": "Этот экран недоступен",
   "retry": "Повторить",
   "chatMatchedWith": "У вас совпадение с {name}!",
   "chatSendFirstMessage": "Отправьте сообщение, чтобы начать разговор",

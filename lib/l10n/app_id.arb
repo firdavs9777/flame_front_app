@@ -82,6 +82,7 @@
   "chatDayToday": "Hari ini",
   "chatDayYesterday": "Kemarin",
   "chatTyping": "sedang menulis…",
+  "routeNotFound": "Halaman ini tidak tersedia",
   "retry": "Coba lagi",
   "chatMatchedWith": "Kamu cocok dengan {name}!",
   "chatSendFirstMessage": "Kirim pesan untuk memulai percakapan",

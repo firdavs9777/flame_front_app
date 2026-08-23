@@ -226,6 +226,10 @@
   "@chatTyping": {
     "description": "Shown under the partner name while they are typing"
   },
+  "routeNotFound": "This screen isn't available",
+  "@routeNotFound": {
+    "description": "Shown when a route name has no screen, e.g. a stale notification payload"
+  },
   "retry": "Retry",
   "@retry": {
     "description": "Button that retries a failed load"

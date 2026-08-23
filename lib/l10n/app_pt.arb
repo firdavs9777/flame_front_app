@@ -82,6 +82,7 @@
   "chatDayToday": "Hoje",
   "chatDayYesterday": "Ontem",
   "chatTyping": "digitando…",
+  "routeNotFound": "Este ecrã não está disponível",
   "retry": "Tentar novamente",
   "chatMatchedWith": "Você deu match com {name}!",
   "chatSendFirstMessage": "Envie uma mensagem para iniciar a conversa",

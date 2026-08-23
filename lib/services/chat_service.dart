@@ -46,6 +46,23 @@ class ChatService {
     return ServiceResult.failure(response.error ?? 'Failed to get conversations');
   }
 
+  /// One conversation by id.
+  ///
+  /// For the push-notification path, which has an id and nothing else. The
+  /// paginated list cannot answer it: a notification about a conversation past
+  /// the first page would find nothing there.
+  Future<ServiceResult<Conversation>> getConversation(String id) async {
+    final response = await _apiClient.get('/conversations/$id');
+
+    if (response.success && response.data is Map) {
+      return ServiceResult.success(
+        Conversation.fromJson(Map<String, dynamic>.from(response.data)),
+      );
+    }
+
+    return ServiceResult.failure(response.error ?? 'Failed to get conversation');
+  }
+
   // Get messages in a conversation
   /// One page of messages, newest-first as the server returns them.
   ///
