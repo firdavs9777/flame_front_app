@@ -167,8 +167,15 @@ class AuthService {
   ///
   /// Best-effort — failures are returned but the app continues using the
   /// local preference. Backend may not have the field yet during deploy.
-  Future<ApiResponse> updatePreferredLanguage(String code) async {
-    return _apiClient.patch('/users/me', body: {'preferred_language': code});
+  /// Tells the server which language to EMAIL this user in.
+  ///
+  /// Sent `preferred_language` until now, which PATCH /users/me does not define.
+  /// That schema is deliberately not `.strict()`, so the key was silently
+  /// stripped: the call returned 200, nothing logged, and every user stayed on
+  /// English. The field is `locale`, and it is enumerated server-side now, so a
+  /// tag outside kSupportedLocales 422s instead of vanishing.
+  Future<ApiResponse> updateLocale(String tag) async {
+    return _apiClient.patch('/users/me', body: {'locale': tag});
   }
 
   // Forgot password

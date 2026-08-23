@@ -14,31 +14,31 @@ Map<String, dynamic> _baseJson() => {
     };
 
 void main() {
-  test('fromJson reads preferred_language when present', () {
-    final json = _baseJson()..['preferred_language'] = 'es';
+  test('fromJson reads locale when present', () {
+    final json = _baseJson()..['locale'] = 'es';
     final user = User.fromJson(json);
-    expect(user.preferredLanguage, 'es');
+    expect(user.locale, 'es');
   });
 
   test('fromJson reads pt-BR style country-coded tag', () {
-    final json = _baseJson()..['preferred_language'] = 'pt-BR';
+    final json = _baseJson()..['locale'] = 'pt-BR';
     final user = User.fromJson(json);
-    expect(user.preferredLanguage, 'pt-BR');
+    expect(user.locale, 'pt-BR');
   });
 
   test('fromJson sets preferredLanguage to null when field absent', () {
     final user = User.fromJson(_baseJson());
-    expect(user.preferredLanguage, isNull);
+    expect(user.locale, isNull);
   });
 
-  test('toJson includes preferred_language', () {
-    final user = User.fromJson(_baseJson()..['preferred_language'] = 'fr');
-    expect(user.toJson()['preferred_language'], 'fr');
+  test('toJson includes locale', () {
+    final user = User.fromJson(_baseJson()..['locale'] = 'fr');
+    expect(user.toJson()['locale'], 'fr');
   });
 
   test('copyWith updates preferredLanguage', () {
     final user = User.fromJson(_baseJson());
-    final updated = user.copyWith(preferredLanguage: 'de');
-    expect(updated.preferredLanguage, 'de');
+    final updated = user.copyWith(locale: 'de');
+    expect(updated.locale, 'de');
   });
 }

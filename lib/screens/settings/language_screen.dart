@@ -56,8 +56,8 @@ class LanguageScreen extends ConsumerWidget {
   void _syncBackend(WidgetRef ref, String tag) {
     if (!ref.read(authProvider).isAuthenticated) return;
     unawaited(
-      AuthService().updatePreferredLanguage(tag).then((_) {}, onError: (e) {
-        debugPrint('preferred_language sync failed: $e');
+      AuthService().updateLocale(tag).then((_) {}, onError: (e) {
+        debugPrint('locale sync failed: $e');
       }),
     );
   }

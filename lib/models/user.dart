@@ -49,7 +49,12 @@ class User {
   final bool? isProfileComplete;
   // BCP 47 short form (e.g. "en", "es", "pt-BR"). Null when the user hasn't
   // explicitly picked a language in app settings.
-  final String? preferredLanguage;
+  /// Which language the server will EMAIL this user in.
+  ///
+  /// Read `preferred_language` until now — a key the server has never sent. It
+  /// parsed to null on every response, so nothing downstream could have worked.
+  /// The field is `locale`.
+  final String? locale;
 
   const User({
     required this.id,
@@ -79,7 +84,7 @@ class User {
     this.premiumExpiresAt,
     this.superLikesRemaining = 3,
     this.isProfileComplete,
-    this.preferredLanguage,
+    this.locale,
   });
 
   /// Whether premium is active right now: `isPremium` is true AND
@@ -193,7 +198,7 @@ class User {
               : null,
       superLikesRemaining: json['super_likes_remaining'] ?? 3,
       isProfileComplete: json['is_profile_complete'] as bool?,
-      preferredLanguage: json['preferred_language'] as String?,
+      locale: json['locale'] as String?,
     );
   }
 
@@ -222,7 +227,7 @@ class User {
       'is_premium': isPremium,
       'premium_expires_at': premiumExpiresAt?.toIso8601String(),
       'super_likes_remaining': superLikesRemaining,
-      'preferred_language': preferredLanguage,
+      'locale': locale,
     };
   }
 
@@ -254,7 +259,7 @@ class User {
     DateTime? premiumExpiresAt,
     int? superLikesRemaining,
     bool? isProfileComplete,
-    String? preferredLanguage,
+    String? locale,
   }) {
     return User(
       id: id ?? this.id,
@@ -284,7 +289,7 @@ class User {
       premiumExpiresAt: premiumExpiresAt ?? this.premiumExpiresAt,
       superLikesRemaining: superLikesRemaining ?? this.superLikesRemaining,
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
-      preferredLanguage: preferredLanguage ?? this.preferredLanguage,
+      locale: locale ?? this.locale,
     );
   }
 
