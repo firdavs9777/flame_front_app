@@ -5,10 +5,13 @@ integration no-ops until its FLAME-specific keys are present, then activates aut
 runbook is the checklist to turn each piece on when you have the credentials. Nothing here needs code
 changes — it's config + a small one-time Flutter native step for push.
 
-> Backend lives on branch **`feat/flame-chat`** (chat + realtime + push + email) and
-> **`feat/flame-ops-hardening`** (DB-connect resilience + Spaces diagnostics), repo
-> `~/Projects/BananaTalk/backend`. All flame env vars are documented in
+> **Stale branch references removed (2026-08-23):** everything this runbook
+> described as living on `feat/flame-chat` and `feat/flame-ops-hardening` is
+> merged to `main` and deployed. All flame env vars are documented in
 > `flame/config/flame.env.example`.
+>
+> See `docs/RELEASE-CHECKLIST.md` for what is still outstanding before release,
+> including the items here that are genuinely blocking rather than optional.
 
 ---
 

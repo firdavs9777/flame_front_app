@@ -25,8 +25,11 @@ C2 first, because it can be finished rather than parked.
 `emailService`, `emailTemplates`, `sendEmail` and `emailScheduler` are all
 written. Almost none of it runs:
 
-- **`startEmailScheduler()` is never called.** The only reference to it in the
-  entire repo is a comment in `flame.env.example`. It has never executed.
+- ~~**`startEmailScheduler()` is never called.**~~ **WRONG — corrected
+  2026-08-23.** `server.js:152` has always called it, guarded exactly like the
+  flame socket init. That claim came from a grep scoped to `flame/`, which cannot
+  see the parent repo's `server.js`. The scheduler was wired correctly from the
+  start; what was missing was any real work in it.
 - **Its one job is a placeholder** that logs `email digest job tick
   (placeholder, no-op)` and reschedules itself. It sends nothing.
 - **`sendPasswordChanged` is never called.** Template and function both ready.
