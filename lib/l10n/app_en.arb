@@ -737,6 +737,34 @@
   "@settingsAccountDeleteFailed": {
     "description": "Profile / settings"
   },
+  "notifTitle": "Notifications",
+  "@notifTitle": {
+    "description": "Title of the notification settings screen"
+  },
+  "notifSectionPush": "Push notifications",
+  "@notifSectionPush": {
+    "description": "Section heading for push notification toggles"
+  },
+  "notifSectionEmail": "Email",
+  "@notifSectionEmail": {
+    "description": "Section heading for email toggles"
+  },
+  "notifPromotions": "Promotions",
+  "@notifPromotions": {
+    "description": "Marketing email toggle (opt-in)"
+  },
+  "notifPromotionsSubtitle": "News and offers by email",
+  "@notifPromotionsSubtitle": {
+    "description": "Subtitle for the marketing email toggle"
+  },
+  "notifReminders": "Reminders",
+  "@notifReminders": {
+    "description": "Re-engagement email toggle (opt-out)"
+  },
+  "notifRemindersSubtitle": "Email me when I have likes I have not seen",
+  "@notifRemindersSubtitle": {
+    "description": "Subtitle for the re-engagement email toggle"
+  },
   "notifAll": "All notifications",
   "@notifAll": {
     "description": "Profile / settings"

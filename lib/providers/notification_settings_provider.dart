@@ -51,6 +51,18 @@ class NotificationSettingsNotifier
         () => _service.updateSettings(matches: value),
       );
 
+  // Email, not push. Deliberately not gated on `enabled` anywhere in this class
+  // or in the screen: they are separate channels.
+  Future<bool> setPromotions(bool value) => _update(
+        (s) => s.copyWith(promotions: value),
+        () => _service.updateSettings(promotions: value),
+      );
+
+  Future<bool> setReengagement(bool value) => _update(
+        (s) => s.copyWith(reengagement: value),
+        () => _service.updateSettings(reengagement: value),
+      );
+
   /// Optimistically applies [optimistic] to the current state, calls
   /// [request], and reconciles with the returned settings on success.
   /// Reverts to the previous state on failure.

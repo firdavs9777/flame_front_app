@@ -26,11 +26,15 @@ class NotificationSettingsService {
     bool? enabled,
     bool? chatMessages,
     bool? matches,
+    bool? promotions,
+    bool? reengagement,
   }) async {
     final body = NotificationSettings.toPutBody(
       enabled: enabled,
       chatMessages: chatMessages,
       matches: matches,
+      promotions: promotions,
+      reengagement: reengagement,
     );
 
     final response = await _apiClient.put(

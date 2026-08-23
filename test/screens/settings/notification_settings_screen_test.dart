@@ -13,12 +13,16 @@ class _FakeNotificationSettingsService extends NotificationSettingsService {
   bool? lastEnabled;
   bool? lastChatMessages;
   bool? lastMatches;
+  bool? lastPromotions;
+  bool? lastReengagement;
   bool getSucceeds = true;
   bool updateSucceeds = true;
   NotificationSettings settings = const NotificationSettings(
     enabled: true,
     chatMessages: true,
     matches: true,
+    promotions: false,
+    reengagement: true,
   );
 
   @override
@@ -33,11 +37,15 @@ class _FakeNotificationSettingsService extends NotificationSettingsService {
     bool? enabled,
     bool? chatMessages,
     bool? matches,
+    bool? promotions,
+    bool? reengagement,
   }) async {
     updateCalled = true;
     lastEnabled = enabled;
     lastChatMessages = chatMessages;
     lastMatches = matches;
+    lastPromotions = promotions;
+    lastReengagement = reengagement;
     if (!updateSucceeds) {
       return ServiceResult.failure('Failed to update notification settings');
     }
@@ -45,6 +53,8 @@ class _FakeNotificationSettingsService extends NotificationSettingsService {
       enabled: enabled,
       chatMessages: chatMessages,
       matches: matches,
+      promotions: promotions,
+      reengagement: reengagement,
     );
     return ServiceResult.success(settings);
   }
@@ -73,7 +83,7 @@ SwitchListTile _tileByTitle(WidgetTester tester, String title) {
 }
 
 void main() {
-  testWidgets('loads settings and renders the three switches', (tester) async {
+  testWidgets('loads settings and renders the push switches', (tester) async {
     final fake = _FakeNotificationSettingsService()
       ..settings = const NotificationSettings(
         enabled: true,
@@ -84,7 +94,10 @@ void main() {
     await tester.pumpWidget(_wrap(fake));
     await tester.pumpAndSettle();
 
-    expect(find.byType(SwitchListTile), findsNWidgets(3));
+    // Five now: the two email channels joined the three push ones. Asserting the
+    // exact count rather than "at least three" is what caught this when the
+    // screen grew, which is the point of counting at all.
+    expect(find.byType(SwitchListTile), findsNWidgets(5));
     expect(_tileByTitle(tester, 'All notifications').value, true);
     expect(_tileByTitle(tester, 'Chat messages').value, false);
     expect(_tileByTitle(tester, 'New matches').value, true);
@@ -147,5 +160,128 @@ void main() {
       find.text('Could not update notification settings'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('renders both channels, push and email', (tester) async {
+    await tester.pumpWidget(_wrap(_FakeNotificationSettingsService()));
+    await tester.pumpAndSettle();
+
+    // Five switches now: three push, two email. Grouped under headings, because
+    // "All notifications" governing the push three but not the email two is only
+    // legible if the two groups are visibly separate.
+    expect(find.byType(SwitchListTile), findsNWidgets(5));
+    expect(_tileByTitle(tester, 'Promotions').value, false);
+    expect(_tileByTitle(tester, 'Reminders').value, true);
+    expect(find.text('Push notifications'), findsOneWidget);
+    expect(find.text('Email'), findsOneWidget);
+  });
+
+  testWidgets('the push master toggle does NOT disable the email switches',
+      (tester) async {
+    final fake = _FakeNotificationSettingsService()
+      ..settings = const NotificationSettings(
+        enabled: false,
+        chatMessages: true,
+        matches: true,
+        promotions: true,
+        reengagement: true,
+      );
+
+    await tester.pumpWidget(_wrap(fake));
+    await tester.pumpAndSettle();
+
+    // Push children are correctly gated...
+    expect(_tileByTitle(tester, 'Chat messages').onChanged, isNull);
+    expect(_tileByTitle(tester, 'New matches').onChanged, isNull);
+    // ...and email is a DIFFERENT CHANNEL. A push toggle silently switching off
+    // someone's email would be wrong, and it is the kind of thing that looks
+    // right in a screenshot.
+    expect(_tileByTitle(tester, 'Promotions').onChanged, isNotNull);
+    expect(_tileByTitle(tester, 'Reminders').onChanged, isNotNull);
+  });
+
+  testWidgets('promotions can be switched ON', (tester) async {
+    final fake = _FakeNotificationSettingsService();
+    await tester.pumpWidget(_wrap(fake));
+    await tester.pumpAndSettle();
+
+    // The whole reason this switch has to exist: promotions defaults to false,
+    // so without a way to turn it on the campaign job correctly mails nobody.
+    await tester.tap(find.byWidget(_tileByTitle(tester, 'Promotions')));
+    await tester.pumpAndSettle();
+
+    expect(fake.lastPromotions, true);
+  });
+
+  testWidgets('reminders can be switched off from here, not only from the email',
+      (tester) async {
+    final fake = _FakeNotificationSettingsService();
+    await tester.pumpWidget(_wrap(fake));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byWidget(_tileByTitle(tester, 'Reminders')));
+    await tester.pumpAndSettle();
+
+    expect(fake.lastReengagement, false);
+  });
+
+  testWidgets('a failed email update reverts the switch and says so',
+      (tester) async {
+    final fake = _FakeNotificationSettingsService()..updateSucceeds = false;
+    await tester.pumpWidget(_wrap(fake));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byWidget(_tileByTitle(tester, 'Promotions')));
+    await tester.pumpAndSettle();
+
+    expect(_tileByTitle(tester, 'Promotions').value, false,
+        reason: 'an optimistic flip must revert when the server refuses');
+    expect(find.text("Could not update notification settings"), findsOneWidget);
+  });
+
+  testWidgets('the title is localized, not a hardcoded English literal',
+      (tester) async {
+    // It was `const Text('Notifications')` — in a Settings screen the profile
+    // and settings localization sweep was supposed to have covered.
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        notificationSettingsServiceProvider
+            .overrideWithValue(_FakeNotificationSettingsService()),
+      ],
+      child: MaterialApp(
+        locale: const Locale('ko'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const NotificationSettingsScreen(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Notifications'), findsNothing);
+  });
+
+  testWidgets('renders at double text scale without overflowing', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        notificationSettingsServiceProvider
+            .overrideWithValue(_FakeNotificationSettingsService()),
+      ],
+      child: MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(2.0)),
+          child: NotificationSettingsScreen(),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
   });
 }

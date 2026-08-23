@@ -11,6 +11,8 @@ class _FakeNotificationSettingsService extends NotificationSettingsService {
   bool? lastEnabled;
   bool? lastChatMessages;
   bool? lastMatches;
+  bool? lastPromotions;
+  bool? lastReengagement;
   bool getSucceeds = true;
   bool updateSucceeds = true;
   NotificationSettings settings = const NotificationSettings(
@@ -32,11 +34,15 @@ class _FakeNotificationSettingsService extends NotificationSettingsService {
     bool? enabled,
     bool? chatMessages,
     bool? matches,
+    bool? promotions,
+    bool? reengagement,
   }) async {
     updateCalled = true;
     lastEnabled = enabled;
     lastChatMessages = chatMessages;
     lastMatches = matches;
+    lastPromotions = promotions;
+    lastReengagement = reengagement;
 
     if (!updateSucceeds) {
       return ServiceResult.failure('Failed to update notification settings');
@@ -46,6 +52,8 @@ class _FakeNotificationSettingsService extends NotificationSettingsService {
       enabled: enabled,
       chatMessages: chatMessages,
       matches: matches,
+      promotions: promotions,
+      reengagement: reengagement,
     );
     return ServiceResult.success(settings);
   }
