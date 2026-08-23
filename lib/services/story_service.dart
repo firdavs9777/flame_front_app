@@ -1,138 +1,122 @@
 import 'dart:io';
 
 import 'package:flame/models/story.dart';
+import 'package:flame/services/api_client.dart';
 
-/// Lightweight, denormalized reference to a story author (avoids coupling the
-/// service layer to [User]/[Match]).
-class StoryUserRef {
-  final String userId;
-  final String name;
-  final String avatarUrl;
-
-  const StoryUserRef({
-    required this.userId,
-    required this.name,
-    required this.avatarUrl,
-  });
-}
-
-/// The Stories backend seam. Swap [MockStoryService] for a real
-/// `ApiStoryService` (same interface, hitting `/stories/*`) when the backend
-/// ships — no UI changes required.
+/// The Stories backend seam.
+///
+/// Nothing here takes the viewer or the author as an argument: the bearer token
+/// identifies the caller, and the SERVER decides whose stories are visible
+/// (matches only — see `flame/services/storyService.js`). An earlier in-memory
+/// implementation took a list of matched users because it had to fabricate the
+/// feed itself; passing that list to a real backend would have been a client
+/// asking to be told what it is allowed to see.
 abstract class StoryService {
-  /// Active stories from the given matched users, grouped per user. Users with
-  /// no active stories are omitted.
-  Future<List<UserStories>> feed(List<StoryUserRef> matches);
+  /// Active stories from users the viewer is matched with, grouped per author.
+  /// Authors with nothing live are omitted.
+  Future<List<UserStories>> feed();
 
-  /// The current user's own active stories (null if none).
-  Future<UserStories?> myStories(StoryUserRef me);
+  /// The viewer's own active stories (null if none).
+  Future<UserStories?> myStories();
 
   /// Upload a photo story; it expires 24h from now.
-  Future<Story> create({
-    required StoryUserRef author,
-    required File image,
-    String? caption,
-  });
+  Future<Story> create({required File image, String? caption});
 
   Future<void> markViewed(String storyId);
 
   Future<void> delete(String storyId);
 }
 
-/// In-memory implementation for the frontend-first slice. Seeds deterministic
-/// stories for matched users, and keeps own created stories + a viewed set for
-/// the session. Not persisted — created stories vanish on restart (by design).
-class MockStoryService implements StoryService {
-  final List<Story> _ownStories = [];
-  final Set<String> _viewed = {};
-  int _createCounter = 0;
+/// Talks to `/stories/*`.
+///
+/// Reads degrade to empty rather than throwing: the tray is one strip inside
+/// the Messages tab, so a story request that fails should cost the strip, not
+/// the screen it sits on. Writes the user initiated ([create]) do throw, because
+/// silently discarding a photo someone just posted is worse than an error.
+class ApiStoryService implements StoryService {
+  ApiStoryService({ApiClient? client}) : _api = client ?? ApiClient();
+
+  final ApiClient _api;
 
   @override
-  Future<List<UserStories>> feed(List<StoryUserRef> matches) async {
-    final result = <UserStories>[];
-    for (final ref in matches) {
-      final stories = _seedStoriesFor(ref);
-      final wrapped = UserStories(
-        userId: ref.userId,
-        name: ref.name,
-        avatarUrl: ref.avatarUrl,
-        stories: stories,
-      );
-      if (wrapped.hasStories) result.add(wrapped);
-    }
-    // Unviewed first, then most recent.
-    result.sort((a, b) {
+  Future<List<UserStories>> feed() async {
+    final response = await _api.get('/stories/feed');
+    if (!response.success) return const [];
+
+    final raw = response.data is Map ? response.data['users'] : null;
+    if (raw is! List) return const [];
+
+    final groups = raw
+        .whereType<Map>()
+        .map((u) => UserStories.fromJson(Map<String, dynamic>.from(u)))
+        .where((u) => u.hasStories)
+        .toList();
+
+    // Unviewed first, then most recent — the tray reads left to right and the
+    // rings people care about belong at the start.
+    groups.sort((a, b) {
       if (a.hasUnviewed != b.hasUnviewed) return a.hasUnviewed ? -1 : 1;
-      final at = a.latestAt ?? a.stories.first.createdAt;
-      final bt = b.latestAt ?? b.stories.first.createdAt;
+      final at = a.latestAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bt = b.latestAt ?? DateTime.fromMillisecondsSinceEpoch(0);
       return bt.compareTo(at);
     });
-    return result;
+    return groups;
   }
 
   @override
-  Future<UserStories?> myStories(StoryUserRef me) async {
-    final active = _ownStories
-        .map((s) => s.copyWith(hasViewed: _viewed.contains(s.id)))
-        .where((s) => s.isActive)
-        .toList();
-    if (active.isEmpty) return null;
-    return UserStories(
-      userId: me.userId,
-      name: me.name,
-      avatarUrl: me.avatarUrl,
-      stories: active,
-    );
+  Future<UserStories?> myStories() async {
+    final response = await _api.get('/stories/my');
+    if (!response.success) return null;
+
+    final data = response.data;
+    if (data is! Map) return null;
+    // `ApiClient._handleResponse` unwraps with `data?['data'] ?? data`, so a
+    // null `data` field falls back to the whole envelope. "No active stories"
+    // therefore arrives as {success: true, data: null} rather than as null.
+    if (data.containsKey('data') && data['data'] == null) return null;
+
+    final group = UserStories.fromJson(Map<String, dynamic>.from(data));
+    return group.hasStories ? group : null;
   }
 
   @override
-  Future<Story> create({
-    required StoryUserRef author,
-    required File image,
-    String? caption,
-  }) async {
-    final now = DateTime.now();
-    final story = Story(
-      id: 'own_${_createCounter++}_${now.microsecondsSinceEpoch}',
-      userId: author.userId,
-      mediaUrl: image.path,
-      caption: caption,
-      createdAt: now,
-      expiresAt: now.add(const Duration(hours: 24)),
+  Future<Story> create({required File image, String? caption}) async {
+    final response = await _api.uploadFile(
+      '/stories',
+      image,
+      fieldName: 'media',
+      fields: (caption != null && caption.trim().isNotEmpty)
+          ? {'caption': caption.trim()}
+          : null,
     );
-    _ownStories.add(story);
-    return story;
+
+    if (!response.success || response.data is! Map) {
+      throw StoryException(response.error ?? 'Could not post your story');
+    }
+    return Story.fromJson(Map<String, dynamic>.from(response.data));
   }
 
   @override
   Future<void> markViewed(String storyId) async {
-    _viewed.add(storyId);
+    // Fire-and-forget by design: this runs as the viewer turns a page, and a
+    // failure only costs an unread ring that corrects itself on the next feed.
+    await _api.post('/stories/$storyId/view');
   }
 
   @override
   Future<void> delete(String storyId) async {
-    _ownStories.removeWhere((s) => s.id == storyId);
+    final response = await _api.delete('/stories/$storyId');
+    if (!response.success) {
+      throw StoryException(response.error ?? 'Could not delete that story');
+    }
   }
+}
 
-  /// Deterministic seed stories for a matched user: ~2/3 of matches have 1-2
-  /// stories, using seeded picsum photos so the viewer shows real images.
-  List<Story> _seedStoriesFor(StoryUserRef ref) {
-    final seed = ref.userId.hashCode & 0x7fffffff;
-    if (seed % 3 == 0) return const []; // this user has no active stories
-    final count = (seed % 2) + 1; // 1 or 2
-    final now = DateTime.now();
-    return List.generate(count, (i) {
-      final id = '${ref.userId}_s$i';
-      final createdAt = now.subtract(Duration(hours: 1 + (seed % 20) + i * 2));
-      return Story(
-        id: id,
-        userId: ref.userId,
-        mediaUrl: 'https://picsum.photos/seed/${ref.userId}_$i/900/1600',
-        createdAt: createdAt,
-        expiresAt: createdAt.add(const Duration(hours: 24)),
-        viewCount: seed % 25,
-        hasViewed: _viewed.contains(id),
-      );
-    }).where((s) => s.isActive).toList();
-  }
+/// Raised for story writes the user initiated, so the UI can say what failed.
+class StoryException implements Exception {
+  const StoryException(this.message);
+  final String message;
+
+  @override
+  String toString() => message;
 }

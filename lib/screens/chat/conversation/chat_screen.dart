@@ -1,3 +1,4 @@
+import 'package:flame/core/navigation/app_routes.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -20,7 +21,6 @@ import 'package:flame/screens/chat/state/thread_presence_provider.dart';
 import 'package:flame/screens/chat/voice_recording.dart';
 import 'package:flame/screens/chat/widgets/chat_snackbar.dart';
 import 'package:flame/screens/chat/widgets/widgets.dart';
-import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/services/chat_service.dart' show PinnedMessage;
 
 /// One open conversation.
@@ -284,9 +284,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _openProfile() {
-    Navigator.push(
+    Navigator.pushNamed(
       context,
-      MaterialPageRoute(builder: (_) => ProfileDetailScreen(user: _otherUser)),
+      AppRoutes.profileDetail,
+      arguments: ProfileDetailArgs(user: _otherUser),
     );
   }
 

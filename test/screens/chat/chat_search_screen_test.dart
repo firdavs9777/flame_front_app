@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flame/l10n/gen/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/screens/chat/chat_search_screen.dart';
@@ -12,8 +14,16 @@ Message _msg(String id, String text) => Message.fromJson({
 });
 
 void main() {
-  Widget host(MessageSearch search) =>
-      MaterialApp(home: ChatSearchScreen(search: search));
+  Widget host(MessageSearch search) => MaterialApp(
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+        home: ChatSearchScreen(search: search),
+      );
 
   testWidgets('does not search until typing settles', (tester) async {
     var calls = 0;

@@ -1,12 +1,11 @@
+import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/screens/chat/widgets/matches_empty_state.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
-import 'package:flame/screens/chat/conversation/chat_screen.dart';
-import 'package:flame/screens/chat/chat_search_screen.dart';
-import 'package:flame/screens/chat/archived_conversations_screen.dart';
 import 'package:flame/screens/stories/widgets/story_tray.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/theme/app_tokens.dart';
@@ -33,46 +32,17 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
     });
   }
 
-  /// Opens search, unwrapping ServiceResult into the screen's contract:
-  /// results on success, a throw on failure so its error branch renders.
-  void _openSearch(BuildContext context, WidgetRef ref) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ChatSearchScreen(
-          search: (query, {int limit = 20, int offset = 0}) async {
-            final result = await ref.read(chatServiceProvider).searchMessages(
-                  query: query, limit: limit, offset: offset,
-                );
-            if (!result.success) throw Exception(result.error ?? 'Search failed');
-            return result.data ?? [];
-          },
-        ),
-      ),
-    );
+  /// The search closure this screen used to build now lives in the route case,
+  /// which is the only place that needs to know how ChatSearchScreen is fed.
+  void _openSearch(BuildContext context) {
+    Navigator.of(context).pushNamed(AppRoutes.chatSearch);
   }
 
-  /// Opens the archived list, unwrapping ServiceResult into the screen's
-  /// contract: conversations on success, a throw on failure so its error
-  /// branch renders.
+  /// The load/unarchive closures moved into the route case. The `.then` did not:
+  /// it is about what happens on the way BACK, which is this screen's business.
   void _openArchived(BuildContext context, WidgetRef ref) {
     Navigator.of(context)
-        .push(
-          MaterialPageRoute(
-            builder: (_) => ArchivedConversationsScreen(
-              load: () async {
-                final result = await ref
-                    .read(chatServiceProvider)
-                    .getConversations(archived: true);
-                if (!result.success) {
-                  throw Exception(result.error ?? 'Could not load');
-                }
-                return result.data?.conversations ?? [];
-              },
-              unarchive: (id) =>
-                  ref.read(conversationsProvider.notifier).unarchive(id),
-            ),
-          ),
-        )
+        .pushNamed(AppRoutes.archivedConversations)
         // Anything unarchived while in there belongs in the default list again.
         .then((_) => ref
             .read(conversationsProvider.notifier)
@@ -86,16 +56,16 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Messages'),
+        title: Text(context.l10n.messagesTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            tooltip: 'Search messages',
-            onPressed: () => _openSearch(context, ref),
+            tooltip: context.l10n.searchMessages,
+            onPressed: () => _openSearch(context),
           ),
           IconButton(
             icon: const Icon(Icons.archive_outlined),
-            tooltip: 'Archived',
+            tooltip: context.l10n.archivedTitle,
             onPressed: () => _openArchived(context, ref),
           ),
         ],
@@ -123,7 +93,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
               error: (error, stack) => SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Text('Error loading matches: $error'),
+                  child: Text(context.l10n.matchesLoadFailed),
                 ),
               ),
               data: (matches) {
@@ -134,11 +104,11 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.all(16),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
                         child: Text(
-                          'New Matches',
-                          style: TextStyle(
+                          context.l10n.newMatches,
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -185,14 +155,14 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
                     children: [
                       Icon(Icons.error_outline, size: 60, color: context.secondaryText),
                       const SizedBox(height: 16),
-                      Text('Failed to load messages',
+                      Text(context.l10n.conversationsLoadFailed,
                 style: TextStyle(color: context.secondaryText)),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () {
                           ref.read(conversationsProvider.notifier).loadConversations(refresh: true);
                         },
-                        child: const Text('Retry'),
+                        child: Text(context.l10n.retry),
                       ),
                     ],
                   ),
@@ -304,13 +274,14 @@ class _MatchCircle extends ConsumerWidget {
 
     if (conversation == null) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Could not open this chat. Please try again.')),
+        SnackBar(content: Text(context.l10n.chatLoadFailed)),
       );
       return;
     }
 
-    navigator.push(
-      MaterialPageRoute(builder: (_) => ChatScreen(conversation: conversation)),
+    navigator.pushNamed(
+      AppRoutes.chat,
+      arguments: ChatRouteArgs.conversation(conversation),
     );
   }
 
@@ -382,19 +353,17 @@ class _MatchCircle extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Unmatch?'),
-        content: Text(
-          'You will no longer be matched with ${match.user.name} and this cannot be undone.',
-        ),
+        title: Text(context.l10n.unmatchTitle),
+        content: Text(context.l10n.unmatchBody(match.user.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(
-              'Unmatch',
+              context.l10n.unmatchConfirm,
               style: TextStyle(color: AppTheme.errorColor),
             ),
           ),
@@ -411,7 +380,9 @@ class _MatchCircle extends ConsumerWidget {
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          ok ? 'Unmatched with ${match.user.name}' : 'Could not unmatch. Please try again.',
+          ok
+              ? context.l10n.unmatchedWith(match.user.name)
+              : context.l10n.unmatchFailed,
         ),
       ),
     );
@@ -429,11 +400,10 @@ class _ConversationTile extends ConsumerWidget {
       onTap: () async {
         await ref.read(conversationsProvider.notifier).markAsRead(conversation.id);
         if (context.mounted) {
-          Navigator.push(
+          Navigator.pushNamed(
             context,
-            MaterialPageRoute(
-              builder: (_) => ChatScreen(conversation: conversation),
-            ),
+            AppRoutes.chat,
+            arguments: ChatRouteArgs.conversation(conversation),
           );
         }
       },

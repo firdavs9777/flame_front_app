@@ -157,7 +157,8 @@ class _FlameNavBar extends StatelessWidget {
   final int chatBadgeCount;
 
   // Builds nav items in the exact order/indices of _MainShellState._screens:
-  // Discover, [Chat if enabled], Profile, Settings.
+  // Discover, [Chat if enabled], Profile. Settings stopped being a tab and now
+  // sits behind the gear in Profile.
   List<Widget> _buildNavItems(BuildContext context) {
     var index = 0;
     final items = <Widget>[];

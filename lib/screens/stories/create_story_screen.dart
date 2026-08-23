@@ -39,16 +39,20 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
     final image = _image;
     if (image == null || _posting) return;
     setState(() => _posting = true);
-    final story = await ref.read(storyActionsProvider).create(
-          image: image,
-          caption: _captionController.text.trim().isEmpty
-              ? null
-              : _captionController.text.trim(),
-        );
-    if (!mounted) return;
-    if (story != null) {
+    // A real upload reports failure by throwing, so the outcome is the catch
+    // rather than a null return: the in-memory service this replaced could only
+    // fail by handing back null, and that branch is now unreachable.
+    try {
+      await ref.read(storyActionsProvider).create(
+            image: image,
+            caption: _captionController.text.trim().isEmpty
+                ? null
+                : _captionController.text.trim(),
+          );
+      if (!mounted) return;
       Navigator.of(context).pop();
-    } else {
+    } catch (_) {
+      if (!mounted) return;
       setState(() => _posting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.storyUploadFailed)),

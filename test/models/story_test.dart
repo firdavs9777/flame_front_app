@@ -78,4 +78,42 @@ void main() {
       expect(us.hasUnviewed, isFalse);
     });
   });
+
+  group('UserStories.fromJson', () {
+    test('parses a grouped author payload from the feed', () {
+      final created = DateTime.now().subtract(const Duration(hours: 2));
+      final group = UserStories.fromJson({
+        'user_id': 'u7',
+        'name': 'Mina',
+        'avatar_url': 'https://cdn/x.jpg',
+        'stories': [
+          {
+            'id': 's1',
+            'user_id': 'u7',
+            'media_url': 'https://cdn/s1.jpg',
+            'created_at': created.toIso8601String(),
+            'expires_at': created.add(const Duration(hours: 24)).toIso8601String(),
+            'view_count': 4,
+            'has_viewed': true,
+          },
+        ],
+      });
+
+      expect(group.userId, 'u7');
+      expect(group.name, 'Mina');
+      expect(group.avatarUrl, 'https://cdn/x.jpg');
+      expect(group.stories.single.id, 's1');
+      expect(group.stories.single.viewCount, 4);
+      expect(group.hasUnviewed, isFalse);
+    });
+
+    test('survives an author with no stories array', () {
+      // The server never sends this, but a group with a missing `stories` key
+      // must not take the tray down with a cast error.
+      final group = UserStories.fromJson({'user_id': 'u1', 'name': 'A'});
+      expect(group.stories, isEmpty);
+      expect(group.avatarUrl, '');
+      expect(group.hasStories, isFalse);
+    });
+  });
 }

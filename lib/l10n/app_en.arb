@@ -226,6 +226,80 @@
   "@chatTyping": {
     "description": "Shown under the partner name while they are typing"
   },
+  "routeNotFound": "This screen isn't available",
+  "@routeNotFound": {
+    "description": "Shown when a route name has no screen, e.g. a stale notification payload"
+  },
+  "messagesTitle": "Messages",
+  "@messagesTitle": {
+    "description": "Title of the Chat tab"
+  },
+  "searchMessages": "Search messages",
+  "@searchMessages": {
+    "description": "Search field hint and its tooltip in the Chat tab"
+  },
+  "newMatches": "New Matches",
+  "@newMatches": {
+    "description": "Heading above the row of new match avatars"
+  },
+  "matchesLoadFailed": "Couldn't load your matches",
+  "@matchesLoadFailed": {
+    "description": "Shown when the match list fails to load"
+  },
+  "conversationsLoadFailed": "Couldn't load your messages",
+  "@conversationsLoadFailed": {
+    "description": "Shown when the conversation list fails to load"
+  },
+  "unmatchTitle": "Unmatch?",
+  "@unmatchTitle": {
+    "description": "Title of the unmatch confirmation dialog"
+  },
+  "unmatchBody": "You will no longer be matched with {name} and this cannot be undone.",
+  "@unmatchBody": {
+    "description": "Body of the unmatch confirmation dialog",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "unmatchConfirm": "Unmatch",
+  "@unmatchConfirm": {
+    "description": "Destructive confirm button in the unmatch dialog"
+  },
+  "unmatchedWith": "Unmatched with {name}",
+  "@unmatchedWith": {
+    "description": "Confirmation after unmatching someone",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "unmatchFailed": "Could not unmatch. Please try again.",
+  "@unmatchFailed": {
+    "description": "Shown when unmatching fails"
+  },
+  "archivedTitle": "Archived",
+  "@archivedTitle": {
+    "description": "Title of the archived conversations screen"
+  },
+  "archivedEmpty": "No archived chats",
+  "@archivedEmpty": {
+    "description": "Empty state of the archived conversations screen"
+  },
+  "archivedLoadFailed": "Could not load archived chats",
+  "@archivedLoadFailed": {
+    "description": "Shown when the archived list fails to load"
+  },
+  "searchFailed": "Search failed. Please try again.",
+  "@searchFailed": {
+    "description": "Shown when a message search fails"
+  },
+  "searchNoResults": "No messages found",
+  "@searchNoResults": {
+    "description": "Empty state of message search"
+  },
+  "unarchive": "Unarchive",
+  "@unarchive": {
+    "description": "Tooltip on the button that returns a conversation to the main list"
+  },
   "retry": "Retry",
   "@retry": {
     "description": "Button that retries a failed load"
