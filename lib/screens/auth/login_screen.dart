@@ -1,10 +1,10 @@
+import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/config/env.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
-import 'package:flame/screens/auth/forgot_password_screen.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/i18n/error_messages.dart';
 import 'package:flame/services/api_client.dart';
@@ -282,10 +282,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (EnvConfig.current.forgotPasswordEnabled)
           TextButton(
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const ForgotPasswordScreen(),
-                ),
+              Navigator.of(context).pushNamed(
+                AppRoutes.forgotPassword,
               );
             },
             child: Text(

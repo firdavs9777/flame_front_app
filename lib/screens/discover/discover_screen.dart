@@ -1,3 +1,4 @@
+import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
@@ -6,7 +7,6 @@ import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/profile_card.dart';
 import 'package:flame/widgets/action_buttons.dart';
-import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/screens/discover/widgets/deck_states.dart';
 import 'package:flame/core/layout/breakpoints.dart';
 import 'package:flame/theme/app_tokens.dart';
@@ -297,12 +297,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               return ProfileCard(
                                 user: user,
                                 onTap: () {
-                                  Navigator.push(
+                                  Navigator.pushNamed(
                                     context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          ProfileDetailScreen(user: user),
-                                    ),
+                                    AppRoutes.profileDetail,
+                                    arguments: ProfileDetailArgs(user: user),
                                   );
                                 },
                               );

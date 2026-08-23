@@ -1,12 +1,10 @@
+import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/screens/chat/widgets/matches_empty_state.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
-import 'package:flame/screens/chat/conversation/chat_screen.dart';
-import 'package:flame/screens/chat/chat_search_screen.dart';
-import 'package:flame/screens/chat/archived_conversations_screen.dart';
 import 'package:flame/screens/stories/widgets/story_tray.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/theme/app_tokens.dart';
@@ -33,46 +31,17 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
     });
   }
 
-  /// Opens search, unwrapping ServiceResult into the screen's contract:
-  /// results on success, a throw on failure so its error branch renders.
-  void _openSearch(BuildContext context, WidgetRef ref) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ChatSearchScreen(
-          search: (query, {int limit = 20, int offset = 0}) async {
-            final result = await ref.read(chatServiceProvider).searchMessages(
-                  query: query, limit: limit, offset: offset,
-                );
-            if (!result.success) throw Exception(result.error ?? 'Search failed');
-            return result.data ?? [];
-          },
-        ),
-      ),
-    );
+  /// The search closure this screen used to build now lives in the route case,
+  /// which is the only place that needs to know how ChatSearchScreen is fed.
+  void _openSearch(BuildContext context) {
+    Navigator.of(context).pushNamed(AppRoutes.chatSearch);
   }
 
-  /// Opens the archived list, unwrapping ServiceResult into the screen's
-  /// contract: conversations on success, a throw on failure so its error
-  /// branch renders.
+  /// The load/unarchive closures moved into the route case. The `.then` did not:
+  /// it is about what happens on the way BACK, which is this screen's business.
   void _openArchived(BuildContext context, WidgetRef ref) {
     Navigator.of(context)
-        .push(
-          MaterialPageRoute(
-            builder: (_) => ArchivedConversationsScreen(
-              load: () async {
-                final result = await ref
-                    .read(chatServiceProvider)
-                    .getConversations(archived: true);
-                if (!result.success) {
-                  throw Exception(result.error ?? 'Could not load');
-                }
-                return result.data?.conversations ?? [];
-              },
-              unarchive: (id) =>
-                  ref.read(conversationsProvider.notifier).unarchive(id),
-            ),
-          ),
-        )
+        .pushNamed(AppRoutes.archivedConversations)
         // Anything unarchived while in there belongs in the default list again.
         .then((_) => ref
             .read(conversationsProvider.notifier)
@@ -91,7 +60,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
           IconButton(
             icon: const Icon(Icons.search),
             tooltip: 'Search messages',
-            onPressed: () => _openSearch(context, ref),
+            onPressed: () => _openSearch(context),
           ),
           IconButton(
             icon: const Icon(Icons.archive_outlined),
@@ -309,8 +278,9 @@ class _MatchCircle extends ConsumerWidget {
       return;
     }
 
-    navigator.push(
-      MaterialPageRoute(builder: (_) => ChatScreen(conversation: conversation)),
+    navigator.pushNamed(
+      AppRoutes.chat,
+      arguments: ChatRouteArgs.conversation(conversation),
     );
   }
 
@@ -429,11 +399,10 @@ class _ConversationTile extends ConsumerWidget {
       onTap: () async {
         await ref.read(conversationsProvider.notifier).markAsRead(conversation.id);
         if (context.mounted) {
-          Navigator.push(
+          Navigator.pushNamed(
             context,
-            MaterialPageRoute(
-              builder: (_) => ChatScreen(conversation: conversation),
-            ),
+            AppRoutes.chat,
+            arguments: ChatRouteArgs.conversation(conversation),
           );
         }
       },

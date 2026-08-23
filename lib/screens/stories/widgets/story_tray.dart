@@ -1,3 +1,4 @@
+import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/story.dart';
@@ -7,8 +8,6 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/stories/widgets/story_gradient_ring.dart';
-import 'package:flame/screens/stories/story_viewer_screen.dart';
-import 'package:flame/screens/stories/create_story_screen.dart';
 
 /// The ring row of stories at the top of the Matches/Chat screen. Own story
 /// first (with a `+` to add), then matched users' stories (coral ring when
@@ -18,15 +17,14 @@ class StoryTray extends ConsumerWidget {
 
   void _openViewer(BuildContext context, List<UserStories> users, int index) {
     if (users.isEmpty || index < 0 || index >= users.length) return;
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => StoryViewerScreen(users: users, initialUserIndex: index),
-    ));
+    Navigator.of(context).pushNamed(
+      AppRoutes.storyViewer,
+      arguments: StoryViewerArgs(users: users, initialUserIndex: index),
+    );
   }
 
   void _openCreate(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => const CreateStoryScreen(),
-    ));
+    Navigator.of(context).pushNamed(AppRoutes.createStory);
   }
 
   @override

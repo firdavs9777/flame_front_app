@@ -1,17 +1,15 @@
+import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
-import 'package:flame/screens/settings/language_screen.dart';
 import 'package:flame/core/i18n/locale_provider.dart';
 import 'package:flame/core/i18n/supported_locales.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/config/env.dart';
 import 'package:flame/screens/auth/registration/legal_document_sheet.dart';
-import 'package:flame/screens/settings/blocked_users_screen.dart';
-import 'package:flame/screens/settings/notification_settings_screen.dart';
 import 'package:flame/screens/settings/widgets/settings_section.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -58,9 +56,9 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.block,
             title: context.l10n.settingsBlockedUsers,
             onTap: () {
-              Navigator.push(
+              Navigator.pushNamed(
                 context,
-                MaterialPageRoute(builder: (_) => const BlockedUsersScreen()),
+                AppRoutes.blockedUsers,
               );
             },
           ),
@@ -108,11 +106,9 @@ class SettingsScreen extends ConsumerWidget {
             title: context.l10n.settingsNotifications,
             subtitle: context.l10n.settingsNotificationsSubtitle,
             onTap: () {
-              Navigator.push(
+              Navigator.pushNamed(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const NotificationSettingsScreen(),
-                ),
+                AppRoutes.notificationSettings,
               );
             },
           ),
@@ -130,8 +126,8 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const LanguageScreen()),
+              Navigator.of(context).pushNamed(
+                AppRoutes.language,
               );
             },
           ),

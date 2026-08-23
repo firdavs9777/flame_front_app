@@ -1,3 +1,4 @@
+import 'package:flame/core/navigation/app_routes.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,12 +7,9 @@ import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
-import 'package:flame/screens/profile/edit_profile/edit_profile_screen.dart';
 import 'package:flame/core/format/distance_format.dart';
-import 'package:flame/screens/settings/settings_screen.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/settings/widgets/settings_section.dart';
-import 'package:flame/screens/profile/profile_detail_screen.dart';
 
 class MyProfileScreen extends ConsumerStatefulWidget {
   const MyProfileScreen({super.key});
@@ -46,17 +44,17 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             tooltip: context.l10n.navSettings,
-            onPressed: () => Navigator.push(
+            onPressed: () => Navigator.pushNamed(
               context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              AppRoutes.settings,
             ),
           ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              Navigator.push(
+              Navigator.pushNamed(
                 context,
-                MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                AppRoutes.editProfile,
               );
             },
           ),
@@ -275,12 +273,12 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                   subtitle: context.l10n.profilePreviewSubtitle,
                   leading: const Icon(Icons.visibility_outlined),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(
+                  // isPreview must survive this: without it the viewer is
+                  // shown like and pass buttons for their own profile.
+                  onTap: () => Navigator.pushNamed(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          ProfileDetailScreen(user: user, isPreview: true),
-                    ),
+                    AppRoutes.profileDetail,
+                    arguments: ProfileDetailArgs(user: user, isPreview: true),
                   ),
                 ),
                 const SizedBox(height: 20),

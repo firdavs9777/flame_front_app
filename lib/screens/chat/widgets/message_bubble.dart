@@ -1,7 +1,7 @@
+import 'package:flame/core/navigation/app_routes.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flame/screens/chat/media_viewer_screen.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/chat/widgets/voice_message_player.dart';
@@ -290,10 +290,9 @@ class MessageBubble extends StatelessWidget {
   /// at the photo. Before this there was no tap target at all.
   void _openViewer(BuildContext context, String url) {
     if (url.isEmpty) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => MediaViewerScreen(url: url, heroTag: 'msg-${message.id}'),
-      ),
+    Navigator.of(context).pushNamed(
+      AppRoutes.mediaViewer,
+      arguments: MediaViewerArgs(url: url, heroTag: 'msg-${message.id}'),
     );
   }
 
