@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:image/image.dart' as img;
+import 'package:flame/core/image/photo_compressor.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/services/user_service.dart';
@@ -235,7 +235,8 @@ class _SocialProfileCompletionFlowState
         final file = _data.photoFiles[i];
         final isPrimary = i == 0;
         try {
-          final compressed = await _compressImage(file, tempPath, i);
+          final compressed = await const PhotoCompressor()
+              .compress(file, tempDir: tempPath, index: i);
           await userService.uploadPhoto(compressed, isPrimary: isPrimary);
         } catch (e) {
           debugPrint('Photo upload error: $e');
@@ -254,28 +255,6 @@ class _SocialProfileCompletionFlowState
       if (!mounted) return;
       setState(() => _isUploading = false);
       _showError('Error: ${e.toString()}');
-    }
-  }
-
-  Future<File> _compressImage(File file, String tempPath, int index) async {
-    try {
-      final bytes = await file.readAsBytes();
-      img.Image? image = img.decodeImage(bytes);
-      if (image == null) return file;
-
-      const maxSize = 800;
-      if (image.width > maxSize || image.height > maxSize) {
-        image = image.width > image.height
-            ? img.copyResize(image, width: maxSize)
-            : img.copyResize(image, height: maxSize);
-      }
-
-      final compressedBytes = img.encodeJpg(image, quality: 70);
-      final out = File('$tempPath/photo_$index.jpg');
-      await out.writeAsBytes(compressedBytes);
-      return out;
-    } catch (_) {
-      return file;
     }
   }
 

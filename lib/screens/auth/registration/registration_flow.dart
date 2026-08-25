@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image/image.dart' as img;
+import 'package:flame/core/image/photo_compressor.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/models/user.dart';
@@ -462,7 +462,8 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
         final i = indexOf[file] ?? 0;
         try {
           // Compress + convert to JPEG before upload.
-          final compressedFile = await _compressImage(file, tempPath, i);
+          final compressedFile = await const PhotoCompressor()
+              .compress(file, tempDir: tempPath, index: i);
 
           final result = await userService.uploadPhotoForRegistration(
             compressedFile,
@@ -483,45 +484,6 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     );
 
     return photoUrls;
-  }
-
-  Future<File> _compressImage(File file, String tempPath, int index) async {
-    try {
-      final bytes = await file.readAsBytes();
-      final originalSize = bytes.length;
-      debugPrint('Original photo ${index + 1} size: ${(originalSize / 1024).toStringAsFixed(0)} KB');
-
-      // Decode image
-      img.Image? image = img.decodeImage(bytes);
-      if (image == null) {
-        debugPrint('Could not decode image, using original');
-        return file;
-      }
-
-      // Resize if larger than 800px
-      const maxSize = 800;
-      if (image.width > maxSize || image.height > maxSize) {
-        if (image.width > image.height) {
-          image = img.copyResize(image, width: maxSize);
-        } else {
-          image = img.copyResize(image, height: maxSize);
-        }
-      }
-
-      // Encode as JPEG with 70% quality
-      final compressedBytes = img.encodeJpg(image, quality: 70);
-      debugPrint('Compressed photo ${index + 1} size: ${(compressedBytes.length / 1024).toStringAsFixed(0)} KB');
-
-      // Save to temp file
-      final compressedPath = '$tempPath/compressed_$index.jpg';
-      final compressedFile = File(compressedPath);
-      await compressedFile.writeAsBytes(compressedBytes);
-
-      return compressedFile;
-    } catch (e) {
-      debugPrint('Compression error: $e, using original');
-      return file;
-    }
   }
 
   void _showLocationError(String error) {
