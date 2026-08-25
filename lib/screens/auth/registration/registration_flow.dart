@@ -128,7 +128,11 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
       ..latitude = data.latitude
       ..longitude = data.longitude;
 
-    final target = step.clamp(0, _totalSteps - 1);
+    final target = resumeStepFor(
+      password: _data.password,
+      savedStep: step,
+      totalSteps: _totalSteps,
+    );
     setState(() => _currentStep = target);
     if (_pageController.hasClients) {
       _pageController.jumpToPage(target);
@@ -549,4 +553,22 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
       ),
     );
   }
+}
+
+/// Which step a resumed draft should open on.
+///
+/// The password is deliberately never persisted (see [RegistrationDraft]), and
+/// step 0 is the only place one is entered. Resuming past it left `_data.password`
+/// empty all the way into `register()`, which the server rejects with a 422 the
+/// user cannot see or escape. So a draft without a password restarts at step 0 —
+/// everything else the user already typed is still restored.
+///
+/// Extracted so the rule is unit-testable independent of the widget.
+int resumeStepFor({
+  required String password,
+  required int savedStep,
+  required int totalSteps,
+}) {
+  if (password.isEmpty) return 0;
+  return savedStep.clamp(0, totalSteps - 1);
 }
