@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/services/face_detection_service.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
 import 'package:flame/widgets/kit/kit.dart';
@@ -65,9 +66,9 @@ class _StepPhotosState extends State<StepPhotos> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Add Your Photos',
-                  style: TextStyle(
+                Text(
+                  context.l10n.registerPhotosSectionTitle,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textPrimary,
@@ -82,7 +83,7 @@ class _StepPhotosState extends State<StepPhotos> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    '$_photoCount/6',
+                    context.l10n.registerPhotoCounter(_photoCount),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -96,7 +97,7 @@ class _StepPhotosState extends State<StepPhotos> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Add at least 2 photos with your face clearly visible. Your first photo will be your main profile picture.',
+              context.l10n.registerPhotosSubtitle,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -151,7 +152,7 @@ class _StepPhotosState extends State<StepPhotos> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'We verify photos contain a real face for safety',
+              context.l10n.registerFaceDetectionInfo,
               style: TextStyle(
                 fontSize: 13,
                 color: Colors.green[800],
@@ -230,7 +231,7 @@ class _StepPhotosState extends State<StepPhotos> {
                         if (isMain) ...[
                           const SizedBox(height: 8),
                           Text(
-                            'Main',
+                            context.l10n.registerPhotoMainBadge,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -250,11 +251,11 @@ class _StepPhotosState extends State<StepPhotos> {
                 color: Colors.black.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Center(
+              child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    SizedBox(
+                    const SizedBox(
                       width: 24,
                       height: 24,
                       child: CircularProgressIndicator(
@@ -262,10 +263,10 @@ class _StepPhotosState extends State<StepPhotos> {
                         strokeWidth: 2,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
-                      'Verifying...',
-                      style: TextStyle(
+                      context.l10n.registerPhotoVerifying,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
@@ -308,9 +309,9 @@ class _StepPhotosState extends State<StepPhotos> {
                   color: AppTheme.primaryColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text(
-                  'Main',
-                  style: TextStyle(
+                child: Text(
+                  context.l10n.registerPhotoMainBadge,
+                  style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -359,7 +360,7 @@ class _StepPhotosState extends State<StepPhotos> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Profiles with multiple photos get more matches! Show your hobbies and personality.',
+              context.l10n.registerPhotosTip,
               style: TextStyle(
                 fontSize: 13,
                 color: Colors.blue[800],
@@ -374,7 +375,7 @@ class _StepPhotosState extends State<StepPhotos> {
 
   Widget _buildCompleteButton() {
     return AppButton(
-      text: 'Complete Profile',
+      text: context.l10n.registerCompleteProfile,
       size: AppButtonSize.large,
       isFullWidth: true,
       isLoading: widget.isLoading,
@@ -405,9 +406,9 @@ class _StepPhotosState extends State<StepPhotos> {
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Add Photo',
-              style: TextStyle(
+            Text(
+              context.l10n.registerAddPhotoSheetTitle,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textPrimary,
@@ -427,8 +428,8 @@ class _StepPhotosState extends State<StepPhotos> {
                   color: AppTheme.primaryColor,
                 ),
               ),
-              title: const Text('Take Photo'),
-              subtitle: const Text('Use your camera'),
+              title: Text(context.l10n.registerTakePhoto),
+              subtitle: Text(context.l10n.registerUseCameraSubtitle),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.pop(context);
@@ -448,8 +449,8 @@ class _StepPhotosState extends State<StepPhotos> {
                   color: Colors.purple,
                 ),
               ),
-              title: const Text('Choose from Gallery'),
-              subtitle: const Text('Select existing photo'),
+              title: Text(context.l10n.registerChooseFromGallery),
+              subtitle: Text(context.l10n.registerSelectExistingPhoto),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.pop(context);
@@ -494,7 +495,7 @@ class _StepPhotosState extends State<StepPhotos> {
         if (mounted) {
           showAuthSnackBar(
             context,
-            message: result.error ?? 'Photo validation failed',
+            message: result.error ?? context.l10n.registerPhotoValidationFailed,
             type: AuthSnackBarType.error,
           );
         }
@@ -512,7 +513,7 @@ class _StepPhotosState extends State<StepPhotos> {
       });
 
       if (mounted) {
-        showAuthSnackBar(context, message: 'Face verified successfully!');
+        showAuthSnackBar(context, message: context.l10n.registerFaceVerifiedSuccess);
       }
     } catch (e) {
       setState(() {
@@ -523,7 +524,7 @@ class _StepPhotosState extends State<StepPhotos> {
       if (mounted) {
         showAuthSnackBar(
           context,
-          message: 'Failed to process image: ${e.toString()}',
+          message: context.l10n.registerImageProcessingFailed(e.toString()),
           type: AuthSnackBarType.error,
         );
       }
@@ -540,7 +541,7 @@ class _StepPhotosState extends State<StepPhotos> {
     if (_photoCount < 2) {
       showAuthSnackBar(
         context,
-        message: 'Please add at least 2 photos',
+        message: context.l10n.registerPhotosMinRequired,
         type: AuthSnackBarType.error,
       );
       return;
@@ -551,7 +552,7 @@ class _StepPhotosState extends State<StepPhotos> {
     if (mainPhoto == null || !mainPhoto.faceVerified) {
       showAuthSnackBar(
         context,
-        message: 'Your main photo must have a verified face',
+        message: context.l10n.registerMainPhotoFaceRequired,
         type: AuthSnackBarType.error,
       );
       return;

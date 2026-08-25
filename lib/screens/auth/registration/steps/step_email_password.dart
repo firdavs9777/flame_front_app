@@ -127,8 +127,8 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
     final validators = AuthValidators(context.l10n);
     return AppInput(
       controller: _emailController,
-      label: 'Email Address',
-      hint: 'you@example.com',
+      label: context.l10n.registerEmailLabel,
+      hint: context.l10n.registerEmailHint,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
       prefixIcon: Icons.email_outlined,
@@ -193,8 +193,8 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
     final validators = AuthValidators(context.l10n);
     return AppInput(
       controller: _passwordController,
-      label: 'Password',
-      hint: 'Create a strong password',
+      label: context.l10n.registerPasswordLabel,
+      hint: context.l10n.registerPasswordHint,
       obscureText: true,
       textInputAction: TextInputAction.next,
       prefixIcon: Icons.lock_outline_rounded,
@@ -207,8 +207,8 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
     final validators = AuthValidators(context.l10n);
     return AppInput(
       controller: _confirmPasswordController,
-      label: 'Confirm Password',
-      hint: 'Confirm your password',
+      label: context.l10n.registerConfirmPasswordLabel,
+      hint: context.l10n.registerConfirmPasswordHint,
       obscureText: true,
       textInputAction: TextInputAction.done,
       prefixIcon: Icons.lock_outline_rounded,
@@ -322,7 +322,7 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
   Widget _buildContinueButton() {
     final enabled = _agreedToTerms && !_checking;
     return AppButton(
-      text: 'Continue',
+      text: context.l10n.registerContinue,
       size: AppButtonSize.large,
       isFullWidth: true,
       isLoading: _checking,

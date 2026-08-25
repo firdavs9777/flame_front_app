@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flame/l10n/gen/app_localizations.dart';
+import 'package:flame/core/i18n/supported_locales.dart';
 import 'package:flame/screens/auth/registration/step_wizard.dart';
 
 /// Two trivial steps: each renders its name and a button that advances.
@@ -36,6 +39,14 @@ Widget _host({
   GlobalKey<StepWizardState>? wizardKey,
 }) {
   return MaterialApp(
+    locale: const Locale('en'),
+    supportedLocales: kSupportedLocales,
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
     home: StepWizard(
       key: wizardKey,
       steps: steps,

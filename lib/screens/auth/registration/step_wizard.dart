@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/auth/widgets/auth_gradient_scaffold.dart';
 
 /// One page of a [StepWizard].
@@ -176,7 +177,7 @@ class StepWizardState extends State<StepWizard> {
           else
             const SizedBox(width: 48),
           Text(
-            'Step ${_currentStep + 1} of ${widget.steps.length}',
+            context.l10n.wizardStepCounter(_currentStep + 1, widget.steps.length),
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.9),
               fontSize: 14,

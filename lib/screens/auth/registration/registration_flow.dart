@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/image/photo_compressor.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/models/user.dart';
@@ -66,18 +67,16 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Resume your signup?'),
-        content: const Text(
-          'We saved your progress. Pick up where you left off, or start over.',
-        ),
+        title: Text(context.l10n.registerResumeTitle),
+        content: Text(context.l10n.registerResumeBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Start Over'),
+            child: Text(context.l10n.registerResumeStartOver),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Resume'),
+            child: Text(context.l10n.registerResumeContinue),
           ),
         ],
       ),
@@ -146,32 +145,32 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
       onComplete: _registerNewAccount,
       steps: [
         WizardStep(
-          title: 'Create Account',
-          subtitle: 'Enter your email and create a password',
+          title: context.l10n.registerStepAccountTitle,
+          subtitle: context.l10n.registerStepAccountSubtitle,
           builder: (context, onNext) =>
               StepEmailPassword(data: _data, onNext: onNext),
         ),
         WizardStep(
-          title: 'About You',
-          subtitle: 'Tell us a bit about yourself',
+          title: context.l10n.registerStepAboutTitle,
+          subtitle: context.l10n.registerStepAboutSubtitle,
           builder: (context, onNext) =>
               StepProfileInfo(data: _data, onNext: onNext),
         ),
         WizardStep(
-          title: 'Looking For',
-          subtitle: 'Who would you like to meet?',
+          title: context.l10n.registerStepLookingForTitle,
+          subtitle: context.l10n.registerStepLookingForSubtitle,
           builder: (context, onNext) =>
               StepLookingFor(data: _data, onNext: onNext),
         ),
         WizardStep(
-          title: 'Your Interests',
-          subtitle: 'What makes you, you?',
+          title: context.l10n.registerStepInterestsTitle,
+          subtitle: context.l10n.registerStepInterestsSubtitle,
           builder: (context, onNext) =>
               StepBioInterests(data: _data, onNext: onNext),
         ),
         WizardStep(
-          title: 'Add Photos',
-          subtitle: 'Show off your best self',
+          title: context.l10n.registerStepPhotosTitle,
+          subtitle: context.l10n.registerStepPhotosSubtitle,
           builder: (context, onNext) => StepPhotos(
             data: _data,
             isLoading: busy,
@@ -191,7 +190,9 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
 
       if (!locationResult.success) {
         setState(() => _isUploading = false);
-        _showLocationError(locationResult.error ?? 'Failed to get location');
+        _showLocationError(
+          locationResult.error ?? context.l10n.registerLocationFailed,
+        );
         return;
       }
 
@@ -205,7 +206,7 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
         setState(() => _isUploading = false);
         showAuthSnackBar(
           context,
-          message: 'Failed to upload photos. Please try again.',
+          message: context.l10n.registerPhotoUploadFailed,
           type: AuthSnackBarType.error,
         );
         return;
@@ -237,7 +238,7 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
       setState(() => _isUploading = false);
       showAuthSnackBar(
         context,
-        message: 'Error: ${e.toString()}',
+        message: context.l10n.registerGenericError(e.toString()),
         type: AuthSnackBarType.error,
       );
     }
@@ -293,21 +294,21 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Location Required'),
+        title: Text(context.l10n.registerLocationRequiredTitle),
         content: Text(
-          '$error\n\nFlame needs your location to find matches near you.',
+          '$error\n\n${context.l10n.registerLocationRequiredBody}',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.registerCancel),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
               await LocationService().openAppSettings();
             },
-            child: const Text('Open Settings'),
+            child: Text(context.l10n.registerOpenSettings),
           ),
         ],
       ),

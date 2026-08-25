@@ -73,7 +73,7 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
               const SizedBox(height: 24),
 
               // Birthday/Age
-              _buildLabel('Your Age'),
+              _buildLabel(context.l10n.registerAgeLabel),
               const SizedBox(height: 8),
               _buildAgeSelector()
                   .animate()
@@ -83,7 +83,7 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
               const SizedBox(height: 24),
 
               // Gender
-              _buildLabel('I am a...'),
+              _buildLabel(context.l10n.registerGenderQuestionLabel),
               const SizedBox(height: 12),
               _buildGenderSelector()
                   .animate()
@@ -119,8 +119,8 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
     final validators = AuthValidators(context.l10n);
     return AppInput(
       controller: _nameController,
-      label: 'First Name',
-      hint: 'Your first name',
+      label: context.l10n.registerFirstNameLabel,
+      hint: context.l10n.registerFirstNameHint,
       prefixIcon: Icons.person_outline_rounded,
       textInputAction: TextInputAction.next,
       validator: validators.name,
@@ -143,7 +143,7 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$_selectedAge years old',
+                  context.l10n.registerAgeYearsOld(_selectedAge),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -235,7 +235,7 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
 
   Widget _buildContinueButton() {
     return AppButton(
-      text: 'Continue',
+      text: context.l10n.registerContinue,
       size: AppButtonSize.large,
       isFullWidth: true,
       onPressed: _handleContinue,
@@ -247,7 +247,7 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
       if (_selectedGender == null) {
         showAuthSnackBar(
           context,
-          message: 'Please select your gender',
+          message: context.l10n.registerGenderRequired,
           type: AuthSnackBarType.error,
         );
         return;

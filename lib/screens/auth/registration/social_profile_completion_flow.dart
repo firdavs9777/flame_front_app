@@ -51,26 +51,26 @@ class _SocialProfileCompletionFlowState
       onComplete: _completeSocialProfile,
       steps: [
         WizardStep(
-          title: 'About You',
-          subtitle: 'Tell us a bit about yourself',
+          title: context.l10n.registerStepAboutTitle,
+          subtitle: context.l10n.registerStepAboutSubtitle,
           builder: (context, onNext) =>
               StepProfileInfo(data: _data, onNext: onNext),
         ),
         WizardStep(
-          title: 'Looking For',
-          subtitle: 'Who would you like to meet?',
+          title: context.l10n.registerStepLookingForTitle,
+          subtitle: context.l10n.registerStepLookingForSubtitle,
           builder: (context, onNext) =>
               StepLookingFor(data: _data, onNext: onNext),
         ),
         WizardStep(
-          title: 'Your Interests',
-          subtitle: 'What makes you, you?',
+          title: context.l10n.registerStepInterestsTitle,
+          subtitle: context.l10n.registerStepInterestsSubtitle,
           builder: (context, onNext) =>
               StepBioInterests(data: _data, onNext: onNext),
         ),
         WizardStep(
-          title: 'Add Photos',
-          subtitle: 'Show off your best self',
+          title: context.l10n.registerStepPhotosTitle,
+          subtitle: context.l10n.registerStepPhotosSubtitle,
           builder: (context, onNext) => StepPhotos(
             data: _data,
             isLoading: _isUploading,
@@ -100,7 +100,7 @@ class _SocialProfileCompletionFlowState
         setState(() => _isUploading = false);
         showAuthSnackBar(
           context,
-          message: profileResult.error ?? 'Failed to update profile',
+          message: profileResult.error ?? context.l10n.registerProfileUpdateFailed,
           type: AuthSnackBarType.error,
         );
         return;
@@ -134,7 +134,7 @@ class _SocialProfileCompletionFlowState
       setState(() => _isUploading = false);
       showAuthSnackBar(
         context,
-        message: 'Error: ${e.toString()}',
+        message: context.l10n.registerGenericError(e.toString()),
         type: AuthSnackBarType.error,
       );
     }
