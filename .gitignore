@@ -49,3 +49,6 @@ lib/l10n/gen/
 
 # Internal SDD subagent reports (not part of the codebase)
 docs/superpowers/plans/*-report.md
+
+# git worktrees for isolated feature work
+.worktrees/
