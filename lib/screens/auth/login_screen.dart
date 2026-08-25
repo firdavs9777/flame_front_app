@@ -7,6 +7,7 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/i18n/error_messages.dart';
+import 'package:flame/core/validation/auth_validators.dart';
 import 'package:flame/services/api_client.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/widgets/auth/social_sign_in_buttons.dart';
@@ -207,8 +208,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildEmailField() {
-    final emailRequired = context.l10n.loginEmailRequired;
-    final emailInvalid = context.l10n.loginEmailInvalid;
+    final validators = AuthValidators(context.l10n);
     return AppInput(
       controller: _emailController,
       label: context.l10n.loginEmailLabel,
@@ -216,21 +216,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
       prefixIcon: Icons.email_outlined,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return emailRequired;
-        }
-        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-          return emailInvalid;
-        }
-        return null;
-      },
+      validator: validators.email,
     );
   }
 
   Widget _buildPasswordField() {
-    final passwordRequired = context.l10n.loginPasswordRequired;
-    final passwordTooShort = context.l10n.loginPasswordTooShort;
+    final validators = AuthValidators(context.l10n);
     return AppInput(
       controller: _passwordController,
       label: context.l10n.loginPasswordLabel,
@@ -239,15 +230,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       textInputAction: TextInputAction.done,
       prefixIcon: Icons.lock_outline_rounded,
       onSubmitted: (_) => _handleLogin(),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return passwordRequired;
-        }
-        if (value.length < 6) {
-          return passwordTooShort;
-        }
-        return null;
-      },
+      // Presence only. A minimum here would lock out any existing account
+      // whose password is shorter than today's registration rule.
+      validator: validators.requiredField,
     );
   }
 

@@ -31,6 +31,7 @@ abstract final class AppRoutes {
   static const storyViewer = '/stories/view';
   static const createStory = '/stories/create';
 
+  static const login = '/auth/login';
   static const forgotPassword = '/auth/forgot-password';
 
   /// Enumerated so the router's test can assert that every name resolves.
@@ -50,6 +51,7 @@ abstract final class AppRoutes {
     mediaViewer,
     storyViewer,
     createStory,
+    login,
     forgotPassword,
   ];
 }

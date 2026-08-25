@@ -858,5 +858,29 @@
   "authNameTooLong": "Name must be 50 characters or fewer",
   "@authNameTooLong": {
     "description": "Validation error when a name exceeds the server's 50-character ceiling"
+  },
+  "registerPasswordHintsTitle": "Make it stronger:",
+  "@registerPasswordHintsTitle": {
+    "description": "Heading above optional password strength hints — these are suggestions, not requirements"
+  },
+  "registerPasswordHintLength": "At least 8 characters",
+  "@registerPasswordHintLength": {
+    "description": "Password strength hint: minimum length. This one IS enforced."
+  },
+  "registerPasswordHintUppercase": "One uppercase letter",
+  "@registerPasswordHintUppercase": {
+    "description": "Password strength hint: an uppercase letter. Advisory only."
+  },
+  "registerPasswordHintNumber": "One number",
+  "@registerPasswordHintNumber": {
+    "description": "Password strength hint: a digit. Advisory only."
+  },
+  "registerEmailTaken": "That email is already registered",
+  "@registerEmailTaken": {
+    "description": "Inline error when the availability check reports the address is in use"
+  },
+  "registerLogInInstead": "Log in instead",
+  "@registerLogInInstead": {
+    "description": "Link offered beside the email-taken error, sending the user to the login screen"
   }
 }

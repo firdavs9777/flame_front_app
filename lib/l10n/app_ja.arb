@@ -229,5 +229,11 @@
   "authPasswordsDoNotMatch": "Passwords do not match",
   "authNameRequired": "Please enter your name",
   "authNameTooShort": "Name must be at least 2 characters",
-  "authNameTooLong": "Name must be 50 characters or fewer"
+  "authNameTooLong": "Name must be 50 characters or fewer",
+  "registerPasswordHintsTitle": "Make it stronger:",
+  "registerPasswordHintLength": "At least 8 characters",
+  "registerPasswordHintUppercase": "One uppercase letter",
+  "registerPasswordHintNumber": "One number",
+  "registerEmailTaken": "That email is already registered",
+  "registerLogInInstead": "Log in instead"
 }

@@ -6,6 +6,7 @@ import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flame/core/navigation/chat_route_resolver.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/screens/auth/forgot_password_screen.dart';
+import 'package:flame/screens/auth/login_screen.dart';
 import 'package:flame/screens/chat/archived_conversations_screen.dart';
 import 'package:flame/screens/chat/chat_search_screen.dart';
 import 'package:flame/screens/chat/media_viewer_screen.dart';
@@ -129,6 +130,9 @@ abstract final class AppRouter {
         );
       case AppRoutes.createStory:
         return _page(settings, const CreateStoryScreen());
+
+      case AppRoutes.login:
+        return _page(settings, const LoginScreen());
 
       case AppRoutes.forgotPassword:
         return _page(settings, const ForgotPasswordScreen());

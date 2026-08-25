@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/models/user.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
+import 'package:flame/core/validation/auth_validators.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/widgets/kit/kit.dart';
 
 class StepProfileInfo extends StatefulWidget {
@@ -113,21 +115,14 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
   }
 
   Widget _buildNameField() {
+    final validators = AuthValidators(context.l10n);
     return AppInput(
       controller: _nameController,
       label: 'First Name',
       hint: 'Your first name',
       prefixIcon: Icons.person_outline_rounded,
       textInputAction: TextInputAction.next,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your name';
-        }
-        if (value.length < 2) {
-          return 'Name must be at least 2 characters';
-        }
-        return null;
-      },
+      validator: validators.name,
     );
   }
 
