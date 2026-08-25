@@ -6,6 +6,7 @@ import 'package:flame/screens/auth/registration/registration_flow.dart';
 import 'package:flame/core/validation/auth_validators.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/widgets/kit/kit.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 
 class StepProfileInfo extends StatefulWidget {
   final RegistrationData data;
@@ -244,15 +245,10 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
   void _handleContinue() {
     if (_formKey.currentState!.validate()) {
       if (_selectedGender == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Please select your gender'),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+        showAuthSnackBar(
+          context,
+          message: 'Please select your gender',
+          type: AuthSnackBarType.error,
         );
         return;
       }

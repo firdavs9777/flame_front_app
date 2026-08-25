@@ -6,6 +6,7 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/services/face_detection_service.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
 import 'package:flame/widgets/kit/kit.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 
 class StepPhotos extends StatefulWidget {
   final RegistrationData data;
@@ -491,7 +492,11 @@ class _StepPhotosState extends State<StepPhotos> {
         });
 
         if (mounted) {
-          _showError(result.error ?? 'Photo validation failed');
+          showAuthSnackBar(
+            context,
+            message: result.error ?? 'Photo validation failed',
+            type: AuthSnackBarType.error,
+          );
         }
         return;
       }
@@ -507,23 +512,7 @@ class _StepPhotosState extends State<StepPhotos> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 20),
-                SizedBox(width: 8),
-                Text('Face verified successfully!'),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        showAuthSnackBar(context, message: 'Face verified successfully!');
       }
     } catch (e) {
       setState(() {
@@ -532,29 +521,13 @@ class _StepPhotosState extends State<StepPhotos> {
       });
 
       if (mounted) {
-        _showError('Failed to process image: ${e.toString()}');
+        showAuthSnackBar(
+          context,
+          message: 'Failed to process image: ${e.toString()}',
+          type: AuthSnackBarType.error,
+        );
       }
     }
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: AppTheme.errorColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        duration: const Duration(seconds: 4),
-      ),
-    );
   }
 
   void _removePhoto(int index) {
@@ -565,14 +538,22 @@ class _StepPhotosState extends State<StepPhotos> {
 
   void _handleComplete() {
     if (_photoCount < 2) {
-      _showError('Please add at least 2 photos');
+      showAuthSnackBar(
+        context,
+        message: 'Please add at least 2 photos',
+        type: AuthSnackBarType.error,
+      );
       return;
     }
 
     // Check if at least the main photo has face verification
     final mainPhoto = _photos[0];
     if (mainPhoto == null || !mainPhoto.faceVerified) {
-      _showError('Your main photo must have a verified face');
+      showAuthSnackBar(
+        context,
+        message: 'Your main photo must have a verified face',
+        type: AuthSnackBarType.error,
+      );
       return;
     }
 

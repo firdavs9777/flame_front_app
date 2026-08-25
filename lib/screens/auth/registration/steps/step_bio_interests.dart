@@ -5,6 +5,7 @@ import 'package:flame/screens/auth/registration/registration_flow.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/core/interests/interest_catalogue.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 
 class StepBioInterests extends StatefulWidget {
   final RegistrationData data;
@@ -210,16 +211,10 @@ class _StepBioInterestsState extends State<StepBioInterests> {
       } else if (_selectedInterests.length < 5) {
         _selectedInterests.add(interest);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Maximum 5 interests allowed'),
-            backgroundColor: Colors.orange,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 2),
-          ),
+        showAuthSnackBar(
+          context,
+          message: 'Maximum 5 interests allowed',
+          type: AuthSnackBarType.warning,
         );
       }
     });
@@ -248,15 +243,10 @@ class _StepBioInterestsState extends State<StepBioInterests> {
 
   void _handleContinue({required bool skipBio}) {
     if (!canContinue(_selectedInterests.length)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Pick at least one interest'),
-          backgroundColor: AppTheme.errorColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+      showAuthSnackBar(
+        context,
+        message: 'Pick at least one interest',
+        type: AuthSnackBarType.error,
       );
       return;
     }

@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/core/image/photo_compressor.dart';
-import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/services/user_service.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 import 'steps/step_profile_info.dart';
 import 'steps/step_looking_for.dart';
 import 'steps/step_bio_interests.dart';
@@ -219,7 +219,11 @@ class _SocialProfileCompletionFlowState
 
       if (!profileResult.success) {
         setState(() => _isUploading = false);
-        _showError(profileResult.error ?? 'Failed to update profile');
+        showAuthSnackBar(
+          context,
+          message: profileResult.error ?? 'Failed to update profile',
+          type: AuthSnackBarType.error,
+        );
         return;
       }
 
@@ -254,19 +258,11 @@ class _SocialProfileCompletionFlowState
     } catch (e) {
       if (!mounted) return;
       setState(() => _isUploading = false);
-      _showError('Error: ${e.toString()}');
+      showAuthSnackBar(
+        context,
+        message: 'Error: ${e.toString()}',
+        type: AuthSnackBarType.error,
+      );
     }
-  }
-
-  void _showError(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppTheme.errorColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
   }
 }

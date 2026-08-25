@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flame/core/image/photo_compressor.dart';
-import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/models/user.dart';
 import 'package:flame/services/location_service.dart';
 import 'package:flame/services/user_service.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 import 'photo_uploader.dart';
 import 'registration_draft.dart';
 import 'steps/step_email_password.dart';
@@ -154,15 +154,10 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
       if (next.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+        showAuthSnackBar(
+          context,
+          message: next.error!,
+          type: AuthSnackBarType.error,
         );
         ref.read(authProvider.notifier).clearError();
       }
@@ -383,15 +378,10 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
 
       if (photoUrls.isEmpty) {
         setState(() => _isUploading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to upload photos. Please try again.'),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+        showAuthSnackBar(
+          context,
+          message: 'Failed to upload photos. Please try again.',
+          type: AuthSnackBarType.error,
         );
         return;
       }
@@ -423,15 +413,10 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isUploading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: AppTheme.errorColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+      showAuthSnackBar(
+        context,
+        message: 'Error: ${e.toString()}',
+        type: AuthSnackBarType.error,
       );
     }
   }

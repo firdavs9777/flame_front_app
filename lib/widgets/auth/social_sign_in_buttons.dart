@@ -7,6 +7,7 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/services/social_auth_service.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 
 enum _Provider { google, apple, facebook }
 
@@ -237,7 +238,6 @@ class _SocialSignInButtonsState extends ConsumerState<SocialSignInButtons> {
     String Function() failedMessage,
   ) async {
     setState(() => _loading = provider);
-    final messenger = ScaffoldMessenger.of(context);
     try {
       final result = await signIn();
       if (!mounted) return;
@@ -246,7 +246,7 @@ class _SocialSignInButtonsState extends ConsumerState<SocialSignInButtons> {
         final msg = result.error == 'Sign-in cancelled'
             ? context.l10n.loginCancelled
             : (result.error ?? failedMessage());
-        messenger.showSnackBar(SnackBar(content: Text(msg)));
+        showAuthSnackBar(context, message: msg);
         return;
       }
 

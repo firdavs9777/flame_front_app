@@ -4,6 +4,7 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/models/user.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
 import 'package:flame/widgets/kit/kit.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 
 class StepLookingFor extends StatefulWidget {
   final RegistrationData data;
@@ -197,15 +198,10 @@ class _StepLookingForState extends State<StepLookingFor> {
 
   void _handleContinue() {
     if (_selectedPreference == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select who you\'d like to see'),
-          backgroundColor: AppTheme.errorColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+      showAuthSnackBar(
+        context,
+        message: 'Please select who you\'d like to see',
+        type: AuthSnackBarType.error,
       );
       return;
     }

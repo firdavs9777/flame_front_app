@@ -11,6 +11,7 @@ import 'package:flame/core/validation/auth_validators.dart';
 import 'package:flame/services/api_client.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/widgets/auth/social_sign_in_buttons.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -53,15 +54,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             statusCode: 0,
           ),
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+        showAuthSnackBar(
+          context,
+          message: message,
+          type: AuthSnackBarType.error,
         );
         ref.read(authProvider.notifier).clearError();
       }

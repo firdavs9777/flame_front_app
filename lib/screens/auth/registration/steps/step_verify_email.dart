@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/services/auth_service.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 
 class StepVerifyEmail extends ConsumerStatefulWidget {
   final String email;
@@ -117,35 +118,15 @@ class _StepVerifyEmailState extends ConsumerState<StepVerifyEmail> {
 
     if (result.success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Email verified successfully!'),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
+        showAuthSnackBar(context, message: 'Email verified successfully!');
       }
       widget.onVerified();
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.error ?? 'Invalid verification code'),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+        showAuthSnackBar(
+          context,
+          message: result.error ?? 'Invalid verification code',
+          type: AuthSnackBarType.error,
         );
         // Clear the code
         for (var controller in _controllers) {
@@ -166,15 +147,10 @@ class _StepVerifyEmailState extends ConsumerState<StepVerifyEmail> {
       widget.onResend();
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.error ?? 'Failed to resend code'),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+        showAuthSnackBar(
+          context,
+          message: result.error ?? 'Failed to resend code',
+          type: AuthSnackBarType.error,
         );
       }
     }
