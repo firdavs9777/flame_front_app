@@ -37,7 +37,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authProvider);
 
     ref.listen<AuthState>(authProvider, (previous, next) {
-      if (next.isAuthenticated) {
+      // Both terminal states mean this pushed route has to get out of the way:
+      // main.dart's `home:` has already swapped to MainShell or to the profile
+      // completion flow underneath it.
+      if (next.isAuthenticated || next.isProfileIncomplete) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
       if (next.error != null) {

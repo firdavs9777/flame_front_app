@@ -149,7 +149,8 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     final authState = ref.watch(authProvider);
 
     ref.listen<AuthState>(authProvider, (previous, next) {
-      if (next.isAuthenticated && _registrationComplete) {
+      if (_registrationComplete &&
+          (next.isAuthenticated || next.isProfileIncomplete)) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
       if (next.error != null) {
