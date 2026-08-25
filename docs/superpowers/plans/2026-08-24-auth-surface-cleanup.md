@@ -15,9 +15,9 @@
 - **Server-authoritative bounds** — copy these exactly from `flame/routes/auth.js:12`; the client must never be stricter or looser: password `min(8).max(128)`, name `min(2).max(50)`, age `18..100`, interests `1..10`, bio `max(500)`, photos `max(9)`.
 - **Login is exempt from the password minimum.** Login validates presence only. Raising it to 8 would lock out existing accounts with shorter passwords.
 - **The password is never persisted.** `RegistrationDraft` must not gain a `password` key under any circumstances. `test/screens/auth/registration_draft_test.dart` asserts this — never weaken that test.
-- **New user-facing strings go in `lib/l10n/app_en.arb` only.** The other eleven ARBs are already ~214 keys behind and fall back to English. Do not edit them.
-- **Every ARB key needs an `@key` description block** — that is the existing convention throughout `app_en.arb`.
-- **After any ARB edit, regenerate:** `flutter gen-l10n`. Generated files live in `lib/l10n/gen/` and are committed.
+- **Every new ARB key goes in ALL TWELVE ARB files.** `test/l10n/arb_parity_test.dart` demands an exact key-set match across `app_en` and the eleven others, and it passes at baseline. In the eleven non-English files use the English string verbatim as the placeholder value and no `@key` block — the shape those files already use for untranslated entries (`loginPasswordTooShort` is English today in app_de, app_es, app_fr, app_pt, app_pt_BR and app_ru). Translating them is still a separate content task.
+- **Only `app_en.arb` carries `@key` description blocks**, one per key — the existing convention throughout that file.
+- **After any ARB edit, regenerate:** `flutter gen-l10n`. **Never commit `lib/l10n/gen/`** — it is gitignored at `.gitignore:48` and `flutter pub get` regenerates it. You still need to run gen-l10n locally to compile and test.
 - **Use `withValues(alpha: …)`, never `withOpacity(…)`** — the latter is deprecated and the rest of the codebase has already moved.
 - **Snackbars go through the feature helper**, following `lib/screens/chat/widgets/chat_snackbar.dart` and `lib/screens/settings/widgets/settings_snackbar.dart`. No inline `ScaffoldMessenger.of(context).showSnackBar(SnackBar(...))` in auth after Task 8.
 - **Backend errors go through `translateApiError(context.l10n, response)`** from `lib/core/i18n/error_messages.dart` before display.
