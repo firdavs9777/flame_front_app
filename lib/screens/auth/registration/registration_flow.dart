@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flame/core/image/photo_compressor.dart';
 import 'package:flame/providers/auth_provider.dart';
@@ -11,6 +10,7 @@ import 'package:flame/services/user_service.dart';
 import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 import 'photo_uploader.dart';
 import 'registration_draft.dart';
+import 'step_wizard.dart';
 import 'steps/step_email_password.dart';
 import 'steps/step_profile_info.dart';
 import 'steps/step_looking_for.dart';
@@ -40,47 +40,23 @@ class RegistrationFlow extends ConsumerStatefulWidget {
 }
 
 class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
-  final PageController _pageController = PageController();
-  int _currentStep = 0;
-  final int _totalSteps = 5; // 5-step flow; no email verification
+  final GlobalKey<StepWizardState> _wizardKey = GlobalKey<StepWizardState>();
   final RegistrationData _data = RegistrationData();
   final RegistrationDraft _draft = const RegistrationDraft();
   bool _isUploading = false;
   bool _registrationComplete = false;
 
-  final List<String> _stepTitles = [
-    'Create Account',
-    'About You',
-    'Looking For',
-    'Your Interests',
-    'Add Photos',
-  ];
-
-  final List<String> _stepSubtitles = [
-    'Enter your email and create a password',
-    'Tell us a bit about yourself',
-    'Who would you like to meet?',
-    'What makes you, you?',
-    'Show off your best self',
-  ];
+  static const int _totalSteps = 5;
 
   @override
   void initState() {
     super.initState();
-    // Offer to resume a previously-saved draft, if any.
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeOfferResume());
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
   }
 
   Future<void> _maybeOfferResume() async {
     final saved = await _draft.load();
     if (saved == null || !mounted) return;
-    // Nothing meaningful to resume (fresh/empty draft) — skip the prompt.
     if (saved.step <= 0 && saved.data.email.isEmpty) {
       await _draft.clear();
       return;
@@ -128,20 +104,13 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
       ..latitude = data.latitude
       ..longitude = data.longitude;
 
-    final target = resumeStepFor(
-      password: _data.password,
-      savedStep: step,
-      totalSteps: _totalSteps,
+    _wizardKey.currentState?.jumpToStep(
+      resumeStepFor(
+        password: _data.password,
+        savedStep: step,
+        totalSteps: _totalSteps,
+      ),
     );
-    setState(() => _currentStep = target);
-    if (_pageController.hasClients) {
-      _pageController.jumpToPage(target);
-    }
-  }
-
-  void _saveDraft() {
-    // Fire-and-forget; a persistence hiccup must never block the UI.
-    _draft.save(_data, _currentStep);
   }
 
   @override
@@ -163,205 +132,61 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
       }
     });
 
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFF6B6B),
-              Color(0xFFFF8E53),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header with back button and progress
-              _buildHeader()
-                  .animate()
-                  .fadeIn(duration: 400.ms),
+    final busy = authState.isLoading || _isUploading;
 
-              const SizedBox(height: 16),
-
-              // Progress indicator
-              _buildProgressIndicator()
-                  .animate()
-                  .fadeIn(delay: 100.ms, duration: 400.ms),
-
-              const SizedBox(height: 24),
-
-              // Step title and subtitle
-              _buildStepInfo()
-                  .animate()
-                  .fadeIn(delay: 200.ms, duration: 400.ms)
-                  .slideX(begin: -0.1, end: 0, delay: 200.ms, duration: 400.ms),
-
-              const SizedBox(height: 24),
-
-              // Page content
-              Expanded(
-                child: _buildPageView(authState),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            onPressed: _handleBack,
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
-          Text(
-            'Step ${_currentStep + 1} of $_totalSteps',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(width: 48), // Balance the back button
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressIndicator() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Row(
-        children: List.generate(_totalSteps, (index) {
-          final isCompleted = index < _currentStep;
-          final isCurrent = index == _currentStep;
-
-          return Expanded(
-            child: Container(
-              height: 4,
-              margin: EdgeInsets.only(right: index < _totalSteps - 1 ? 8 : 0),
-              decoration: BoxDecoration(
-                color: isCompleted || isCurrent
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildStepInfo() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _stepTitles[_currentStep],
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _stepSubtitles[_currentStep],
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.85),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPageView(AuthState authState) {
-    return PageView(
-      controller: _pageController,
-      physics: const NeverScrollableScrollPhysics(),
-      onPageChanged: (index) {
-        setState(() => _currentStep = index);
-        _saveDraft();
+    return StepWizard(
+      key: _wizardKey,
+      isBusy: busy,
+      onStepChanged: (step) => _draft.save(_data, step),
+      onExit: () {
+        // Explicit back-out to welcome — discard the saved draft.
+        _draft.clear();
+        Navigator.of(context).pop();
       },
-      children: [
-        StepEmailPassword(
-          data: _data,
-          onNext: _goToNextStep,
+      onComplete: _registerNewAccount,
+      steps: [
+        WizardStep(
+          title: 'Create Account',
+          subtitle: 'Enter your email and create a password',
+          builder: (context, onNext) =>
+              StepEmailPassword(data: _data, onNext: onNext),
         ),
-        StepProfileInfo(
-          data: _data,
-          onNext: _goToNextStep,
+        WizardStep(
+          title: 'About You',
+          subtitle: 'Tell us a bit about yourself',
+          builder: (context, onNext) =>
+              StepProfileInfo(data: _data, onNext: onNext),
         ),
-        StepLookingFor(
-          data: _data,
-          onNext: _goToNextStep,
+        WizardStep(
+          title: 'Looking For',
+          subtitle: 'Who would you like to meet?',
+          builder: (context, onNext) =>
+              StepLookingFor(data: _data, onNext: onNext),
         ),
-        StepBioInterests(
-          data: _data,
-          onNext: _goToNextStep,
+        WizardStep(
+          title: 'Your Interests',
+          subtitle: 'What makes you, you?',
+          builder: (context, onNext) =>
+              StepBioInterests(data: _data, onNext: onNext),
         ),
-        StepPhotos(
-          data: _data,
-          isLoading: authState.isLoading || _isUploading,
-          onComplete: _handlePhotosComplete,
+        WizardStep(
+          title: 'Add Photos',
+          subtitle: 'Show off your best self',
+          builder: (context, onNext) => StepPhotos(
+            data: _data,
+            isLoading: busy,
+            onComplete: onNext,
+          ),
         ),
       ],
     );
   }
 
-  void _handleBack() {
-    if (_currentStep > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-      );
-    } else {
-      // Explicit back-out to login/welcome — discard the saved draft.
-      _draft.clear();
-      Navigator.of(context).pop();
-    }
-  }
-
-  void _goToNextStep() {
-    if (_currentStep < _totalSteps - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
-
-  Future<void> _handlePhotosComplete() async {
+  Future<void> _registerNewAccount() async {
     setState(() => _isUploading = true);
 
     try {
-      final locationService = LocationService();
-      final locationResult = await locationService.getCurrentPosition();
+      final locationResult = await LocationService().getCurrentPosition();
       if (!mounted) return;
 
       if (!locationResult.success) {
@@ -400,12 +225,9 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
             longitude: _data.longitude!,
           );
       if (!mounted) return;
-
       setState(() => _isUploading = false);
 
       if (success) {
-        // Tokens are already issued. The ref.listen above pops to root once
-        // auth state flips. Drop the draft so a future signup starts clean.
         await _draft.clear();
         if (!mounted) return;
         setState(() => _registrationComplete = true);
@@ -430,33 +252,31 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     try {
       tempPath = (await getTemporaryDirectory()).path;
     } catch (_) {
-      // path_provider unavailable on some simulators; fall back to system temp
+      // path_provider is unavailable on some simulators.
       tempPath = Directory.systemTemp.path;
     }
 
-    // Index each file so compression temp paths and debug logs stay stable
-    // even though uploads run concurrently.
+    // Index each file so compression paths stay stable and collision-free
+    // even though the uploads run concurrently.
     final indexOf = <File, int>{};
     for (var i = 0; i < _data.photoFiles.length; i++) {
       indexOf[_data.photoFiles[i]] = i;
     }
 
-    final photoUrls = await const PhotoUploader().upload(
+    return const PhotoUploader().upload(
       _data.photoFiles,
       uploadOne: (file, {required bool isPrimary}) async {
         final i = indexOf[file] ?? 0;
         try {
-          // Compress + convert to JPEG before upload.
-          final compressedFile = await const PhotoCompressor()
+          final compressed = await const PhotoCompressor()
               .compress(file, tempDir: tempPath, index: i);
 
           final result = await userService.uploadPhotoForRegistration(
-            compressedFile,
+            compressed,
             isPrimary: isPrimary,
           );
 
           if (result.success && result.data != null) {
-            debugPrint('Uploaded photo ${i + 1}: ${result.data!.url}');
             return UploadOutcome(success: true, url: result.data!.url);
           }
           debugPrint('Failed to upload photo ${i + 1}: ${result.error}');
@@ -467,8 +287,6 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
         }
       },
     );
-
-    return photoUrls;
   }
 
   void _showLocationError(String error) {
@@ -487,8 +305,7 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              final locationService = LocationService();
-              await locationService.openAppSettings();
+              await LocationService().openAppSettings();
             },
             child: const Text('Open Settings'),
           ),
