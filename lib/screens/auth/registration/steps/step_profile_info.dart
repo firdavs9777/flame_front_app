@@ -205,7 +205,7 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  gender.displayName,
+                  _genderSelfLabel(context, gender),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -230,6 +230,23 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
         return Icons.transgender_rounded;
       default:
         return Icons.person_outline_rounded;
+    }
+  }
+
+  /// Self-description phrasing ("I am a...") for the gender chips — distinct
+  /// from [Gender.displayName] (used for third-person contexts elsewhere) and
+  /// from the looking-for chips' "Men"/"Women" phrasing, which reads wrong
+  /// here ("I am a... Men").
+  String _genderSelfLabel(BuildContext context, Gender gender) {
+    switch (gender) {
+      case Gender.male:
+        return context.l10n.registerGenderSelfMale;
+      case Gender.female:
+        return context.l10n.registerGenderSelfFemale;
+      case Gender.nonBinary:
+        return context.l10n.registerGenderSelfNonBinary;
+      case Gender.other:
+        return gender.displayName;
     }
   }
 

@@ -487,22 +487,22 @@ class _StepPhotosState extends State<StepPhotos> {
       final result = await _faceDetection.validateFace(file, strictMode: isMainPhoto);
 
       if (!result.isValid) {
+        if (!mounted) return;
         setState(() {
           _isProcessing = false;
           _processingIndex = null;
         });
 
-        if (mounted) {
-          showAuthSnackBar(
-            context,
-            message: result.error ?? context.l10n.registerPhotoValidationFailed,
-            type: AuthSnackBarType.error,
-          );
-        }
+        showAuthSnackBar(
+          context,
+          message: result.error ?? context.l10n.registerPhotoValidationFailed,
+          type: AuthSnackBarType.error,
+        );
         return;
       }
 
       // Face detected successfully
+      if (!mounted) return;
       setState(() {
         _photos[index] = PhotoData(
           file: file,
@@ -512,22 +512,19 @@ class _StepPhotosState extends State<StepPhotos> {
         _processingIndex = null;
       });
 
-      if (mounted) {
-        showAuthSnackBar(context, message: context.l10n.registerFaceVerifiedSuccess);
-      }
+      showAuthSnackBar(context, message: context.l10n.registerFaceVerifiedSuccess);
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isProcessing = false;
         _processingIndex = null;
       });
 
-      if (mounted) {
-        showAuthSnackBar(
-          context,
-          message: context.l10n.registerImageProcessingFailed(e.toString()),
-          type: AuthSnackBarType.error,
-        );
-      }
+      showAuthSnackBar(
+        context,
+        message: context.l10n.registerImageProcessingFailed(e.toString()),
+        type: AuthSnackBarType.error,
+      );
     }
   }
 

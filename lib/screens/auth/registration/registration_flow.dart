@@ -46,6 +46,7 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
   final RegistrationDraft _draft = const RegistrationDraft();
   bool _isUploading = false;
   bool _registrationComplete = false;
+  int _restoreGeneration = 0;
 
   static const int _totalSteps = 5;
 
@@ -91,17 +92,20 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
   }
 
   void _restoreFrom(RegistrationData data, int step) {
-    _data
-      ..email = data.email
-      ..name = data.name
-      ..age = data.age
-      ..gender = data.gender
-      ..lookingFor = data.lookingFor
-      ..bio = data.bio
-      ..interests = data.interests
-      ..photoFiles = data.photoFiles
-      ..latitude = data.latitude
-      ..longitude = data.longitude;
+    setState(() {
+      _data
+        ..email = data.email
+        ..name = data.name
+        ..age = data.age
+        ..gender = data.gender
+        ..lookingFor = data.lookingFor
+        ..bio = data.bio
+        ..interests = data.interests
+        ..photoFiles = data.photoFiles
+        ..latitude = data.latitude
+        ..longitude = data.longitude;
+      _restoreGeneration++;
+    });
 
     _wizardKey.currentState?.jumpToStep(
       resumeStepFor(
@@ -147,8 +151,11 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
         WizardStep(
           title: context.l10n.registerStepAccountTitle,
           subtitle: context.l10n.registerStepAccountSubtitle,
-          builder: (context, onNext) =>
-              StepEmailPassword(data: _data, onNext: onNext),
+          builder: (context, onNext) => StepEmailPassword(
+            key: ValueKey(_restoreGeneration),
+            data: _data,
+            onNext: onNext,
+          ),
         ),
         WizardStep(
           title: context.l10n.registerStepAboutTitle,

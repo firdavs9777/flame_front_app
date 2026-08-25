@@ -8,7 +8,7 @@ import 'package:flame/core/i18n/supported_locales.dart';
 import 'package:flame/screens/auth/registration/step_wizard.dart';
 
 /// Two trivial steps: each renders its name and a button that advances.
-List<WizardStep> _steps({VoidCallback? onLastNext}) => [
+List<WizardStep> _steps() => [
       WizardStep(
         title: 'First',
         subtitle: 'the first one',
