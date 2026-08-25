@@ -882,5 +882,9 @@
   "registerLogInInstead": "Log in instead",
   "@registerLogInInstead": {
     "description": "Link offered beside the email-taken error, sending the user to the login screen"
+  },
+  "registerPhotoUploadFailedSocial": "Your photos could not be uploaded. You can add them from your profile.",
+  "@registerPhotoUploadFailedSocial": {
+    "description": "Warning shown on social profile completion when every selected photo failed to upload. The flow proceeds anyway since the user is already authenticated and this wizard has no exit — the user finishes profile completion and adds photos later from their profile."
   }
 }

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/image/photo_compressor.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
@@ -105,8 +106,20 @@ class _SocialProfileCompletionFlowState
         return;
       }
 
-      await _uploadPhotos(userService);
+      final uploaded = await _uploadPhotos(userService);
       if (!mounted) return;
+
+      // The profile PATCH already succeeded and this wizard has no exit — an
+      // authenticated user must be able to finish even if every photo upload
+      // failed. Warn instead of blocking; they can add photos from their
+      // profile afterward.
+      if (_data.photoFiles.isNotEmpty && uploaded.isEmpty) {
+        showAuthSnackBar(
+          context,
+          message: context.l10n.registerPhotoUploadFailedSocial,
+          type: AuthSnackBarType.warning,
+        );
+      }
 
       final userResult = await userService.getCurrentUser();
       if (!mounted) return;
@@ -130,8 +143,12 @@ class _SocialProfileCompletionFlowState
   /// The same uploader registration uses — parallel, with one retry per photo.
   /// This path was a sequential `for` loop that swallowed every error, which is
   /// exactly the drift a shared wizard is meant to stop.
-  Future<void> _uploadPhotos(UserService userService) async {
-    if (_data.photoFiles.isEmpty) return;
+  ///
+  /// Returns the URLs that made it, in `_data.photoFiles` order — an empty
+  /// list is a real "nothing uploaded" result, which the caller checks against
+  /// `_data.photoFiles` to decide whether to warn.
+  Future<List<String>> _uploadPhotos(UserService userService) async {
+    if (_data.photoFiles.isEmpty) return const [];
 
     String tempPath;
     try {
@@ -146,7 +163,7 @@ class _SocialProfileCompletionFlowState
       indexOf[_data.photoFiles[i]] = i;
     }
 
-    await const PhotoUploader().upload(
+    return const PhotoUploader().upload(
       _data.photoFiles,
       uploadOne: (file, {required bool isPrimary}) async {
         final i = indexOf[file] ?? 0;

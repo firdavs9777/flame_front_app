@@ -235,5 +235,6 @@
   "registerPasswordHintUppercase": "One uppercase letter",
   "registerPasswordHintNumber": "One number",
   "registerEmailTaken": "That email is already registered",
-  "registerLogInInstead": "Log in instead"
+  "registerLogInInstead": "Log in instead",
+  "registerPhotoUploadFailedSocial": "Your photos could not be uploaded. You can add them from your profile."
 }
