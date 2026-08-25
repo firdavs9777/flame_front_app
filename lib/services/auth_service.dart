@@ -110,36 +110,6 @@ class AuthService {
     );
   }
 
-  // Verify Email
-  Future<AuthResult> verifyEmail({
-    required String email,
-    required String code,
-  }) async {
-    final response = await _apiClient.post(
-      '/auth/verify-email',
-      body: {'email': email, 'code': code},
-    );
-
-    return AuthResult(
-      success: response.success,
-      message: response.message,
-      error: response.error,
-      errorCode: response.errorCode,
-    );
-  }
-
-  // Resend Verification Code
-  Future<AuthResult> resendVerificationCode() async {
-    final response = await _apiClient.post('/auth/resend-verification');
-
-    return AuthResult(
-      success: response.success,
-      message: response.message,
-      error: response.error,
-      errorCode: response.errorCode,
-    );
-  }
-
   // Logout
   Future<void> logout() async {
     await _apiClient.post('/auth/logout');
@@ -183,28 +153,6 @@ class AuthService {
     final response = await _apiClient.post(
       '/auth/forgot-password',
       body: {'email': email},
-    );
-
-    return AuthResult(
-      success: response.success,
-      message: response.message,
-      error: response.error,
-      errorCode: response.errorCode,
-    );
-  }
-
-  // Reset password with token (from email link)
-  Future<AuthResult> resetPassword({
-    required String token,
-    required String password,
-  }) async {
-    final response = await _apiClient.post(
-      '/auth/reset-password',
-      body: {
-        'token': token,
-        'password': password,
-        'password_confirmation': password,
-      },
     );
 
     return AuthResult(

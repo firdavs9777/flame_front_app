@@ -7,9 +7,12 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/i18n/error_messages.dart';
+import 'package:flame/core/validation/auth_validators.dart';
 import 'package:flame/services/api_client.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/widgets/auth/social_sign_in_buttons.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
+import 'package:flame/screens/auth/widgets/auth_gradient_scaffold.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -36,7 +39,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authProvider);
 
     ref.listen<AuthState>(authProvider, (previous, next) {
-      if (next.isAuthenticated) {
+      // Both terminal states mean this pushed route has to get out of the way:
+      // main.dart's `home:` has already swapped to MainShell or to the profile
+      // completion flow underneath it.
+      if (next.isAuthenticated || next.isProfileIncomplete) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
       if (next.error != null) {
@@ -49,94 +55,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             statusCode: 0,
           ),
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+        showAuthSnackBar(
+          context,
+          message: message,
+          type: AuthSnackBarType.error,
         );
         ref.read(authProvider.notifier).clearError();
       }
     });
 
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFF6B6B),
-              Color(0xFFFF8E53),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-
-                  // Back Button
-                  _buildBackButton()
-                      .animate()
-                      .fadeIn(duration: 400.ms),
-
-                  const SizedBox(height: 40),
-
-                  // Header
-                  _buildHeader()
-                      .animate()
-                      .fadeIn(delay: 100.ms, duration: 500.ms)
-                      .slideX(begin: -0.1, end: 0, delay: 100.ms, duration: 500.ms),
-
-                  const SizedBox(height: 48),
-
-                  // Login Form Card
-                  _buildLoginCard(authState)
-                      .animate()
-                      .fadeIn(delay: 200.ms, duration: 600.ms)
-                      .slideY(begin: 0.1, end: 0, delay: 200.ms, duration: 600.ms),
-
-                  const SizedBox(height: 32),
-
-                  // Social Login (self-gates on authSocialEnabled).
-                  const SocialSignInButtons()
-                      .animate()
-                      .fadeIn(delay: 400.ms, duration: 600.ms),
-
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackButton() {
-    return IconButton(
-      onPressed: () => Navigator.of(context).pop(),
-      icon: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Icon(
-          Icons.arrow_back_ios_new_rounded,
-          color: Colors.white,
-          size: 20,
+    return AuthGradientScaffold(
+      onBack: () => Navigator.of(context).pop(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 40),
+            _buildHeader()
+                .animate()
+                .fadeIn(delay: 100.ms, duration: 500.ms)
+                .slideX(begin: -0.1, end: 0, delay: 100.ms, duration: 500.ms),
+            const SizedBox(height: 48),
+            _buildLoginCard(authState)
+                .animate()
+                .fadeIn(delay: 200.ms, duration: 600.ms)
+                .slideY(begin: 0.1, end: 0, delay: 200.ms, duration: 600.ms),
+            const SizedBox(height: 32),
+            const SocialSignInButtons()
+                .animate()
+                .fadeIn(delay: 400.ms, duration: 600.ms),
+            const SizedBox(height: 32),
+          ],
         ),
       ),
     );
@@ -207,8 +157,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildEmailField() {
-    final emailRequired = context.l10n.loginEmailRequired;
-    final emailInvalid = context.l10n.loginEmailInvalid;
+    final validators = AuthValidators(context.l10n);
     return AppInput(
       controller: _emailController,
       label: context.l10n.loginEmailLabel,
@@ -216,21 +165,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
       prefixIcon: Icons.email_outlined,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return emailRequired;
-        }
-        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-          return emailInvalid;
-        }
-        return null;
-      },
+      validator: validators.email,
     );
   }
 
   Widget _buildPasswordField() {
-    final passwordRequired = context.l10n.loginPasswordRequired;
-    final passwordTooShort = context.l10n.loginPasswordTooShort;
+    final validators = AuthValidators(context.l10n);
     return AppInput(
       controller: _passwordController,
       label: context.l10n.loginPasswordLabel,
@@ -239,15 +179,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       textInputAction: TextInputAction.done,
       prefixIcon: Icons.lock_outline_rounded,
       onSubmitted: (_) => _handleLogin(),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return passwordRequired;
-        }
-        if (value.length < 6) {
-          return passwordTooShort;
-        }
-        return null;
-      },
+      // Presence only. A minimum here would lock out any existing account
+      // whose password is shorter than today's registration rule.
+      validator: validators.requiredField,
     );
   }
 

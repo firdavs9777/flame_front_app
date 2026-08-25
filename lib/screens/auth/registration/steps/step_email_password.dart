@@ -7,6 +7,8 @@ import 'package:flame/providers/auth_availability_provider.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
 import 'package:flame/screens/auth/registration/legal_document_sheet.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/core/navigation/app_routes.dart';
+import 'package:flame/core/validation/auth_validators.dart';
 import 'package:flame/widgets/kit/kit.dart';
 
 class StepEmailPassword extends ConsumerStatefulWidget {
@@ -122,10 +124,11 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
   }
 
   Widget _buildEmailField() {
+    final validators = AuthValidators(context.l10n);
     return AppInput(
       controller: _emailController,
-      label: 'Email Address',
-      hint: 'you@example.com',
+      label: context.l10n.registerEmailLabel,
+      hint: context.l10n.registerEmailHint,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
       prefixIcon: Icons.email_outlined,
@@ -134,15 +137,7 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
           setState(() => _emailAvailabilityError = null);
         }
       },
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your email';
-        }
-        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-          return 'Please enter a valid email';
-        }
-        return null;
-      },
+      validator: validators.email,
     );
   }
 
@@ -172,16 +167,17 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
-              onPressed: () => Navigator.of(context).maybePop(),
+              onPressed: () => Navigator.of(context)
+                  .pushReplacementNamed(AppRoutes.login),
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
                 minimumSize: const Size(0, 32),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 foregroundColor: AppTheme.primaryColor,
               ),
-              child: const Text(
-                'Log in instead',
-                style: TextStyle(
+              child: Text(
+                context.l10n.registerLogInInstead,
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -194,49 +190,38 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
   }
 
   Widget _buildPasswordField() {
+    final validators = AuthValidators(context.l10n);
     return AppInput(
       controller: _passwordController,
-      label: 'Password',
-      hint: 'Create a strong password',
+      label: context.l10n.registerPasswordLabel,
+      hint: context.l10n.registerPasswordHint,
       obscureText: true,
       textInputAction: TextInputAction.next,
       prefixIcon: Icons.lock_outline_rounded,
-      onChanged: (_) => setState(() {}), // live-update requirement checklist
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter a password';
-        }
-        if (value.length < 8) {
-          return 'Password must be at least 8 characters';
-        }
-        return null;
-      },
+      onChanged: (_) => setState(() {}), // live-update the strength hints
+      validator: validators.password,
     );
   }
 
   Widget _buildConfirmPasswordField() {
+    final validators = AuthValidators(context.l10n);
     return AppInput(
       controller: _confirmPasswordController,
-      label: 'Confirm Password',
-      hint: 'Confirm your password',
+      label: context.l10n.registerConfirmPasswordLabel,
+      hint: context.l10n.registerConfirmPasswordHint,
       obscureText: true,
       textInputAction: TextInputAction.done,
       prefixIcon: Icons.lock_outline_rounded,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please confirm your password';
-        }
-        if (value != _passwordController.text) {
-          return 'Passwords do not match';
-        }
-        return null;
-      },
+      validator: (value) => validators.confirmPassword(
+        value,
+        against: _passwordController.text,
+      ),
     );
   }
 
   Widget _buildPasswordRequirements() {
     final password = _passwordController.text;
-    final hasLength = password.length >= 8;
+    final hasLength = password.length >= kMinPasswordLength;
     final hasUppercase = password.contains(RegExp(r'[A-Z]'));
     final hasNumber = password.contains(RegExp(r'[0-9]'));
 
@@ -250,13 +235,13 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Password must contain:',
+            context.l10n.registerPasswordHintsTitle,
             style: AppTypography.labelMedium.copyWith(color: AppColors.gray600),
           ),
           const SizedBox(height: 8),
-          _buildRequirement('At least 8 characters', hasLength),
-          _buildRequirement('One uppercase letter', hasUppercase),
-          _buildRequirement('One number', hasNumber),
+          _buildRequirement(context.l10n.registerPasswordHintLength, hasLength),
+          _buildRequirement(context.l10n.registerPasswordHintUppercase, hasUppercase),
+          _buildRequirement(context.l10n.registerPasswordHintNumber, hasNumber),
         ],
       ),
     );
@@ -337,7 +322,7 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
   Widget _buildContinueButton() {
     final enabled = _agreedToTerms && !_checking;
     return AppButton(
-      text: 'Continue',
+      text: context.l10n.registerContinue,
       size: AppButtonSize.large,
       isFullWidth: true,
       isLoading: _checking,
@@ -363,7 +348,7 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
       if (result.success && result.data == false) {
         // Email is taken — block advancing and surface an inline error.
         setState(() {
-          _emailAvailabilityError = 'That email is already registered';
+          _emailAvailabilityError = context.l10n.registerEmailTaken;
         });
         return;
       }

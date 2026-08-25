@@ -9,7 +9,6 @@ enum AuthStatus {
   initial,
   unauthenticated,
   authenticated,
-  registering,
   profileIncomplete,
 }
 
@@ -265,16 +264,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   // Promote profileIncomplete user to authenticated (after completion flow)
   void markAuthenticated() {
     state = state.copyWith(status: AuthStatus.authenticated);
-  }
-
-  // Start registration flow
-  void startRegistration() {
-    state = state.copyWith(status: AuthStatus.registering);
-  }
-
-  // Cancel registration
-  void cancelRegistration() {
-    state = state.copyWith(status: AuthStatus.unauthenticated);
   }
 
   // Logout

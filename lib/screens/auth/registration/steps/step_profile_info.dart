@@ -3,7 +3,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/models/user.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
+import 'package:flame/core/validation/auth_validators.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/widgets/kit/kit.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 
 class StepProfileInfo extends StatefulWidget {
   final RegistrationData data;
@@ -70,7 +73,7 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
               const SizedBox(height: 24),
 
               // Birthday/Age
-              _buildLabel('Your Age'),
+              _buildLabel(context.l10n.registerAgeLabel),
               const SizedBox(height: 8),
               _buildAgeSelector()
                   .animate()
@@ -80,7 +83,7 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
               const SizedBox(height: 24),
 
               // Gender
-              _buildLabel('I am a...'),
+              _buildLabel(context.l10n.registerGenderQuestionLabel),
               const SizedBox(height: 12),
               _buildGenderSelector()
                   .animate()
@@ -113,21 +116,14 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
   }
 
   Widget _buildNameField() {
+    final validators = AuthValidators(context.l10n);
     return AppInput(
       controller: _nameController,
-      label: 'First Name',
-      hint: 'Your first name',
+      label: context.l10n.registerFirstNameLabel,
+      hint: context.l10n.registerFirstNameHint,
       prefixIcon: Icons.person_outline_rounded,
       textInputAction: TextInputAction.next,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your name';
-        }
-        if (value.length < 2) {
-          return 'Name must be at least 2 characters';
-        }
-        return null;
-      },
+      validator: validators.name,
     );
   }
 
@@ -147,7 +143,7 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$_selectedAge years old',
+                  context.l10n.registerAgeYearsOld(_selectedAge),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -209,7 +205,7 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  gender.displayName,
+                  _genderSelfLabel(context, gender),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -237,9 +233,26 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
     }
   }
 
+  /// Self-description phrasing ("I am a...") for the gender chips — distinct
+  /// from [Gender.displayName] (used for third-person contexts elsewhere) and
+  /// from the looking-for chips' "Men"/"Women" phrasing, which reads wrong
+  /// here ("I am a... Men").
+  String _genderSelfLabel(BuildContext context, Gender gender) {
+    switch (gender) {
+      case Gender.male:
+        return context.l10n.registerGenderSelfMale;
+      case Gender.female:
+        return context.l10n.registerGenderSelfFemale;
+      case Gender.nonBinary:
+        return context.l10n.registerGenderSelfNonBinary;
+      case Gender.other:
+        return gender.displayName;
+    }
+  }
+
   Widget _buildContinueButton() {
     return AppButton(
-      text: 'Continue',
+      text: context.l10n.registerContinue,
       size: AppButtonSize.large,
       isFullWidth: true,
       onPressed: _handleContinue,
@@ -249,15 +262,10 @@ class _StepProfileInfoState extends State<StepProfileInfo> {
   void _handleContinue() {
     if (_formKey.currentState!.validate()) {
       if (_selectedGender == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Please select your gender'),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+        showAuthSnackBar(
+          context,
+          message: context.l10n.registerGenderRequired,
+          type: AuthSnackBarType.error,
         );
         return;
       }

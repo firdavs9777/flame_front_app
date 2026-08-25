@@ -41,7 +41,6 @@ void main() {
     for (final status in [
       AuthStatus.unauthenticated,
       AuthStatus.initial,
-      AuthStatus.registering,
       AuthStatus.profileIncomplete,
     ]) {
       final conn = build();

@@ -9,6 +9,7 @@ Map<String, dynamic> buildUpdateProfileBody({
   String? bio,
   List<String>? interests,
   Gender? lookingFor,
+  Gender? gender,
   int? age,
 }) {
   final body = <String, dynamic>{};
@@ -19,6 +20,7 @@ Map<String, dynamic> buildUpdateProfileBody({
     body['lookingFor'] = lookingFor.toApiString();
     body['looking_for'] = lookingFor.toApiString();
   }
+  if (gender != null) body['gender'] = gender.toApiString();
   if (age != null) body['age'] = age;
   return body;
 }
@@ -56,6 +58,7 @@ class UserService {
     String? bio,
     List<String>? interests,
     Gender? lookingFor,
+    Gender? gender,
     int? age,
   }) async {
     final body = buildUpdateProfileBody(
@@ -63,6 +66,7 @@ class UserService {
       bio: bio,
       interests: interests,
       lookingFor: lookingFor,
+      gender: gender,
       age: age,
     );
 

@@ -5,6 +5,7 @@ import 'package:flame/screens/auth/registration/registration_flow.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/core/interests/interest_catalogue.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 
 class StepBioInterests extends StatefulWidget {
   final RegistrationData data;
@@ -65,9 +66,9 @@ class _StepBioInterestsState extends State<StepBioInterests> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Bio Section
-            const Text(
-              'About You',
-              style: TextStyle(
+            Text(
+              context.l10n.registerBioSectionTitle,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
@@ -75,7 +76,7 @@ class _StepBioInterestsState extends State<StepBioInterests> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Optional — write something fun, or skip for now',
+              context.l10n.registerBioSubtitle,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -92,9 +93,9 @@ class _StepBioInterestsState extends State<StepBioInterests> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Your Interests',
-                  style: TextStyle(
+                Text(
+                  context.l10n.registerInterestsSectionTitle,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textPrimary,
@@ -109,7 +110,7 @@ class _StepBioInterestsState extends State<StepBioInterests> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    '${_selectedInterests.length}/5 selected',
+                    context.l10n.registerInterestsCounter(_selectedInterests.length),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -123,7 +124,7 @@ class _StepBioInterestsState extends State<StepBioInterests> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Pick at least one — you can add more later',
+              context.l10n.registerInterestsSubtitle,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -150,8 +151,7 @@ class _StepBioInterestsState extends State<StepBioInterests> {
   Widget _buildBioField() {
     return AppInput(
       controller: _bioController,
-      hint:
-          'e.g., Coffee enthusiast who loves hiking on weekends. Always up for trying new restaurants!',
+      hint: context.l10n.registerBioHint,
       maxLines: 4,
       minLines: 4,
       maxLength: 300,
@@ -210,16 +210,10 @@ class _StepBioInterestsState extends State<StepBioInterests> {
       } else if (_selectedInterests.length < 5) {
         _selectedInterests.add(interest);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Maximum 5 interests allowed'),
-            backgroundColor: Colors.orange,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 2),
-          ),
+        showAuthSnackBar(
+          context,
+          message: context.l10n.registerInterestsMax,
+          type: AuthSnackBarType.warning,
         );
       }
     });
@@ -230,14 +224,14 @@ class _StepBioInterestsState extends State<StepBioInterests> {
     return Column(
       children: [
         AppButton(
-          text: 'Continue',
+          text: context.l10n.registerContinue,
           size: AppButtonSize.large,
           isFullWidth: true,
           onPressed: enabled ? () => _handleContinue(skipBio: false) : null,
         ),
         const SizedBox(height: 8),
         AppButton(
-          text: 'Skip for now',
+          text: context.l10n.registerSkipForNow,
           variant: AppButtonVariant.ghost,
           isFullWidth: true,
           onPressed: enabled ? () => _handleContinue(skipBio: true) : null,
@@ -248,15 +242,10 @@ class _StepBioInterestsState extends State<StepBioInterests> {
 
   void _handleContinue({required bool skipBio}) {
     if (!canContinue(_selectedInterests.length)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Pick at least one interest'),
-          backgroundColor: AppTheme.errorColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+      showAuthSnackBar(
+        context,
+        message: context.l10n.registerInterestsMin,
+        type: AuthSnackBarType.error,
       );
       return;
     }

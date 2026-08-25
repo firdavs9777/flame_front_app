@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/models/user.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
 import 'package:flame/widgets/kit/kit.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 
 class StepLookingFor extends StatefulWidget {
   final RegistrationData data;
@@ -48,9 +50,9 @@ class _StepLookingForState extends State<StepLookingFor> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Show me...',
-              style: TextStyle(
+            Text(
+              context.l10n.registerShowMeTitle,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
@@ -58,7 +60,7 @@ class _StepLookingForState extends State<StepLookingFor> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Select who you\'d like to see on Flame',
+              context.l10n.registerSelectWhoToSee,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -86,25 +88,25 @@ class _StepLookingForState extends State<StepLookingFor> {
     final options = [
       _PreferenceOption(
         gender: Gender.male,
-        title: 'Men',
+        title: context.l10n.registerGenderMen,
         icon: Icons.male_rounded,
         color: const Color(0xFF5B9BD5),
       ),
       _PreferenceOption(
         gender: Gender.female,
-        title: 'Women',
+        title: context.l10n.registerGenderWomen,
         icon: Icons.female_rounded,
         color: const Color(0xFFFF69B4),
       ),
       _PreferenceOption(
         gender: Gender.nonBinary,
-        title: 'Non-binary',
+        title: context.l10n.registerGenderNonBinary,
         icon: Icons.transgender_rounded,
         color: const Color(0xFF9B59B6),
       ),
       _PreferenceOption(
         gender: Gender.other,
-        title: 'Everyone',
+        title: context.l10n.registerGenderEveryone,
         icon: Icons.people_rounded,
         color: AppTheme.primaryColor,
       ),
@@ -188,7 +190,7 @@ class _StepLookingForState extends State<StepLookingFor> {
 
   Widget _buildContinueButton() {
     return AppButton(
-      text: 'Continue',
+      text: context.l10n.registerContinue,
       size: AppButtonSize.large,
       isFullWidth: true,
       onPressed: _handleContinue,
@@ -197,15 +199,10 @@ class _StepLookingForState extends State<StepLookingFor> {
 
   void _handleContinue() {
     if (_selectedPreference == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select who you\'d like to see'),
-          backgroundColor: AppTheme.errorColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+      showAuthSnackBar(
+        context,
+        message: context.l10n.registerLookingForRequired,
+        type: AuthSnackBarType.error,
       );
       return;
     }

@@ -1,16 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image/image.dart' as img;
-import 'package:flame/theme/app_theme.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/core/image/photo_compressor.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/models/user.dart';
 import 'package:flame/services/location_service.dart';
 import 'package:flame/services/user_service.dart';
+import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 import 'photo_uploader.dart';
 import 'registration_draft.dart';
+import 'step_wizard.dart';
 import 'steps/step_email_password.dart';
 import 'steps/step_profile_info.dart';
 import 'steps/step_looking_for.dart';
@@ -40,47 +41,24 @@ class RegistrationFlow extends ConsumerStatefulWidget {
 }
 
 class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
-  final PageController _pageController = PageController();
-  int _currentStep = 0;
-  final int _totalSteps = 5; // 5-step flow; no email verification
+  final GlobalKey<StepWizardState> _wizardKey = GlobalKey<StepWizardState>();
   final RegistrationData _data = RegistrationData();
   final RegistrationDraft _draft = const RegistrationDraft();
   bool _isUploading = false;
   bool _registrationComplete = false;
+  int _restoreGeneration = 0;
 
-  final List<String> _stepTitles = [
-    'Create Account',
-    'About You',
-    'Looking For',
-    'Your Interests',
-    'Add Photos',
-  ];
-
-  final List<String> _stepSubtitles = [
-    'Enter your email and create a password',
-    'Tell us a bit about yourself',
-    'Who would you like to meet?',
-    'What makes you, you?',
-    'Show off your best self',
-  ];
+  static const int _totalSteps = 5;
 
   @override
   void initState() {
     super.initState();
-    // Offer to resume a previously-saved draft, if any.
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeOfferResume());
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
   }
 
   Future<void> _maybeOfferResume() async {
     final saved = await _draft.load();
     if (saved == null || !mounted) return;
-    // Nothing meaningful to resume (fresh/empty draft) — skip the prompt.
     if (saved.step <= 0 && saved.data.email.isEmpty) {
       await _draft.clear();
       return;
@@ -90,18 +68,16 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Resume your signup?'),
-        content: const Text(
-          'We saved your progress. Pick up where you left off, or start over.',
-        ),
+        title: Text(context.l10n.registerResumeTitle),
+        content: Text(context.l10n.registerResumeBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Start Over'),
+            child: Text(context.l10n.registerResumeStartOver),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Resume'),
+            child: Text(context.l10n.registerResumeContinue),
           ),
         ],
       ),
@@ -116,28 +92,28 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
   }
 
   void _restoreFrom(RegistrationData data, int step) {
-    _data
-      ..email = data.email
-      ..name = data.name
-      ..age = data.age
-      ..gender = data.gender
-      ..lookingFor = data.lookingFor
-      ..bio = data.bio
-      ..interests = data.interests
-      ..photoFiles = data.photoFiles
-      ..latitude = data.latitude
-      ..longitude = data.longitude;
+    setState(() {
+      _data
+        ..email = data.email
+        ..name = data.name
+        ..age = data.age
+        ..gender = data.gender
+        ..lookingFor = data.lookingFor
+        ..bio = data.bio
+        ..interests = data.interests
+        ..photoFiles = data.photoFiles
+        ..latitude = data.latitude
+        ..longitude = data.longitude;
+      _restoreGeneration++;
+    });
 
-    final target = step.clamp(0, _totalSteps - 1);
-    setState(() => _currentStep = target);
-    if (_pageController.hasClients) {
-      _pageController.jumpToPage(target);
-    }
-  }
-
-  void _saveDraft() {
-    // Fire-and-forget; a persistence hiccup must never block the UI.
-    _draft.save(_data, _currentStep);
+    _wizardKey.currentState?.jumpToStep(
+      resumeStepFor(
+        password: _data.password,
+        savedStep: step,
+        totalSteps: _totalSteps,
+      ),
+    );
   }
 
   @override
@@ -145,257 +121,104 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     final authState = ref.watch(authProvider);
 
     ref.listen<AuthState>(authProvider, (previous, next) {
-      if (next.isAuthenticated && _registrationComplete) {
+      if (_registrationComplete &&
+          (next.isAuthenticated || next.isProfileIncomplete)) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
       if (next.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+        showAuthSnackBar(
+          context,
+          message: next.error!,
+          type: AuthSnackBarType.error,
         );
         ref.read(authProvider.notifier).clearError();
       }
     });
 
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFF6B6B),
-              Color(0xFFFF8E53),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header with back button and progress
-              _buildHeader()
-                  .animate()
-                  .fadeIn(duration: 400.ms),
+    final busy = authState.isLoading || _isUploading;
 
-              const SizedBox(height: 16),
-
-              // Progress indicator
-              _buildProgressIndicator()
-                  .animate()
-                  .fadeIn(delay: 100.ms, duration: 400.ms),
-
-              const SizedBox(height: 24),
-
-              // Step title and subtitle
-              _buildStepInfo()
-                  .animate()
-                  .fadeIn(delay: 200.ms, duration: 400.ms)
-                  .slideX(begin: -0.1, end: 0, delay: 200.ms, duration: 400.ms),
-
-              const SizedBox(height: 24),
-
-              // Page content
-              Expanded(
-                child: _buildPageView(authState),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            onPressed: _handleBack,
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
-          Text(
-            'Step ${_currentStep + 1} of $_totalSteps',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(width: 48), // Balance the back button
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressIndicator() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Row(
-        children: List.generate(_totalSteps, (index) {
-          final isCompleted = index < _currentStep;
-          final isCurrent = index == _currentStep;
-
-          return Expanded(
-            child: Container(
-              height: 4,
-              margin: EdgeInsets.only(right: index < _totalSteps - 1 ? 8 : 0),
-              decoration: BoxDecoration(
-                color: isCompleted || isCurrent
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildStepInfo() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _stepTitles[_currentStep],
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _stepSubtitles[_currentStep],
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.85),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPageView(AuthState authState) {
-    return PageView(
-      controller: _pageController,
-      physics: const NeverScrollableScrollPhysics(),
-      onPageChanged: (index) {
-        setState(() => _currentStep = index);
-        _saveDraft();
+    return StepWizard(
+      key: _wizardKey,
+      isBusy: busy,
+      onStepChanged: (step) => _draft.save(_data, step),
+      onExit: () {
+        // Explicit back-out to welcome — discard the saved draft.
+        _draft.clear();
+        Navigator.of(context).pop();
       },
-      children: [
-        StepEmailPassword(
-          data: _data,
-          onNext: _goToNextStep,
+      onComplete: _registerNewAccount,
+      steps: [
+        WizardStep(
+          title: context.l10n.registerStepAccountTitle,
+          subtitle: context.l10n.registerStepAccountSubtitle,
+          builder: (context, onNext) => StepEmailPassword(
+            key: ValueKey(_restoreGeneration),
+            data: _data,
+            onNext: onNext,
+          ),
         ),
-        StepProfileInfo(
-          data: _data,
-          onNext: _goToNextStep,
+        WizardStep(
+          title: context.l10n.registerStepAboutTitle,
+          subtitle: context.l10n.registerStepAboutSubtitle,
+          builder: (context, onNext) =>
+              StepProfileInfo(data: _data, onNext: onNext),
         ),
-        StepLookingFor(
-          data: _data,
-          onNext: _goToNextStep,
+        WizardStep(
+          title: context.l10n.registerStepLookingForTitle,
+          subtitle: context.l10n.registerStepLookingForSubtitle,
+          builder: (context, onNext) =>
+              StepLookingFor(data: _data, onNext: onNext),
         ),
-        StepBioInterests(
-          data: _data,
-          onNext: _goToNextStep,
+        WizardStep(
+          title: context.l10n.registerStepInterestsTitle,
+          subtitle: context.l10n.registerStepInterestsSubtitle,
+          builder: (context, onNext) =>
+              StepBioInterests(data: _data, onNext: onNext),
         ),
-        StepPhotos(
-          data: _data,
-          isLoading: authState.isLoading || _isUploading,
-          onComplete: _handlePhotosComplete,
+        WizardStep(
+          title: context.l10n.registerStepPhotosTitle,
+          subtitle: context.l10n.registerStepPhotosSubtitle,
+          builder: (context, onNext) => StepPhotos(
+            data: _data,
+            isLoading: busy,
+            onComplete: onNext,
+          ),
         ),
       ],
     );
   }
 
-  void _handleBack() {
-    if (_currentStep > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-      );
-    } else {
-      // Explicit back-out to login/welcome — discard the saved draft.
-      _draft.clear();
-      Navigator.of(context).pop();
-    }
-  }
-
-  void _goToNextStep() {
-    if (_currentStep < _totalSteps - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
-
-  Future<void> _handlePhotosComplete() async {
+  Future<void> _registerNewAccount() async {
     setState(() => _isUploading = true);
 
     try {
-      // Request location permission and get current location
-      final locationService = LocationService();
-      final locationResult = await locationService.getCurrentPosition();
+      final locationResult = await LocationService().getCurrentPosition();
+      if (!mounted) return;
 
       if (!locationResult.success) {
         setState(() => _isUploading = false);
-        if (mounted) {
-          _showLocationError(locationResult.error ?? 'Failed to get location');
-        }
+        _showLocationError(
+          locationResult.error ?? context.l10n.registerLocationFailed,
+        );
         return;
       }
 
       _data.latitude = locationResult.latitude;
       _data.longitude = locationResult.longitude;
 
-      // Upload photos FIRST and get URLs back
       final photoUrls = await _uploadPhotosForRegistration();
+      if (!mounted) return;
 
       if (photoUrls.isEmpty) {
         setState(() => _isUploading = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Failed to upload photos. Please try again.'),
-              backgroundColor: AppTheme.errorColor,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
-        }
+        showAuthSnackBar(
+          context,
+          message: context.l10n.registerPhotoUploadFailed,
+          type: AuthSnackBarType.error,
+        );
         return;
       }
 
-      // Register user with photo URLs
       final success = await ref.read(authProvider.notifier).register(
             email: _data.email,
             password: _data.password,
@@ -409,30 +232,22 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
             latitude: _data.latitude!,
             longitude: _data.longitude!,
           );
-
+      if (!mounted) return;
       setState(() => _isUploading = false);
 
       if (success) {
-        // Registration is complete — tokens are already issued. The ref.listen
-        // above pops to root once auth state flips to authenticated. Drop the
-        // saved draft so a future signup starts clean.
         await _draft.clear();
+        if (!mounted) return;
         setState(() => _registrationComplete = true);
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isUploading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-      }
+      showAuthSnackBar(
+        context,
+        message: context.l10n.registerGenericError(e.toString()),
+        type: AuthSnackBarType.error,
+      );
     }
   }
 
@@ -445,32 +260,31 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     try {
       tempPath = (await getTemporaryDirectory()).path;
     } catch (_) {
-      // path_provider unavailable on some simulators; fall back to system temp
+      // path_provider is unavailable on some simulators.
       tempPath = Directory.systemTemp.path;
     }
 
-    // Index each file so compression temp paths and debug logs stay stable
-    // even though uploads run concurrently.
+    // Index each file so compression paths stay stable and collision-free
+    // even though the uploads run concurrently.
     final indexOf = <File, int>{};
     for (var i = 0; i < _data.photoFiles.length; i++) {
       indexOf[_data.photoFiles[i]] = i;
     }
 
-    final photoUrls = await const PhotoUploader().upload(
+    return const PhotoUploader().upload(
       _data.photoFiles,
       uploadOne: (file, {required bool isPrimary}) async {
         final i = indexOf[file] ?? 0;
         try {
-          // Compress + convert to JPEG before upload.
-          final compressedFile = await _compressImage(file, tempPath, i);
+          final compressed = await const PhotoCompressor()
+              .compress(file, tempDir: tempPath, index: i);
 
           final result = await userService.uploadPhotoForRegistration(
-            compressedFile,
+            compressed,
             isPrimary: isPrimary,
           );
 
           if (result.success && result.data != null) {
-            debugPrint('Uploaded photo ${i + 1}: ${result.data!.url}');
             return UploadOutcome(success: true, url: result.data!.url);
           }
           debugPrint('Failed to upload photo ${i + 1}: ${result.error}');
@@ -481,72 +295,48 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
         }
       },
     );
-
-    return photoUrls;
-  }
-
-  Future<File> _compressImage(File file, String tempPath, int index) async {
-    try {
-      final bytes = await file.readAsBytes();
-      final originalSize = bytes.length;
-      debugPrint('Original photo ${index + 1} size: ${(originalSize / 1024).toStringAsFixed(0)} KB');
-
-      // Decode image
-      img.Image? image = img.decodeImage(bytes);
-      if (image == null) {
-        debugPrint('Could not decode image, using original');
-        return file;
-      }
-
-      // Resize if larger than 800px
-      const maxSize = 800;
-      if (image.width > maxSize || image.height > maxSize) {
-        if (image.width > image.height) {
-          image = img.copyResize(image, width: maxSize);
-        } else {
-          image = img.copyResize(image, height: maxSize);
-        }
-      }
-
-      // Encode as JPEG with 70% quality
-      final compressedBytes = img.encodeJpg(image, quality: 70);
-      debugPrint('Compressed photo ${index + 1} size: ${(compressedBytes.length / 1024).toStringAsFixed(0)} KB');
-
-      // Save to temp file
-      final compressedPath = '$tempPath/compressed_$index.jpg';
-      final compressedFile = File(compressedPath);
-      await compressedFile.writeAsBytes(compressedBytes);
-
-      return compressedFile;
-    } catch (e) {
-      debugPrint('Compression error: $e, using original');
-      return file;
-    }
   }
 
   void _showLocationError(String error) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Location Required'),
+        title: Text(context.l10n.registerLocationRequiredTitle),
         content: Text(
-          '$error\n\nFlame needs your location to find matches near you.',
+          '$error\n\n${context.l10n.registerLocationRequiredBody}',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.registerCancel),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              final locationService = LocationService();
-              await locationService.openAppSettings();
+              await LocationService().openAppSettings();
             },
-            child: const Text('Open Settings'),
+            child: Text(context.l10n.registerOpenSettings),
           ),
         ],
       ),
     );
   }
+}
+
+/// Which step a resumed draft should open on.
+///
+/// The password is deliberately never persisted (see [RegistrationDraft]), and
+/// step 0 is the only place one is entered. Resuming past it left `_data.password`
+/// empty all the way into `register()`, which the server rejects with a 422 the
+/// user cannot see or escape. So a draft without a password restarts at step 0 —
+/// everything else the user already typed is still restored.
+///
+/// Extracted so the rule is unit-testable independent of the widget.
+int resumeStepFor({
+  required String password,
+  required int savedStep,
+  required int totalSteps,
+}) {
+  if (password.isEmpty) return 0;
+  return savedStep.clamp(0, totalSteps - 1);
 }

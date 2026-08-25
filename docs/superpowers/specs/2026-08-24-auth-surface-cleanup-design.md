@@ -104,7 +104,7 @@ pattern.
 | `forgot_password_screen.dart` | **Rebuilt on the kit and localised, still behind the flag.** Ready when the endpoints land, and the codebase stops carrying an outlier. |
 | Password self-service as a feature | **Out.** Still the open decision `RELEASE-CHECKLIST.md` records. |
 | Dead code | **Deleted**, including the enum member the realtime test enumerates. |
-| Translations | **English ARB keys only.** `app_en.arb` has 437 keys against 223 in the other eleven; Flutter falls back to English already. Translation is a content task. |
+| Translations | **New keys land in all twelve ARBs, with the English string as the placeholder value in the eleven non-English files.** ~~`app_en.arb` has 437 keys against 223 in the other eleven; Flutter falls back to English already.~~ That was wrong: the 437 came from a grep that counted the `"description"` lines inside `@key` blocks as keys. The twelve files are at parity, and `test/l10n/arb_parity_test.dart` enforces it. English placeholders are already the practice there. Translating them stays a separate content task. |
 | `go_router` | **Out.** Unchanged from the navigation route table decision. |
 
 ## Architecture
