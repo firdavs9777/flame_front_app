@@ -1,17 +1,25 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+
 import 'package:flame/core/image/photo_compressor.dart';
 import 'package:flame/providers/auth_provider.dart';
-import 'package:flame/services/user_service.dart';
 import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
-import 'steps/step_profile_info.dart';
-import 'steps/step_looking_for.dart';
-import 'steps/step_bio_interests.dart';
-import 'steps/step_photos.dart';
+import 'package:flame/services/user_service.dart';
+import 'photo_uploader.dart';
 import 'registration_flow.dart';
+import 'step_wizard.dart';
+import 'steps/step_bio_interests.dart';
+import 'steps/step_looking_for.dart';
+import 'steps/step_photos.dart';
+import 'steps/step_profile_info.dart';
 
+/// Profile completion for a user who signed in with Google, Apple or Facebook.
+///
+/// The same wizard registration uses, minus the email/password step — a social
+/// user already has credentials. No exit: they are authenticated but their
+/// profile is unusable, so backing out would strand them between the two.
 class SocialProfileCompletionFlow extends ConsumerStatefulWidget {
   const SocialProfileCompletionFlow({super.key});
 
@@ -22,191 +30,61 @@ class SocialProfileCompletionFlow extends ConsumerStatefulWidget {
 
 class _SocialProfileCompletionFlowState
     extends ConsumerState<SocialProfileCompletionFlow> {
-  final PageController _pageController = PageController();
-  int _currentStep = 0;
-  final int _totalSteps = 4;
   final RegistrationData _data = RegistrationData();
   bool _isUploading = false;
-
-  final List<String> _stepTitles = [
-    'About You',
-    'Looking For',
-    'Your Interests',
-    'Add Photos',
-  ];
-
-  final List<String> _stepSubtitles = [
-    'Tell us a bit about yourself',
-    'Who would you like to meet?',
-    'What makes you, you?',
-    'Show off your best self',
-  ];
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
+  bool _prefilled = false;
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    // Pre-fill name from the authenticated social user
-    if (_data.name.isEmpty && authState.user != null) {
+    // Pre-fill the name the provider gave us — once. Doing this unconditionally
+    // in build() meant every rebuild fought whatever the user had typed.
+    if (!_prefilled && authState.user != null) {
       _data.name = authState.user!.name;
+      _prefilled = true;
     }
 
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
+    return StepWizard(
+      isBusy: _isUploading,
+      onComplete: _completeSocialProfile,
+      steps: [
+        WizardStep(
+          title: 'About You',
+          subtitle: 'Tell us a bit about yourself',
+          builder: (context, onNext) =>
+              StepProfileInfo(data: _data, onNext: onNext),
+        ),
+        WizardStep(
+          title: 'Looking For',
+          subtitle: 'Who would you like to meet?',
+          builder: (context, onNext) =>
+              StepLookingFor(data: _data, onNext: onNext),
+        ),
+        WizardStep(
+          title: 'Your Interests',
+          subtitle: 'What makes you, you?',
+          builder: (context, onNext) =>
+              StepBioInterests(data: _data, onNext: onNext),
+        ),
+        WizardStep(
+          title: 'Add Photos',
+          subtitle: 'Show off your best self',
+          builder: (context, onNext) => StepPhotos(
+            data: _data,
+            isLoading: _isUploading,
+            onComplete: onNext,
           ),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader().animate().fadeIn(duration: 400.ms),
-              const SizedBox(height: 16),
-              _buildProgressIndicator()
-                  .animate()
-                  .fadeIn(delay: 100.ms, duration: 400.ms),
-              const SizedBox(height: 24),
-              _buildStepInfo()
-                  .animate()
-                  .fadeIn(delay: 200.ms, duration: 400.ms),
-              const SizedBox(height: 24),
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  onPageChanged: (i) => setState(() => _currentStep = i),
-                  children: [
-                    StepProfileInfo(data: _data, onNext: _goToNextStep),
-                    StepLookingFor(data: _data, onNext: _goToNextStep),
-                    StepBioInterests(data: _data, onNext: _goToNextStep),
-                    StepPhotos(
-                      data: _data,
-                      isLoading: _isUploading,
-                      onComplete: _handleComplete,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      ],
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          if (_currentStep > 0)
-            IconButton(
-              onPressed: () => _pageController.previousPage(
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeOutCubic,
-              ),
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 20),
-              ),
-            )
-          else
-            const SizedBox(width: 48),
-          Text(
-            'Step ${_currentStep + 1} of $_totalSteps',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(width: 48),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressIndicator() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Row(
-        children: List.generate(_totalSteps, (index) {
-          return Expanded(
-            child: Container(
-              height: 4,
-              margin: EdgeInsets.only(right: index < _totalSteps - 1 ? 8 : 0),
-              decoration: BoxDecoration(
-                color: index <= _currentStep
-                    ? Colors.white
-                    : Colors.white.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildStepInfo() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _stepTitles[_currentStep],
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _stepSubtitles[_currentStep],
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.85),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _goToNextStep() {
-    if (_currentStep < _totalSteps - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
-
-  Future<void> _handleComplete() async {
+  Future<void> _completeSocialProfile() async {
     setState(() => _isUploading = true);
+    final userService = UserService();
 
     try {
-      final userService = UserService();
-
       final profileResult = await userService.updateProfile(
         name: _data.name,
         bio: _data.bio,
@@ -227,25 +105,7 @@ class _SocialProfileCompletionFlowState
         return;
       }
 
-      String tempPath;
-      try {
-        final dir = await Directory.systemTemp.createTemp('flame_photos');
-        tempPath = dir.path;
-      } catch (_) {
-        tempPath = Directory.systemTemp.path;
-      }
-
-      for (int i = 0; i < _data.photoFiles.length; i++) {
-        final file = _data.photoFiles[i];
-        final isPrimary = i == 0;
-        try {
-          final compressed = await const PhotoCompressor()
-              .compress(file, tempDir: tempPath, index: i);
-          await userService.uploadPhoto(compressed, isPrimary: isPrimary);
-        } catch (e) {
-          debugPrint('Photo upload error: $e');
-        }
-      }
+      await _uploadPhotos(userService);
       if (!mounted) return;
 
       final userResult = await userService.getCurrentUser();
@@ -253,6 +113,7 @@ class _SocialProfileCompletionFlowState
       if (userResult.success && userResult.data != null) {
         ref.read(authProvider.notifier).updateUser(userResult.data!);
       }
+
       setState(() => _isUploading = false);
       ref.read(authProvider.notifier).markAuthenticated();
     } catch (e) {
@@ -264,5 +125,46 @@ class _SocialProfileCompletionFlowState
         type: AuthSnackBarType.error,
       );
     }
+  }
+
+  /// The same uploader registration uses — parallel, with one retry per photo.
+  /// This path was a sequential `for` loop that swallowed every error, which is
+  /// exactly the drift a shared wizard is meant to stop.
+  Future<void> _uploadPhotos(UserService userService) async {
+    if (_data.photoFiles.isEmpty) return;
+
+    String tempPath;
+    try {
+      final dir = await Directory.systemTemp.createTemp('flame_photos');
+      tempPath = dir.path;
+    } catch (_) {
+      tempPath = Directory.systemTemp.path;
+    }
+
+    final indexOf = <File, int>{};
+    for (var i = 0; i < _data.photoFiles.length; i++) {
+      indexOf[_data.photoFiles[i]] = i;
+    }
+
+    await const PhotoUploader().upload(
+      _data.photoFiles,
+      uploadOne: (file, {required bool isPrimary}) async {
+        final i = indexOf[file] ?? 0;
+        try {
+          final compressed = await const PhotoCompressor()
+              .compress(file, tempDir: tempPath, index: i);
+          final result =
+              await userService.uploadPhoto(compressed, isPrimary: isPrimary);
+          if (result.success) {
+            return UploadOutcome(success: true, url: result.data?.url);
+          }
+          debugPrint('Failed to upload photo ${i + 1}: ${result.error}');
+          return const UploadOutcome(success: false);
+        } catch (e) {
+          debugPrint('Error uploading photo ${i + 1}: $e');
+          return const UploadOutcome(success: false);
+        }
+      },
+    );
   }
 }
