@@ -886,5 +886,41 @@
   "registerPhotoUploadFailedSocial": "Your photos could not be uploaded. You can add them from your profile.",
   "@registerPhotoUploadFailedSocial": {
     "description": "Warning shown on social profile completion when every selected photo failed to upload. The flow proceeds anyway since the user is already authenticated and this wizard has no exit — the user finishes profile completion and adds photos later from their profile."
+  },
+  "forgotPasswordTitle": "Forgot\nPassword?",
+  "@forgotPasswordTitle": {
+    "description": "Heading on the forgot-password screen before a reset email is sent"
+  },
+  "forgotPasswordSubtitle": "No worries, we'll send you reset instructions",
+  "@forgotPasswordSubtitle": {
+    "description": "Subheading on the forgot-password screen before sending"
+  },
+  "forgotPasswordSubmit": "Send reset link",
+  "@forgotPasswordSubmit": {
+    "description": "Button that requests a password reset email"
+  },
+  "forgotPasswordSentTitle": "Check Your\nEmail",
+  "@forgotPasswordSentTitle": {
+    "description": "Heading after a reset email has been sent"
+  },
+  "forgotPasswordSentSubtitle": "We've sent a reset link to your email",
+  "@forgotPasswordSentSubtitle": {
+    "description": "Subheading after a reset email has been sent"
+  },
+  "forgotPasswordSentHeading": "Email sent",
+  "@forgotPasswordSentHeading": {
+    "description": "Heading inside the confirmation card"
+  },
+  "forgotPasswordSentBody": "Please check your inbox and follow the instructions to reset your password.",
+  "@forgotPasswordSentBody": {
+    "description": "Body text inside the confirmation card"
+  },
+  "forgotPasswordBackToLogin": "Back to login",
+  "@forgotPasswordBackToLogin": {
+    "description": "Button returning to the login screen from the confirmation card"
+  },
+  "forgotPasswordRetry": "Didn't receive the email? Try again",
+  "@forgotPasswordRetry": {
+    "description": "Link that returns to the email form to re-request a reset"
   }
 }

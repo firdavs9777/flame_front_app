@@ -236,5 +236,14 @@
   "registerPasswordHintNumber": "One number",
   "registerEmailTaken": "That email is already registered",
   "registerLogInInstead": "Log in instead",
-  "registerPhotoUploadFailedSocial": "Your photos could not be uploaded. You can add them from your profile."
+  "registerPhotoUploadFailedSocial": "Your photos could not be uploaded. You can add them from your profile.",
+  "forgotPasswordTitle": "Forgot\nPassword?",
+  "forgotPasswordSubtitle": "No worries, we'll send you reset instructions",
+  "forgotPasswordSubmit": "Send reset link",
+  "forgotPasswordSentTitle": "Check Your\nEmail",
+  "forgotPasswordSentSubtitle": "We've sent a reset link to your email",
+  "forgotPasswordSentHeading": "Email sent",
+  "forgotPasswordSentBody": "Please check your inbox and follow the instructions to reset your password.",
+  "forgotPasswordBackToLogin": "Back to login",
+  "forgotPasswordRetry": "Didn't receive the email? Try again"
 }
