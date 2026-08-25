@@ -365,42 +365,37 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     setState(() => _isUploading = true);
 
     try {
-      // Request location permission and get current location
       final locationService = LocationService();
       final locationResult = await locationService.getCurrentPosition();
+      if (!mounted) return;
 
       if (!locationResult.success) {
         setState(() => _isUploading = false);
-        if (mounted) {
-          _showLocationError(locationResult.error ?? 'Failed to get location');
-        }
+        _showLocationError(locationResult.error ?? 'Failed to get location');
         return;
       }
 
       _data.latitude = locationResult.latitude;
       _data.longitude = locationResult.longitude;
 
-      // Upload photos FIRST and get URLs back
       final photoUrls = await _uploadPhotosForRegistration();
+      if (!mounted) return;
 
       if (photoUrls.isEmpty) {
         setState(() => _isUploading = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Failed to upload photos. Please try again.'),
-              backgroundColor: AppTheme.errorColor,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to upload photos. Please try again.'),
+            backgroundColor: AppTheme.errorColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-          );
-        }
+          ),
+        );
         return;
       }
 
-      // Register user with photo URLs
       final success = await ref.read(authProvider.notifier).register(
             email: _data.email,
             password: _data.password,
@@ -414,30 +409,30 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
             latitude: _data.latitude!,
             longitude: _data.longitude!,
           );
+      if (!mounted) return;
 
       setState(() => _isUploading = false);
 
       if (success) {
-        // Registration is complete — tokens are already issued. The ref.listen
-        // above pops to root once auth state flips to authenticated. Drop the
-        // saved draft so a future signup starts clean.
+        // Tokens are already issued. The ref.listen above pops to root once
+        // auth state flips. Drop the draft so a future signup starts clean.
         await _draft.clear();
+        if (!mounted) return;
         setState(() => _registrationComplete = true);
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isUploading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: AppTheme.errorColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-        );
-      }
+        ),
+      );
     }
   }
 

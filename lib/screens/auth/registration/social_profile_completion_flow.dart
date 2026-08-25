@@ -207,7 +207,6 @@ class _SocialProfileCompletionFlowState
     try {
       final userService = UserService();
 
-      // 1. Update profile info
       final profileResult = await userService.updateProfile(
         name: _data.name,
         bio: _data.bio,
@@ -216,14 +215,14 @@ class _SocialProfileCompletionFlowState
         gender: _data.gender,
         age: _data.age,
       );
+      if (!mounted) return;
 
       if (!profileResult.success) {
-        _showError(profileResult.error ?? 'Failed to update profile');
         setState(() => _isUploading = false);
+        _showError(profileResult.error ?? 'Failed to update profile');
         return;
       }
 
-      // 2. Upload photos
       String tempPath;
       try {
         final dir = await Directory.systemTemp.createTemp('flame_photos');
@@ -242,14 +241,17 @@ class _SocialProfileCompletionFlowState
           debugPrint('Photo upload error: $e');
         }
       }
+      if (!mounted) return;
 
-      // 3. Refresh user and mark authenticated
       final userResult = await userService.getCurrentUser();
+      if (!mounted) return;
       if (userResult.success && userResult.data != null) {
         ref.read(authProvider.notifier).updateUser(userResult.data!);
       }
+      setState(() => _isUploading = false);
       ref.read(authProvider.notifier).markAuthenticated();
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isUploading = false);
       _showError('Error: ${e.toString()}');
     }
