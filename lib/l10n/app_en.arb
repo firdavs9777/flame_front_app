@@ -830,5 +830,33 @@
         "type": "String"
       }
     }
+  },
+  "authPasswordTooShort": "Password must be at least 8 characters",
+  "@authPasswordTooShort": {
+    "description": "Validation error when a new password is under the server's 8-character minimum"
+  },
+  "authPasswordTooLong": "Password must be 128 characters or fewer",
+  "@authPasswordTooLong": {
+    "description": "Validation error when a new password exceeds the server's 128-character ceiling"
+  },
+  "authConfirmPasswordRequired": "Please confirm your password",
+  "@authConfirmPasswordRequired": {
+    "description": "Validation error when the confirm-password field is empty"
+  },
+  "authPasswordsDoNotMatch": "Passwords do not match",
+  "@authPasswordsDoNotMatch": {
+    "description": "Validation error when confirm-password differs from password"
+  },
+  "authNameRequired": "Please enter your name",
+  "@authNameRequired": {
+    "description": "Validation error when the name field is empty"
+  },
+  "authNameTooShort": "Name must be at least 2 characters",
+  "@authNameTooShort": {
+    "description": "Validation error when a name is under the server's 2-character minimum"
+  },
+  "authNameTooLong": "Name must be 50 characters or fewer",
+  "@authNameTooLong": {
+    "description": "Validation error when a name exceeds the server's 50-character ceiling"
   }
 }

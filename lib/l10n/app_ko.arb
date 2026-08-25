@@ -222,5 +222,12 @@
   "blockedUnblockConfirm": "차단을 해제할까요?",
   "commonOk": "확인",
   "blockedOnDate": "{date}에 차단",
-  "errorWithDetail": "오류: {detail}"
+  "errorWithDetail": "오류: {detail}",
+  "authPasswordTooShort": "Password must be at least 8 characters",
+  "authPasswordTooLong": "Password must be 128 characters or fewer",
+  "authConfirmPasswordRequired": "Please confirm your password",
+  "authPasswordsDoNotMatch": "Passwords do not match",
+  "authNameRequired": "Please enter your name",
+  "authNameTooShort": "Name must be at least 2 characters",
+  "authNameTooLong": "Name must be 50 characters or fewer"
 }

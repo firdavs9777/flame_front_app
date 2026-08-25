@@ -222,5 +222,12 @@
   "blockedUnblockConfirm": "Разблокировать пользователя?",
   "commonOk": "ОК",
   "blockedOnDate": "Заблокирован {date}",
-  "errorWithDetail": "Ошибка: {detail}"
+  "errorWithDetail": "Ошибка: {detail}",
+  "authPasswordTooShort": "Password must be at least 8 characters",
+  "authPasswordTooLong": "Password must be 128 characters or fewer",
+  "authConfirmPasswordRequired": "Please confirm your password",
+  "authPasswordsDoNotMatch": "Passwords do not match",
+  "authNameRequired": "Please enter your name",
+  "authNameTooShort": "Name must be at least 2 characters",
+  "authNameTooLong": "Name must be 50 characters or fewer"
 }
