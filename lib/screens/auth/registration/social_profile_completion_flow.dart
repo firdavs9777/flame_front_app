@@ -213,6 +213,7 @@ class _SocialProfileCompletionFlowState
         bio: _data.bio,
         interests: _data.interests,
         lookingFor: _data.lookingFor,
+        gender: _data.gender,
         age: _data.age,
       );
 

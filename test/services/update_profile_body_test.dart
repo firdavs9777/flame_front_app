@@ -32,5 +32,21 @@ void main() {
       expect(body['interests'], ['a', 'b']);
       expect(body['age'], 29);
     });
+
+    test('writes gender in camelCase when given', () {
+      final body = buildUpdateProfileBody(gender: Gender.female);
+      expect(body['gender'], 'female');
+    });
+
+    test('gender needs no snake_case twin — the PATCH schema names it gender', () {
+      final body = buildUpdateProfileBody(gender: Gender.male);
+      expect(body['gender'], 'male');
+      expect(body.containsKey('gender_identity'), isFalse);
+    });
+
+    test('omits gender when null — a profile edit must not reset it', () {
+      final body = buildUpdateProfileBody(name: 'Ann');
+      expect(body.containsKey('gender'), isFalse);
+    });
   });
 }
