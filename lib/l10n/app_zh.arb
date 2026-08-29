@@ -273,6 +273,7 @@
   "registerInterestsMax": "Maximum 5 interests allowed",
   "registerInterestsMin": "Pick at least one interest",
   "registerLocationFailed": "Failed to get location",
+  "registerLocationSaveFailed": "Failed to save your location",
   "registerGenericError": "Error: {error}",
   "registerImageProcessingFailed": "Failed to process image: {error}",
   "registerEmailLabel": "Email Address",

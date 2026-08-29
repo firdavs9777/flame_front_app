@@ -947,6 +947,8 @@
   "@registerInterestsMin": { "description": "Shown when advancing with no interests selected" },
   "registerLocationFailed": "Failed to get location",
   "@registerLocationFailed": { "description": "Fallback error text when the location lookup failed with no platform message" },
+  "registerLocationSaveFailed": "Failed to save your location",
+  "@registerLocationSaveFailed": { "description": "Shown when coordinates were obtained but the server rejected them during social profile completion" },
   "registerGenericError": "Error: {error}",
   "@registerGenericError": {
     "description": "Generic catch-all error shown when registration or profile completion throws unexpectedly",

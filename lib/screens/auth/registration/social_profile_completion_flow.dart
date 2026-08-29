@@ -7,7 +7,10 @@ import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/image/photo_compressor.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
+import 'package:flame/screens/auth/widgets/location_required_dialog.dart';
+import 'package:flame/services/location_service.dart';
 import 'package:flame/services/user_service.dart';
+import 'location_gate.dart';
 import 'photo_uploader.dart';
 import 'registration_flow.dart';
 import 'step_wizard.dart';
@@ -86,6 +89,33 @@ class _SocialProfileCompletionFlowState
     final userService = UserService();
 
     try {
+      // Before anything is written: a social account is created without
+      // coordinates, and the backend does not call a profile complete without
+      // them. Asking first means a refusal costs the user nothing but a retry,
+      // instead of leaving a half-applied profile behind.
+      final location = await const LocationGate().establish(
+        getPosition: LocationService().getCurrentPosition,
+        push: (latitude, longitude) async {
+          final result = await userService.updateLocation(
+            latitude: latitude,
+            longitude: longitude,
+          );
+          return result.success;
+        },
+      );
+      if (!mounted) return;
+
+      if (!location.ok) {
+        setState(() => _isUploading = false);
+        showLocationRequiredDialog(
+          context,
+          error: location.failure == LocationGateFailure.push
+              ? context.l10n.registerLocationSaveFailed
+              : (location.error ?? context.l10n.registerLocationFailed),
+        );
+        return;
+      }
+
       final profileResult = await userService.updateProfile(
         name: _data.name,
         bio: _data.bio,
