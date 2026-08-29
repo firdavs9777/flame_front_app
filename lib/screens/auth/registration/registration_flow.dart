@@ -6,7 +6,6 @@ import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/image/photo_compressor.dart';
 import 'package:flame/providers/auth_provider.dart';
 import 'package:flame/models/user.dart';
-import 'package:flame/screens/auth/widgets/location_required_dialog.dart';
 import 'package:flame/services/location_service.dart';
 import 'package:flame/services/user_service.dart';
 import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
@@ -198,9 +197,8 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
 
       if (!locationResult.success) {
         setState(() => _isUploading = false);
-        showLocationRequiredDialog(
-          context,
-          error: locationResult.error ?? context.l10n.registerLocationFailed,
+        _showLocationError(
+          locationResult.error ?? context.l10n.registerLocationFailed,
         );
         return;
       }
@@ -299,6 +297,31 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     );
   }
 
+
+  void _showLocationError(String error) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.registerLocationRequiredTitle),
+        content: Text(
+          '$error\n\n${context.l10n.registerLocationRequiredBody}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(context.l10n.registerCancel),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await LocationService().openAppSettings();
+            },
+            child: Text(context.l10n.registerOpenSettings),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Which step a resumed draft should open on.

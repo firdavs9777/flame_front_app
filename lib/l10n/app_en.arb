@@ -947,8 +947,10 @@
   "@registerInterestsMin": { "description": "Shown when advancing with no interests selected" },
   "registerLocationFailed": "Failed to get location",
   "@registerLocationFailed": { "description": "Fallback error text when the location lookup failed with no platform message" },
-  "registerLocationSaveFailed": "Failed to save your location",
-  "@registerLocationSaveFailed": { "description": "Shown when coordinates were obtained but the server rejected them during social profile completion" },
+  "registerLocationSaveFailed": "We couldn't save your location, so matches near you may not appear yet.",
+  "@registerLocationSaveFailed": { "description": "Warning when coordinates were obtained but the server rejected them during social profile completion; the flow continues" },
+  "registerLocationDeniedWarning": "Without location access, matches near you won't appear. You can allow it in settings.",
+  "@registerLocationDeniedWarning": { "description": "Warning when the device gave no location during social profile completion; the flow continues" },
   "registerGenericError": "Error: {error}",
   "@registerGenericError": {
     "description": "Generic catch-all error shown when registration or profile completion throws unexpectedly",
