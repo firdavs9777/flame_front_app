@@ -8,6 +8,7 @@ import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flame/l10n/gen/app_localizations.dart';
 import 'package:flame/models/user.dart';
 import 'package:flame/screens/chat/media_viewer_screen.dart';
+import 'package:flame/screens/settings/notification_settings_screen.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
 
 User _user() => User.fromJson({'id': 'u1', 'name': 'Bea', 'photos': <dynamic>[]});
@@ -55,6 +56,27 @@ void main() {
         ));
         expect(route, isNotNull, reason: '$name resolved to nothing');
       }
+    });
+  });
+
+  group('a disabled feature is not reachable by name', () {
+    testWidgets('notification settings resolve to not-found while off',
+        (tester) async {
+      // The Settings row is hidden, but hiding an entry point does not close a
+      // screen — a deep link or a restored stack can still name the route.
+      final route = AppRouter.onGenerateRoute(
+        const RouteSettings(name: AppRoutes.notificationSettings),
+      ) as MaterialPageRoute;
+
+      await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(builder: (context) => route.builder(context)),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RouteNotFoundScreen), findsOneWidget);
+      expect(find.byType(NotificationSettingsScreen), findsNothing);
     });
   });
 

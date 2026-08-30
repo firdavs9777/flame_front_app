@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/config/env.dart';
 import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flame/core/navigation/chat_route_resolver.dart';
 import 'package:flame/providers/providers.dart';
@@ -45,7 +46,14 @@ abstract final class AppRouter {
       case AppRoutes.settings:
         return _page(settings, const SettingsScreen());
       case AppRoutes.notificationSettings:
-        return _page(settings, const NotificationSettingsScreen());
+        // Hiding the Settings row is not enough to close a screen. This name
+        // can still arrive from a deep link, a restored navigation stack, or —
+        // with some irony — a notification payload. A screen offering to tune
+        // deliveries the app cannot receive is worse than not-found, which the
+        // user can at least back out of.
+        return EnvConfig.current.notificationsEnabled
+            ? _page(settings, const NotificationSettingsScreen())
+            : _page(settings, const RouteNotFoundScreen());
       case AppRoutes.language:
         return _page(settings, const LanguageScreen());
       case AppRoutes.blockedUsers:
