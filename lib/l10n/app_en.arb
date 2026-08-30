@@ -258,7 +258,9 @@
   "@unmatchBody": {
     "description": "Body of the unmatch confirmation dialog",
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
   "unmatchConfirm": "Unmatch",
@@ -269,7 +271,9 @@
   "@unmatchedWith": {
     "description": "Confirmation after unmatching someone",
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
   "unmatchFailed": "Could not unmatch. Please try again.",
@@ -891,173 +895,335 @@
   "@wizardStepCounter": {
     "description": "Progress label above a registration wizard's step",
     "placeholders": {
-      "current": { "type": "int" },
-      "total": { "type": "int" }
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "registerStepAccountTitle": "Create Account",
-  "@registerStepAccountTitle": { "description": "Title of the email/password step" },
+  "@registerStepAccountTitle": {
+    "description": "Title of the email/password step"
+  },
   "registerStepAccountSubtitle": "Enter your email and create a password",
-  "@registerStepAccountSubtitle": { "description": "Subtitle of the email/password step" },
+  "@registerStepAccountSubtitle": {
+    "description": "Subtitle of the email/password step"
+  },
   "registerStepAboutTitle": "About You",
-  "@registerStepAboutTitle": { "description": "Title of the name/age/gender step" },
+  "@registerStepAboutTitle": {
+    "description": "Title of the name/age/gender step"
+  },
   "registerStepAboutSubtitle": "Tell us a bit about yourself",
-  "@registerStepAboutSubtitle": { "description": "Subtitle of the name/age/gender step" },
+  "@registerStepAboutSubtitle": {
+    "description": "Subtitle of the name/age/gender step"
+  },
   "registerStepLookingForTitle": "Looking For",
-  "@registerStepLookingForTitle": { "description": "Title of the gender-preference step" },
+  "@registerStepLookingForTitle": {
+    "description": "Title of the gender-preference step"
+  },
   "registerStepLookingForSubtitle": "Who would you like to meet?",
-  "@registerStepLookingForSubtitle": { "description": "Subtitle of the gender-preference step" },
+  "@registerStepLookingForSubtitle": {
+    "description": "Subtitle of the gender-preference step"
+  },
   "registerStepInterestsTitle": "Your Interests",
-  "@registerStepInterestsTitle": { "description": "Title of the bio/interests step" },
+  "@registerStepInterestsTitle": {
+    "description": "Title of the bio/interests step"
+  },
   "registerStepInterestsSubtitle": "What makes you, you?",
-  "@registerStepInterestsSubtitle": { "description": "Subtitle of the bio/interests step" },
+  "@registerStepInterestsSubtitle": {
+    "description": "Subtitle of the bio/interests step"
+  },
   "registerStepPhotosTitle": "Add Photos",
-  "@registerStepPhotosTitle": { "description": "Title of the photos step" },
+  "@registerStepPhotosTitle": {
+    "description": "Title of the photos step"
+  },
   "registerStepPhotosSubtitle": "Show off your best self",
-  "@registerStepPhotosSubtitle": { "description": "Subtitle of the photos step" },
+  "@registerStepPhotosSubtitle": {
+    "description": "Subtitle of the photos step"
+  },
   "registerResumeTitle": "Resume your signup?",
-  "@registerResumeTitle": { "description": "Dialog title offering to restore a saved registration draft" },
+  "@registerResumeTitle": {
+    "description": "Dialog title offering to restore a saved registration draft"
+  },
   "registerResumeBody": "We saved your progress. Resume to restore everything except your password — you'll enter that again — or start over.",
-  "@registerResumeBody": { "description": "Dialog body offering to restore a saved draft. A resumed draft always re-enters at the password step since the password is deliberately never persisted, so the copy is explicit about that instead of implying the user returns to wherever they stopped." },
+  "@registerResumeBody": {
+    "description": "Dialog body offering to restore a saved draft. A resumed draft always re-enters at the password step since the password is deliberately never persisted, so the copy is explicit about that instead of implying the user returns to wherever they stopped."
+  },
   "registerResumeStartOver": "Start over",
-  "@registerResumeStartOver": { "description": "Discards the saved draft" },
+  "@registerResumeStartOver": {
+    "description": "Discards the saved draft"
+  },
   "registerResumeContinue": "Resume",
-  "@registerResumeContinue": { "description": "Restores the saved draft" },
+  "@registerResumeContinue": {
+    "description": "Restores the saved draft"
+  },
   "registerContinue": "Continue",
-  "@registerContinue": { "description": "Advances to the next registration step" },
+  "@registerContinue": {
+    "description": "Advances to the next registration step"
+  },
   "registerLocationRequiredTitle": "Location required",
-  "@registerLocationRequiredTitle": { "description": "Dialog title when location permission is missing at signup" },
+  "@registerLocationRequiredTitle": {
+    "description": "Dialog title when location permission is missing at signup"
+  },
   "registerLocationRequiredBody": "Flame needs your location to find matches near you.",
-  "@registerLocationRequiredBody": { "description": "Explains why location is needed, shown under the platform error" },
+  "@registerLocationRequiredBody": {
+    "description": "Explains why location is needed, shown under the platform error"
+  },
   "registerOpenSettings": "Open settings",
-  "@registerOpenSettings": { "description": "Opens the OS app-settings page" },
+  "@registerOpenSettings": {
+    "description": "Opens the OS app-settings page"
+  },
   "registerCancel": "Cancel",
-  "@registerCancel": { "description": "Dismisses a registration dialog" },
+  "@registerCancel": {
+    "description": "Dismisses a registration dialog"
+  },
   "registerPhotoUploadFailed": "Failed to upload photos. Please try again.",
-  "@registerPhotoUploadFailed": { "description": "Shown when every photo upload failed" },
+  "@registerPhotoUploadFailed": {
+    "description": "Shown when every photo upload failed"
+  },
   "registerProfileUpdateFailed": "Failed to update profile",
-  "@registerProfileUpdateFailed": { "description": "Shown when the profile PATCH failed during social completion" },
+  "@registerProfileUpdateFailed": {
+    "description": "Shown when the profile PATCH failed during social completion"
+  },
   "registerGenderRequired": "Please select your gender",
-  "@registerGenderRequired": { "description": "Shown when the gender chips are untouched" },
+  "@registerGenderRequired": {
+    "description": "Shown when the gender chips are untouched"
+  },
   "registerLookingForRequired": "Please select who you'd like to see",
-  "@registerLookingForRequired": { "description": "Shown when no gender preference is chosen" },
+  "@registerLookingForRequired": {
+    "description": "Shown when no gender preference is chosen"
+  },
   "registerInterestsMax": "Maximum 5 interests allowed",
-  "@registerInterestsMax": { "description": "Shown when a sixth interest is tapped" },
+  "@registerInterestsMax": {
+    "description": "Shown when a sixth interest is tapped"
+  },
   "registerInterestsMin": "Pick at least one interest",
-  "@registerInterestsMin": { "description": "Shown when advancing with no interests selected" },
+  "@registerInterestsMin": {
+    "description": "Shown when advancing with no interests selected"
+  },
   "registerLocationFailed": "Failed to get location",
-  "@registerLocationFailed": { "description": "Fallback error text when the location lookup failed with no platform message" },
+  "@registerLocationFailed": {
+    "description": "Fallback error text when the location lookup failed with no platform message"
+  },
   "registerLocationSaveFailed": "We couldn't save your location, so matches near you may not appear yet.",
-  "@registerLocationSaveFailed": { "description": "Warning when coordinates were obtained but the server rejected them during social profile completion; the flow continues" },
+  "@registerLocationSaveFailed": {
+    "description": "Warning when coordinates were obtained but the server rejected them during social profile completion; the flow continues"
+  },
   "registerLocationDeniedWarning": "Without location access, matches near you won't appear. You can allow it in settings.",
-  "@registerLocationDeniedWarning": { "description": "Warning when the device gave no location during social profile completion; the flow continues" },
+  "@registerLocationDeniedWarning": {
+    "description": "Warning when the device gave no location during social profile completion; the flow continues"
+  },
   "registerGenericError": "Error: {error}",
   "@registerGenericError": {
     "description": "Generic catch-all error shown when registration or profile completion throws unexpectedly",
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "registerImageProcessingFailed": "Failed to process image: {error}",
   "@registerImageProcessingFailed": {
     "description": "Shown when picking/compressing/validating a photo throws unexpectedly",
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "registerEmailLabel": "Email Address",
-  "@registerEmailLabel": { "description": "Label of the email field on the account step" },
+  "@registerEmailLabel": {
+    "description": "Label of the email field on the account step"
+  },
   "registerEmailHint": "you@example.com",
-  "@registerEmailHint": { "description": "Placeholder inside the email field on the account step" },
+  "@registerEmailHint": {
+    "description": "Placeholder inside the email field on the account step"
+  },
   "registerPasswordLabel": "Password",
-  "@registerPasswordLabel": { "description": "Label of the password field on the account step" },
+  "@registerPasswordLabel": {
+    "description": "Label of the password field on the account step"
+  },
   "registerPasswordHint": "Create a strong password",
-  "@registerPasswordHint": { "description": "Placeholder inside the password field" },
+  "@registerPasswordHint": {
+    "description": "Placeholder inside the password field"
+  },
   "registerConfirmPasswordLabel": "Confirm Password",
-  "@registerConfirmPasswordLabel": { "description": "Label of the confirm-password field" },
+  "@registerConfirmPasswordLabel": {
+    "description": "Label of the confirm-password field"
+  },
   "registerConfirmPasswordHint": "Confirm your password",
-  "@registerConfirmPasswordHint": { "description": "Placeholder inside the confirm-password field" },
+  "@registerConfirmPasswordHint": {
+    "description": "Placeholder inside the confirm-password field"
+  },
   "registerAgeLabel": "Your Age",
-  "@registerAgeLabel": { "description": "Label above the age slider" },
+  "@registerAgeLabel": {
+    "description": "Label above the age slider"
+  },
   "registerGenderQuestionLabel": "I am a...",
-  "@registerGenderQuestionLabel": { "description": "Label above the gender chips on the about-you step" },
+  "@registerGenderQuestionLabel": {
+    "description": "Label above the gender chips on the about-you step"
+  },
   "registerFirstNameLabel": "First Name",
-  "@registerFirstNameLabel": { "description": "Label of the name field on the about-you step" },
+  "@registerFirstNameLabel": {
+    "description": "Label of the name field on the about-you step"
+  },
   "registerFirstNameHint": "Your first name",
-  "@registerFirstNameHint": { "description": "Placeholder inside the name field" },
+  "@registerFirstNameHint": {
+    "description": "Placeholder inside the name field"
+  },
   "registerAgeYearsOld": "{age} years old",
   "@registerAgeYearsOld": {
     "description": "Read-out of the selected age next to the age slider",
-    "placeholders": { "age": { "type": "int" } }
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
   },
   "registerShowMeTitle": "Show me...",
-  "@registerShowMeTitle": { "description": "Heading on the looking-for step" },
+  "@registerShowMeTitle": {
+    "description": "Heading on the looking-for step"
+  },
   "registerSelectWhoToSee": "Select who you'd like to see on Flame",
-  "@registerSelectWhoToSee": { "description": "Subtitle on the looking-for step" },
+  "@registerSelectWhoToSee": {
+    "description": "Subtitle on the looking-for step"
+  },
   "registerGenderMen": "Men",
-  "@registerGenderMen": { "description": "Looking-for chip: men" },
+  "@registerGenderMen": {
+    "description": "Looking-for chip: men"
+  },
   "registerGenderWomen": "Women",
-  "@registerGenderWomen": { "description": "Looking-for chip: women" },
+  "@registerGenderWomen": {
+    "description": "Looking-for chip: women"
+  },
   "registerGenderNonBinary": "Non-binary",
-  "@registerGenderNonBinary": { "description": "Looking-for chip: non-binary" },
+  "@registerGenderNonBinary": {
+    "description": "Looking-for chip: non-binary"
+  },
   "registerGenderEveryone": "Everyone",
-  "@registerGenderEveryone": { "description": "Looking-for chip: everyone" },
+  "@registerGenderEveryone": {
+    "description": "Looking-for chip: everyone"
+  },
   "registerGenderSelfMale": "Male",
-  "@registerGenderSelfMale": { "description": "About-you step gender chip: male, phrased as a self-description (\"I am a...\"), not the looking-for chip" },
+  "@registerGenderSelfMale": {
+    "description": "About-you step gender chip: male, phrased as a self-description (\"I am a...\"), not the looking-for chip"
+  },
   "registerGenderSelfFemale": "Female",
-  "@registerGenderSelfFemale": { "description": "About-you step gender chip: female, phrased as a self-description (\"I am a...\"), not the looking-for chip" },
+  "@registerGenderSelfFemale": {
+    "description": "About-you step gender chip: female, phrased as a self-description (\"I am a...\"), not the looking-for chip"
+  },
   "registerGenderSelfNonBinary": "Non-binary",
-  "@registerGenderSelfNonBinary": { "description": "About-you step gender chip: non-binary, phrased as a self-description (\"I am a...\"), not the looking-for chip" },
+  "@registerGenderSelfNonBinary": {
+    "description": "About-you step gender chip: non-binary, phrased as a self-description (\"I am a...\"), not the looking-for chip"
+  },
   "registerBioSectionTitle": "About You",
-  "@registerBioSectionTitle": { "description": "Section heading above the bio field on the interests step" },
+  "@registerBioSectionTitle": {
+    "description": "Section heading above the bio field on the interests step"
+  },
   "registerBioSubtitle": "Optional — write something fun, or skip for now",
-  "@registerBioSubtitle": { "description": "Subtitle under the bio section heading" },
+  "@registerBioSubtitle": {
+    "description": "Subtitle under the bio section heading"
+  },
   "registerBioHint": "e.g., Coffee enthusiast who loves hiking on weekends. Always up for trying new restaurants!",
-  "@registerBioHint": { "description": "Placeholder inside the bio text field" },
+  "@registerBioHint": {
+    "description": "Placeholder inside the bio text field"
+  },
   "registerInterestsSectionTitle": "Your Interests",
-  "@registerInterestsSectionTitle": { "description": "Section heading above the interest chips" },
+  "@registerInterestsSectionTitle": {
+    "description": "Section heading above the interest chips"
+  },
   "registerInterestsCounter": "{count}/5 selected",
   "@registerInterestsCounter": {
     "description": "Live count of selected interests next to the interests heading",
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "registerInterestsSubtitle": "Pick at least one — you can add more later",
-  "@registerInterestsSubtitle": { "description": "Subtitle under the interests section heading" },
+  "@registerInterestsSubtitle": {
+    "description": "Subtitle under the interests section heading"
+  },
   "registerSkipForNow": "Skip for now",
-  "@registerSkipForNow": { "description": "Secondary button that advances the interests step without a bio" },
+  "@registerSkipForNow": {
+    "description": "Secondary button that advances the interests step without a bio"
+  },
   "registerPhotosSectionTitle": "Add Your Photos",
-  "@registerPhotosSectionTitle": { "description": "Section heading on the photos step" },
+  "@registerPhotosSectionTitle": {
+    "description": "Section heading on the photos step"
+  },
   "registerPhotoCounter": "{count}/6",
   "@registerPhotoCounter": {
     "description": "Live count of selected photos next to the photos heading",
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "registerPhotosSubtitle": "Add at least 2 photos with your face clearly visible. Your first photo will be your main profile picture.",
-  "@registerPhotosSubtitle": { "description": "Subtitle under the photos section heading" },
+  "@registerPhotosSubtitle": {
+    "description": "Subtitle under the photos section heading"
+  },
   "registerFaceDetectionInfo": "We verify photos contain a real face for safety",
-  "@registerFaceDetectionInfo": { "description": "Info banner explaining face verification on the photos step" },
+  "@registerFaceDetectionInfo": {
+    "description": "Info banner explaining face verification on the photos step"
+  },
   "registerPhotoMainBadge": "Main",
-  "@registerPhotoMainBadge": { "description": "Badge marking the primary/profile photo slot" },
+  "@registerPhotoMainBadge": {
+    "description": "Badge marking the primary/profile photo slot"
+  },
   "registerPhotoVerifying": "Verifying...",
-  "@registerPhotoVerifying": { "description": "Overlay shown on a photo slot while face detection runs" },
+  "@registerPhotoVerifying": {
+    "description": "Overlay shown on a photo slot while face detection runs"
+  },
   "registerPhotosTip": "Profiles with multiple photos get more matches! Show your hobbies and personality.",
-  "@registerPhotosTip": { "description": "Tip banner on the photos step" },
+  "@registerPhotosTip": {
+    "description": "Tip banner on the photos step"
+  },
   "registerCompleteProfile": "Complete Profile",
-  "@registerCompleteProfile": { "description": "Final button that submits registration" },
+  "@registerCompleteProfile": {
+    "description": "Final button that submits registration"
+  },
   "registerAddPhotoSheetTitle": "Add Photo",
-  "@registerAddPhotoSheetTitle": { "description": "Title of the bottom sheet offering camera or gallery" },
+  "@registerAddPhotoSheetTitle": {
+    "description": "Title of the bottom sheet offering camera or gallery"
+  },
   "registerTakePhoto": "Take Photo",
-  "@registerTakePhoto": { "description": "Option to take a new photo with the camera" },
+  "@registerTakePhoto": {
+    "description": "Option to take a new photo with the camera"
+  },
   "registerUseCameraSubtitle": "Use your camera",
-  "@registerUseCameraSubtitle": { "description": "Subtitle under the take-photo option" },
+  "@registerUseCameraSubtitle": {
+    "description": "Subtitle under the take-photo option"
+  },
   "registerChooseFromGallery": "Choose from Gallery",
-  "@registerChooseFromGallery": { "description": "Option to pick an existing photo" },
+  "@registerChooseFromGallery": {
+    "description": "Option to pick an existing photo"
+  },
   "registerSelectExistingPhoto": "Select existing photo",
-  "@registerSelectExistingPhoto": { "description": "Subtitle under the choose-from-gallery option" },
+  "@registerSelectExistingPhoto": {
+    "description": "Subtitle under the choose-from-gallery option"
+  },
   "registerPhotoValidationFailed": "Photo validation failed",
-  "@registerPhotoValidationFailed": { "description": "Fallback error text when face validation fails with no specific message" },
+  "@registerPhotoValidationFailed": {
+    "description": "Fallback error text when face validation fails with no specific message"
+  },
   "registerFaceVerifiedSuccess": "Face verified successfully!",
-  "@registerFaceVerifiedSuccess": { "description": "Shown after a photo passes face verification" },
+  "@registerFaceVerifiedSuccess": {
+    "description": "Shown after a photo passes face verification"
+  },
   "registerPhotosMinRequired": "Please add at least 2 photos",
-  "@registerPhotosMinRequired": { "description": "Shown when completing with fewer than 2 photos" },
+  "@registerPhotosMinRequired": {
+    "description": "Shown when completing with fewer than 2 photos"
+  },
   "registerMainPhotoFaceRequired": "Your main photo must have a verified face",
-  "@registerMainPhotoFaceRequired": { "description": "Shown when the main photo slot has no verified face" },
+  "@registerMainPhotoFaceRequired": {
+    "description": "Shown when the main photo slot has no verified face"
+  },
   "forgotPasswordTitle": "Forgot\nPassword?",
   "@forgotPasswordTitle": {
     "description": "Heading on the forgot-password screen before a reset email is sent"
@@ -1066,7 +1232,7 @@
   "@forgotPasswordSubtitle": {
     "description": "Subheading on the forgot-password screen before sending"
   },
-  "forgotPasswordSubmit": "Send reset link",
+  "forgotPasswordSubmit": "Send code",
   "@forgotPasswordSubmit": {
     "description": "Button that requests a password reset email"
   },
@@ -1074,7 +1240,7 @@
   "@forgotPasswordSentTitle": {
     "description": "Heading after a reset email has been sent"
   },
-  "forgotPasswordSentSubtitle": "We've sent a reset link to your email",
+  "forgotPasswordSentSubtitle": "We've sent a six-digit code to your email",
   "@forgotPasswordSentSubtitle": {
     "description": "Subheading after a reset email has been sent"
   },
@@ -1082,7 +1248,7 @@
   "@forgotPasswordSentHeading": {
     "description": "Heading inside the confirmation card"
   },
-  "forgotPasswordSentBody": "Please check your inbox and follow the instructions to reset your password.",
+  "forgotPasswordSentBody": "Enter the code below and choose a new password.",
   "@forgotPasswordSentBody": {
     "description": "Body text inside the confirmation card"
   },
@@ -1090,8 +1256,36 @@
   "@forgotPasswordBackToLogin": {
     "description": "Button returning to the login screen from the confirmation card"
   },
-  "forgotPasswordRetry": "Didn't receive the email? Try again",
+  "forgotPasswordRetry": "Didn't receive the code? Try again",
   "@forgotPasswordRetry": {
     "description": "Link that returns to the email form to re-request a reset"
+  },
+  "forgotPasswordCodeLabel": "Six-digit code",
+  "@forgotPasswordCodeLabel": {
+    "description": "Label for the reset code field"
+  },
+  "forgotPasswordCodeHint": "123456",
+  "@forgotPasswordCodeHint": {
+    "description": "Placeholder showing the code shape"
+  },
+  "forgotPasswordCodeRequired": "Enter the code from your email",
+  "@forgotPasswordCodeRequired": {
+    "description": "Shown when the code field is empty"
+  },
+  "forgotPasswordCodeInvalid": "The code is six digits",
+  "@forgotPasswordCodeInvalid": {
+    "description": "Shown when the code is not six digits"
+  },
+  "forgotPasswordNewPasswordLabel": "New password",
+  "@forgotPasswordNewPasswordLabel": {
+    "description": "Label for the new password field"
+  },
+  "forgotPasswordResetSubmit": "Set new password",
+  "@forgotPasswordResetSubmit": {
+    "description": "Submits the code and the new password"
+  },
+  "forgotPasswordResetDone": "Password updated. Sign in with your new password.",
+  "@forgotPasswordResetDone": {
+    "description": "Confirms the reset; the user is NOT signed in automatically"
   }
 }

@@ -2,8 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/config/env.dart';
 
 void main() {
-  test('forgot-password stays OFF — no backend endpoint for it', () {
-    expect(EnvConfig.current.forgotPasswordEnabled, isFalse);
+  test('forgot-password is ON in both environments', () {
+    // Was off in both presets because /auth/forgot-password and
+    // /auth/reset-password did not exist server-side. Anyone who registered
+    // with an email and forgot the password was locked out permanently, with no
+    // support path back. Both routes ship now.
+    expect(EnvConfig.prodConfig.forgotPasswordEnabled, isTrue);
+    expect(EnvConfig.localConfig.forgotPasswordEnabled, isTrue);
   });
 
   test('chat and its socket are ON in both environments', () {
