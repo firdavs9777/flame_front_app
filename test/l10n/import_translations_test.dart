@@ -18,19 +18,66 @@ const _english = {
 Map<String, String> _merge(
   Map<String, String> current,
   Map<String, String> incoming,
-  void Function(ImportResult) check,
-) {
+  void Function(ImportResult) check, {
+  Set<String> machine = const {},
+}) {
   final out = <String, String>{};
   check(mergeTranslations(
     english: _english,
     current: current,
     incoming: incoming,
     out: out,
+    machine: machine,
   ));
   return out;
 }
 
 void main() {
+  group('machine-translated strings are replaceable, human ones are not', () {
+    // Phase D shipped machine translation for thousands of strings. Without
+    // provenance every one of them would read as "already translated" and a
+    // paid delivery would be skipped in full — the machine output would be
+    // permanent. These two tests are the difference.
+    test('a delivery replaces a machine-translated string', () {
+      final out = _merge(
+        {'greeting': 'Hola-maquina'},
+        {'greeting': 'Hola'},
+        (r) {
+          expect(r.applied, 1);
+          expect(r.skippedAlreadyDone, 0);
+          expect(r.appliedKeys, contains('greeting'));
+        },
+        machine: {'greeting'},
+      );
+      expect(out['greeting'], 'Hola');
+    });
+
+    test('a delivery still cannot overwrite a human translation', () {
+      final out = _merge(
+        {'greeting': 'Hola-humano'},
+        {'greeting': 'Hola'},
+        (r) {
+          expect(r.applied, 0);
+          expect(r.skippedAlreadyDone, 1);
+        },
+        machine: const {},
+      );
+      expect(out['greeting'], 'Hola-humano');
+    });
+
+    test('a machine string still cannot drop a placeholder', () {
+      _merge(
+        {'counted': 'Tienes {count} coincidencias (maquina)'},
+        {'counted': 'Tienes muchas coincidencias'},
+        (r) {
+          expect(r.applied, 0);
+          expect(r.rejected, hasLength(1));
+        },
+        machine: {'counted'},
+      );
+    });
+  });
+
   test('applies a clean translation', () {
     final out = _merge(
       {'greeting': 'Hello'},

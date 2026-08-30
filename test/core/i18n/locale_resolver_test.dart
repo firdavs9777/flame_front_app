@@ -27,7 +27,8 @@ void main() {
       saved: null,
       deviceLocales: [
         const Locale('is'),  // unsupported (Italian ships since Phase B)
-        const Locale('nl'),  // unsupported
+        const Locale('mt'),  // unsupported (Dutch ships since Phase D, so the
+                             // old 'nl' entry stopped being a miss)
         const Locale('de'),  // supported — should win
       ],
       supported: kSupportedLocales,
@@ -35,10 +36,12 @@ void main() {
     expect(result, const Locale('de'));
   });
 
+  // fr-CA ships since Phase D, so it now matches exactly and no longer
+  // exercises this path. fr-BE does: French we have no regional ARB for.
   test('unsupported locale with country falls back to bare language', () {
     final result = resolveLocale(
       saved: null,
-      deviceLocales: [const Locale('fr', 'CA')],
+      deviceLocales: [const Locale('fr', 'BE')],
       supported: kSupportedLocales,
     );
     expect(result, const Locale('fr'));

@@ -62,14 +62,25 @@ Locale? _languageMatch(Locale candidate, List<Locale> supported) {
   final wantsHant = _wantsTraditionalChinese(candidate);
 
   // Same language AND the script the candidate actually reads.
+  //
+  // The country-less locale wins over any regional variant. Picker order is a
+  // product decision — it lists Portuguese (Brazil) before Portuguese
+  // (Portugal), Spanish (Mexico) before Spanish (Spain) — and resolution must
+  // not inherit it. Taking the first match by position is what once sent every
+  // Portugal user to Brazilian wording; pt-PT must land on pt, and es-ES on
+  // es, no matter how the picker is sorted. An exact match is handled by the
+  // caller before this runs, so es-MX still gets es-MX.
+  Locale? regional;
   for (final s in supported) {
     if (s.languageCode != candidate.languageCode) continue;
     if (candidate.languageCode == 'zh' &&
         (s.scriptCode == 'Hant') != wantsHant) {
       continue;
     }
-    return s;
+    if (s.countryCode == null) return s;
+    regional ??= s;
   }
+  if (regional != null) return regional;
 
   // Same language, wrong script. Only reachable for Chinese, and only while one
   // of the two scripts is unshipped: Simplified is closer for a Traditional

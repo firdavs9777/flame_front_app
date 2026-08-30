@@ -18,6 +18,13 @@ import 'dart:convert';
 import 'dart:io';
 
 const _arbDir = 'lib/l10n';
+
+/// Keys whose current value was produced by machine translation rather than by
+/// a person. Tracked in the ARB itself so it survives a file move, and so a
+/// paid delivery can still REPLACE it — without this list every machine string
+/// would look "already translated" and the vendor's work would be skipped.
+const _mtKey = '@@x-machine-translated';
+
 final _placeholder = RegExp(r'\{([a-zA-Z0-9_]+)\}');
 
 Map<String, dynamic> _read(String path) =>
@@ -77,8 +84,13 @@ class ImportResult {
   final int skippedAlreadyDone;
   final List<String> rejected;
 
+  /// Keys this delivery wrote. Any of them that were machine-translated are no
+  /// longer machine-translated, so they drop off the provenance list.
+  final Set<String> appliedKeys;
+
   ImportResult(this.applied, this.skippedBlank, this.skippedAlreadyDone,
-      this.rejected);
+      this.rejected, [Set<String>? appliedKeys])
+      : appliedKeys = appliedKeys ?? const {};
 }
 
 /// Merges [incoming] into [current] for one locale. Pure, so the rules are
@@ -88,9 +100,11 @@ ImportResult mergeTranslations({
   required Map<String, String> current,
   required Map<String, String> incoming,
   required Map<String, String> out,
+  Set<String> machine = const {},
 }) {
   var applied = 0, blank = 0, alreadyDone = 0;
   final rejected = <String>[];
+  final appliedKeys = <String>{};
 
   out.addAll(current);
 
@@ -111,7 +125,10 @@ ImportResult mergeTranslations({
     }
     final existing = current[entry.key];
     if (existing != null &&
-        existing.trim().toLowerCase() != source.trim().toLowerCase()) {
+        existing.trim().toLowerCase() != source.trim().toLowerCase() &&
+        !machine.contains(entry.key)) {
+      // A human already did this one. Machine output does NOT count as done —
+      // upgrading it is the whole point of paying for the delivery.
       alreadyDone++;
       continue;
     }
@@ -122,9 +139,10 @@ ImportResult mergeTranslations({
       continue;
     }
     out[entry.key] = value;
+    appliedKeys.add(entry.key);
     applied++;
   }
-  return ImportResult(applied, blank, alreadyDone, rejected);
+  return ImportResult(applied, blank, alreadyDone, rejected, appliedKeys);
 }
 
 bool _setEquals(Set<String> a, Set<String> b) =>
@@ -175,18 +193,25 @@ void main(List<String> args) {
       incoming[row[keyIdx]] = row[valIdx];
     }
 
-    final current = _strings(_read(target.path));
+    final targetArb = _read(target.path);
+    final current = _strings(targetArb);
+    final machine = ((targetArb[_mtKey] as List?) ?? const [])
+        .cast<String>()
+        .toSet();
     final out = <String, String>{};
     final result = mergeTranslations(
       english: english,
       current: current,
       incoming: incoming,
       out: out,
+      machine: machine,
     );
 
     totalApplied += result.applied;
     totalRejected += result.rejected.length;
-    stdout.writeln('  ${locale.padRight(9)} +${result.applied} applied, '
+    final upgraded = result.appliedKeys.intersection(machine).length;
+    stdout.writeln('  ${locale.padRight(9)} +${result.applied} applied '
+        '($upgraded replacing machine output), '
         '${result.skippedBlank} blank, ${result.skippedAlreadyDone} already done, '
         '${result.rejected.length} REJECTED');
     for (final r in result.rejected) {
@@ -194,7 +219,10 @@ void main(List<String> args) {
     }
 
     if (apply) {
+      final remainingMt = (machine.difference(result.appliedKeys)).toList()
+        ..sort();
       final body = <String, dynamic>{'@@locale': locale};
+      if (remainingMt.isNotEmpty) body[_mtKey] = remainingMt;
       for (final k in english.keys) {
         body[k] = out[k] ?? english[k]!;
       }

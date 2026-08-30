@@ -28,23 +28,44 @@ Locale _resolve(Locale device, {List<Locale>? supported}) => resolveLocale(
     );
 
 void main() {
-  group('English variants fall back to English', () {
-    test('en-GB, en-AU and en-CA all resolve to en', () {
+  group('English variants', () {
+    // These used to fall back to plain en, on the reasoning that they needed no
+    // ARB of their own. Phase D ships them: each overrides only what genuinely
+    // differs (en-GB has two strings — "Licences" and "Films"), which is enough
+    // to resolve exactly and to list the market as localized.
+    test('en-GB, en-AU and en-CA resolve to themselves', () {
       for (final region in ['GB', 'AU', 'CA']) {
-        expect(_resolve(Locale('en', region)), const Locale('en'),
-            reason: 'en-$region needs no ARB of its own');
+        expect(_resolve(Locale('en', region)), Locale('en', region));
       }
+    });
+
+    test('an English region we do not ship still falls back to en', () {
+      expect(_resolve(const Locale('en', 'NZ')), const Locale('en'));
+      expect(_resolve(const Locale('en', 'IE')), const Locale('en'));
     });
   });
 
-  group('Spanish and French variants fall back to their language', () {
-    test('es-MX and es-ES resolve to es', () {
-      expect(_resolve(const Locale('es', 'MX')), const Locale('es'));
+  group('Spanish and French variants', () {
+    test('es-MX resolves to Mexican Spanish, es-ES to Peninsular', () {
+      expect(_resolve(const Locale('es', 'MX')), const Locale('es', 'MX'));
       expect(_resolve(const Locale('es', 'ES')), const Locale('es'));
     });
 
-    test('fr-CA resolves to fr', () {
-      expect(_resolve(const Locale('fr', 'CA')), const Locale('fr'));
+    // The picker lists Spanish (Mexico) before Spain, so resolving by list
+    // position would hand Spain the Mexican wording. The country-less locale
+    // wins the language fallback precisely so ordering cannot do that.
+    test('a Spanish region we do not ship falls back to es, not es-MX', () {
+      expect(_resolve(const Locale('es', 'AR')), const Locale('es'));
+      expect(_resolve(const Locale('es', 'CO')), const Locale('es'));
+    });
+
+    test('fr-CA resolves to Canadian French', () {
+      expect(_resolve(const Locale('fr', 'CA')), const Locale('fr', 'CA'));
+    });
+
+    test('a French region we do not ship falls back to fr, not fr-CA', () {
+      expect(_resolve(const Locale('fr', 'BE')), const Locale('fr'));
+      expect(_resolve(const Locale('fr', 'CH')), const Locale('fr'));
     });
   });
 
@@ -97,10 +118,21 @@ void main() {
     });
   });
 
-  group('locales with no translation yet', () {
-    test('Arabic and Urdu resolve to English until they ship', () {
-      expect(_resolve(const Locale('ar')), const Locale('en'));
-      expect(_resolve(const Locale('ur')), const Locale('en'));
+  group('right-to-left locales', () {
+    // Both were held back while coverage was low — an RTL page two thirds full
+    // of LTR English is worse than plain English. Phase D closed that gap.
+    test('Arabic and Urdu resolve to themselves now that they ship', () {
+      expect(_resolve(const Locale('ar')), const Locale('ar'));
+      expect(_resolve(const Locale('ur')), const Locale('ur'));
+      expect(_resolve(const Locale('ar', 'EG')), const Locale('ar'));
+      expect(_resolve(const Locale('ur', 'PK')), const Locale('ur'));
+    });
+  });
+
+  group('a language we ship nothing for', () {
+    test('falls back to English', () {
+      expect(_resolve(const Locale('is')), const Locale('en'));
+      expect(_resolve(const Locale('mt')), const Locale('en'));
     });
   });
 }

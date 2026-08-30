@@ -15,6 +15,11 @@ import 'dart:io';
 const _template = 'lib/l10n/app_en.arb';
 const _arbDir = 'lib/l10n';
 
+/// See import_translations.dart. A machine-translated string is NOT done: it
+/// ships so the locale is usable today, and it goes out for post-editing so a
+/// person can replace it.
+const _mtKey = '@@x-machine-translated';
+
 final _placeholder = RegExp(r'\{[a-zA-Z0-9_]+\}');
 
 Map<String, dynamic> _read(String path) =>
@@ -49,24 +54,36 @@ void main(List<String> args) {
     ..sort();
 
   final summary = StringBuffer()
-    ..writeln('locale,needed,translated,total,percent_translated');
+    ..writeln('locale,needed,post_edit,human_translated,total,percent_human');
   var grandTotal = 0;
 
   for (final locale in locales) {
-    final translated = _strings(_read('$_arbDir/app_$locale.arb'));
+    final localeArb = _read('$_arbDir/app_$locale.arb');
+    final translated = _strings(localeArb);
+    final machine =
+        ((localeArb[_mtKey] as List?) ?? const []).cast<String>().toSet();
+    // A regional variant (pt_BR beside pt) inherits everything it does not
+    // override, so only its own overrides are its to translate.
+    final inherits = locale.contains('_') &&
+        !locale.endsWith('_Hant') &&
+        File('$_arbDir/app_${locale.split('_').first}.arb').existsSync();
 
     final rows = <String>[];
-    var done = 0;
+    var done = 0, postEdit = 0;
     for (final entry in en.entries) {
+      if (inherits && !translated.containsKey(entry.key)) continue;
       final current = translated[entry.key];
       // A value identical to the English source is untranslated, not a
       // coincidence: the harvest used the same rule.
+      final isMachine = machine.contains(entry.key);
       final isDone = current != null &&
-          current.trim().toLowerCase() != entry.value.trim().toLowerCase();
+          current.trim().toLowerCase() != entry.value.trim().toLowerCase() &&
+          !isMachine;
       if (isDone) {
         done++;
         continue;
       }
+      if (isMachine) postEdit++;
       final meta = templateArb['@${entry.key}'];
       final description =
           meta is Map && meta['description'] is String ? meta['description'] as String : '';
@@ -77,21 +94,25 @@ void main(List<String> args) {
         _csv(entry.value),
         _csv(description),
         _csv(placeholders),
+        _csv(isMachine ? 'machine' : ''),
+        _csv(isMachine ? (current ?? '') : ''),
         '""', // translation — the column the translator fills in
       ].join(','));
     }
 
     final file = File('${outDir.path}/$locale.csv');
     file.writeAsStringSync([
-      'key,english,description,placeholders,translation',
+      'key,english,description,placeholders,source,current,translation',
       ...rows,
     ].join('\n'));
 
     grandTotal += rows.length;
-    final pct = (100 * done / en.length).round();
-    summary.writeln('$locale,${rows.length},$done,${en.length},$pct');
+    final total = inherits ? translated.length : en.length;
+    final pct = total == 0 ? 100 : (100 * done / total).round();
+    summary.writeln('$locale,${rows.length},$postEdit,$done,$total,$pct');
     stdout.writeln('  ${locale.padRight(9)} ${rows.length.toString().padLeft(4)} strings needed  '
-        '(${pct.toString().padLeft(3)}% already done)');
+        '(${postEdit.toString().padLeft(4)} of them post-edit, '
+        '${pct.toString().padLeft(3)}% human-translated)');
   }
 
   File('${outDir.path}/summary.csv').writeAsStringSync(summary.toString());
@@ -114,6 +135,11 @@ Rules that matter:
 
   * Leave a row blank if you are unsure rather than guessing. A blank row is
     skipped on import and stays English; a wrong guess ships.
+
+  * Rows with source="machine" are ALREADY LIVE in the app as machine output,
+    shown to you in the "current" column. Post-edit them: correct what is wrong
+    and keep what is right. A blank translation leaves the machine text in
+    place, so blank means "the machine got it right", not "skipped".
 
   * Arabic and Urdu are read right-to-left. Do not add directional marks or
     reorder punctuation to compensate — the app mirrors its own layout.

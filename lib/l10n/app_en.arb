@@ -1287,5 +1287,83 @@
   "forgotPasswordResetDone": "Password updated. Sign in with your new password.",
   "@forgotPasswordResetDone": {
     "description": "Confirms the reset; the user is NOT signed in automatically"
+  },
+  "safetyReport": "Report",
+  "@safetyReport": {
+    "description": "Overflow-menu item that opens the report reason sheet"
+  },
+  "safetyBlock": "Block",
+  "@safetyBlock": {
+    "description": "Overflow-menu item that blocks the other user"
+  },
+  "safetyReportUserTitle": "Report this user",
+  "@safetyReportUserTitle": {
+    "description": "Heading of the report reason sheet"
+  },
+  "safetyReportMessageTitle": "Report this message",
+  "@safetyReportMessageTitle": {
+    "description": "Heading of the reason sheet when reporting one message rather than the person"
+  },
+  "safetyReportMessage": "Report message",
+  "@safetyReportMessage": {
+    "description": "Message long-press action that reports that single message"
+  },
+  "safetyReportSubmitted": "Report submitted. We review every report.",
+  "@safetyReportSubmitted": {
+    "description": "Confirmation after a report is accepted. Says review happens without promising a deadline we do not control"
+  },
+  "safetyReportFailed": "Couldn't submit that report. Please try again.",
+  "@safetyReportFailed": {
+    "description": "Shown when the report request fails"
+  },
+  "safetyBlockConfirmTitle": "Block {name}?",
+  "@safetyBlockConfirmTitle": {
+    "description": "Title of the block confirmation dialog",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "safetyBlockConfirmBody": "They will not see your profile and you will not see theirs. Your conversation is removed and they are not told.",
+  "@safetyBlockConfirmBody": {
+    "description": "Body of the block confirmation. Spells out the consequence, including that blocking is silent"
+  },
+  "safetyBlocked": "{name} is blocked",
+  "@safetyBlocked": {
+    "description": "Confirmation after blocking someone",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "safetyBlockFailed": "Couldn't block that user. Please try again.",
+  "@safetyBlockFailed": {
+    "description": "Shown when the block request fails"
+  },
+  "safetyReasonInappropriate": "Inappropriate content",
+  "@safetyReasonInappropriate": {
+    "description": "Report reason"
+  },
+  "safetyReasonFakeProfile": "Fake profile",
+  "@safetyReasonFakeProfile": {
+    "description": "Report reason"
+  },
+  "safetyReasonHarassment": "Harassment or bullying",
+  "@safetyReasonHarassment": {
+    "description": "Report reason"
+  },
+  "safetyReasonSpam": "Spam or scam",
+  "@safetyReasonSpam": {
+    "description": "Report reason"
+  },
+  "safetyReasonUnderage": "User appears to be under 18",
+  "@safetyReasonUnderage": {
+    "description": "Report reason. A standalone row in the reason list, so it reads as a full sentence."
+  },
+  "safetyReasonOther": "Something else",
+  "@safetyReasonOther": {
+    "description": "Report reason"
   }
 }
