@@ -6,11 +6,17 @@ class ActionButtons extends StatelessWidget {
   final VoidCallback onSuperLike;
   final VoidCallback onLike;
 
+  /// Takes back the last swipe. Null until there is one to take back — an
+  /// always-present Undo on a deck nobody has swiped yet is a button that can
+  /// only ever say "nothing to undo".
+  final VoidCallback? onUndo;
+
   const ActionButtons({
     super.key,
     required this.onDislike,
     required this.onSuperLike,
     required this.onLike,
+    this.onUndo,
   });
 
   @override
@@ -18,6 +24,17 @@ class ActionButtons extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        if (onUndo != null) ...[
+          _ActionButton(
+            key: const Key('deck_undo_button'),
+            icon: Icons.undo,
+            color: Colors.amber.shade700,
+            size: 44,
+            iconSize: 20,
+            onTap: onUndo!,
+          ),
+          const SizedBox(width: 16),
+        ],
         // Dislike button
         _ActionButton(
           icon: Icons.close,
@@ -57,6 +74,7 @@ class _ActionButton extends StatefulWidget {
   final VoidCallback onTap;
 
   const _ActionButton({
+    super.key,
     required this.icon,
     required this.color,
     required this.size,

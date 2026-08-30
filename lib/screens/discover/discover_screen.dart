@@ -99,6 +99,29 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     }
   }
 
+  /// Takes back the last swipe, then steps the deck's cursor back one.
+  ///
+  /// The deck list is untouched: it is append-only now, so the card is still
+  /// there — the swiper simply moves back onto it. Putting the user back into
+  /// the list, which is what the old undo did, would duplicate them.
+  Future<void> _handleUndo() async {
+    final outcome = await ref.read(swipeProvider.notifier).undo();
+    if (!mounted) return;
+
+    if (outcome == UndoOutcome.undone) {
+      _swiperController.undo();
+      return;
+    }
+
+    final l10n = context.l10n;
+    _showSwipeError(switch (outcome) {
+      UndoOutcome.nothingToUndo => l10n.deckUndoNothing,
+      UndoOutcome.premiumOnly => l10n.deckUndoPremiumOnly,
+      UndoOutcome.alreadyMessaged => l10n.deckUndoAlreadyMessaged,
+      _ => l10n.errorGeneric,
+    });
+  }
+
   Future<void> _handleDislike(User user) async {
     final error = await ref.read(swipeProvider.notifier).pass(user);
     if (error != null) {
@@ -351,6 +374,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           _swiperController.swipe(CardSwiperDirection.top),
                       onLike: () =>
                           _swiperController.swipe(CardSwiperDirection.right),
+                      onUndo: swipeState.canUndo ? _handleUndo : null,
                     ),
                   ),
                 ],

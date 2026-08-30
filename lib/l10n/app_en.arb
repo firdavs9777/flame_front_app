@@ -1763,5 +1763,21 @@
         "type": "String"
       }
     }
+  },
+  "deckUndo": "Undo",
+  "@deckUndo": {
+    "description": "Takes back the last swipe. Premium only."
+  },
+  "deckUndoNothing": "Nothing to undo",
+  "@deckUndoNothing": {
+    "description": "Undo pressed with no swipe to take back"
+  },
+  "deckUndoAlreadyMessaged": "You've already messaged this match",
+  "@deckUndoAlreadyMessaged": {
+    "description": "Undo refused: the conversation cannot be un-had"
+  },
+  "deckUndoPremiumOnly": "Undo is a premium feature",
+  "@deckUndoPremiumOnly": {
+    "description": "Undo pressed by a non-premium account"
   }
 }

@@ -56,6 +56,10 @@ class SwipeState {
   }
 }
 
+/// Why an undo did or did not happen. A value rather than a message, because
+/// this crosses from a provider into a widget that owns the localisation.
+enum UndoOutcome { undone, nothingToUndo, premiumOnly, alreadyMessaged, failed }
+
 class SwipeNotifier extends StateNotifier<SwipeState> {
   final SwipeService _swipeService;
   final Ref _ref;
@@ -180,41 +184,36 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
     return user.isPremiumActive;
   }
 
-  Future<bool> undo() async {
-    if (state.lastSwipedUser == null) {
-      state = state.copyWith(error: 'Nothing to undo');
-      return false;
-    }
-
-    // Check if user can undo (premium only)
-    if (!_canUndo()) {
-      state = state.copyWith(
-        error: 'Undo is a premium feature. Upgrade to use it!',
-      );
-      return false;
-    }
+  /// Takes back the last swipe, server-side.
+  ///
+  /// Returns an [UndoOutcome] rather than a bool: the three ways this can fail
+  /// are different situations and the caller has to say which. The reasons are
+  /// codes so they can be rendered in the reader's language — the two English
+  /// sentences that used to live here could not be.
+  ///
+  /// The deck is NOT touched. It is append-only now, so the card is still in
+  /// the list; putting it back would duplicate it. The caller steps the
+  /// swiper's cursor back one instead.
+  Future<UndoOutcome> undo() async {
+    if (state.lastSwipedUser == null) return UndoOutcome.nothingToUndo;
+    if (!_canUndo()) return UndoOutcome.premiumOnly;
 
     state = state.copyWith(isLoading: true, error: null);
 
     final result = await _swipeService.undoLastSwipe();
+    final data = result.data;
 
-    if (result.success && result.data != null) {
-      final swipeResult = result.data!;
-
-      if (swipeResult.undone == true && swipeResult.undoneUser != null) {
-        // Add user back to discovery
-        _ref.read(discoveryProvider.notifier).undoRemove(swipeResult.undoneUser!);
-
-        state = const SwipeState(isLoading: false);
-        return true;
-      }
+    if (result.success && data != null && data.undone == true) {
+      state = const SwipeState(isLoading: false);
+      return UndoOutcome.undone;
     }
 
-    state = state.copyWith(
-      isLoading: false,
-      error: ErrorStringsFor.fromString(result.error),
-    );
-    return false;
+    state = state.copyWith(isLoading: false);
+    return switch (data?.undoReason) {
+      'ALREADY_MESSAGED' => UndoOutcome.alreadyMessaged,
+      'NOTHING_TO_UNDO' => UndoOutcome.nothingToUndo,
+      _ => UndoOutcome.failed,
+    };
   }
 
   void clearNewMatch() {

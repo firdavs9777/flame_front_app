@@ -9,14 +9,15 @@ class MatchService {
   Future<ServiceResult<MatchesResult>> getMatches({
     int limit = 20,
     int offset = 0,
-    bool newOnly = false,
   }) async {
+    // No `new_only`: no route has ever read it, and the listing reports
+    // is_new: false for everything by design — only a swipe response knows a
+    // match is new. Sending it looked like a filter that worked.
     final response = await _apiClient.get(
       '/matches',
       queryParams: {
         'limit': limit.toString(),
         'offset': offset.toString(),
-        'new_only': newOnly.toString(),
       },
     );
 
@@ -49,18 +50,6 @@ class MatchService {
     return ServiceResult.failure(response.error ?? 'Failed to unmatch');
   }
 
-  // Mark match as seen (not new)
-  Future<ServiceResult<Match>> markMatchAsSeen(String matchId) async {
-    final response = await _apiClient.patch('/matches/$matchId', body: {
-      'is_new': false,
-    });
-
-    if (response.success && response.data != null) {
-      return ServiceResult.success(Match.fromJson(response.data));
-    }
-
-    return ServiceResult.failure(response.error ?? 'Failed to update match');
-  }
 }
 
 class MatchesResult {

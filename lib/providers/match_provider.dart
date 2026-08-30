@@ -58,21 +58,6 @@ class MatchesNotifier extends StateNotifier<AsyncValue<List<Match>>> {
     state = AsyncValue.data([match, ...currentMatches]);
   }
 
-  Future<bool> markAsSeen(String matchId) async {
-    final result = await _matchService.markMatchAsSeen(matchId);
-
-    if (result.success) {
-      final currentMatches = state.valueOrNull ?? [];
-      state = AsyncValue.data(currentMatches.map((match) {
-        if (match.id == matchId) {
-          return match.copyWith(isNew: false);
-        }
-        return match;
-      }).toList());
-      return true;
-    }
-    return false;
-  }
 
   /// Removes a match locally. Call after the server confirms the unmatch so the
   /// list does not flicker back on a failed request.

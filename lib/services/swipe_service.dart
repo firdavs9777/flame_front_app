@@ -83,6 +83,9 @@ class SwipeService {
       return ServiceResult.success(SwipeResult(
         undone: response.data['undone'] ?? true,
         undoneUser: user,
+        // A code, not a sentence — the route stopped sending English prose
+        // precisely so this could be shown in the reader's language.
+        undoReason: response.data['reason'] as String?,
       ));
     }
 
@@ -100,6 +103,10 @@ class SwipeResult {
   final int? remainingSuperLikes;
   final User? undoneUser;
 
+  /// Why the server refused, as a code — 'NOTHING_TO_UNDO' or
+  /// 'ALREADY_MESSAGED'. Null when the undo succeeded.
+  final String? undoReason;
+
   SwipeResult({
     this.liked,
     this.passed,
@@ -109,5 +116,6 @@ class SwipeResult {
     this.match,
     this.remainingSuperLikes,
     this.undoneUser,
+    this.undoReason,
   });
 }
