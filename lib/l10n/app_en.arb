@@ -1365,5 +1365,17 @@
   "safetyReasonOther": "Something else",
   "@safetyReasonOther": {
     "description": "Report reason"
+  },
+  "registerStepConsentTitle": "Before you start",
+  "@registerStepConsentTitle": {
+    "description": "Title of the consent step shown to social sign-in users before profile completion"
+  },
+  "registerStepConsentSubtitle": "Please read and accept these to continue",
+  "@registerStepConsentSubtitle": {
+    "description": "Subtitle of the consent step"
+  },
+  "registerConsentDecline": "Not now",
+  "@registerConsentDecline": {
+    "description": "Exit from the consent step. Signs the user out rather than stranding them in a wizard they will not finish"
   }
 }

@@ -43,7 +43,7 @@ void main() {
     );
   }
 
-  testWidgets('opens on a four-step wizard, with no email/password step',
+  testWidgets('opens on the Terms gate, with no email/password step',
       (tester) async {
     await tester.pumpWidget(wrap());
     // StepWizard's header/progress/step-info fade in via flutter_animate; a
@@ -53,19 +53,32 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     expect(find.byType(StepWizard), findsOneWidget);
-    // A social user already has credentials — asking for a password again
-    // would be nonsense, so the flow starts at profile info.
-    expect(find.text('Step 1 of 4'), findsOneWidget);
-    expect(find.text('About You'), findsOneWidget);
+    // Was four steps opening on About You. A social user already has
+    // credentials, so there is still no password step — but they had also
+    // never been shown the Terms or the Privacy Policy, because the consent
+    // checkbox lived only on the email step. The gate goes first: agreeing to
+    // documents you were never offered is not agreement.
+    expect(find.text('Step 1 of 5'), findsOneWidget);
+    expect(find.text('Before you start'), findsOneWidget);
+    expect(find.textContaining('I agree to the'), findsOneWidget);
   });
 
-  testWidgets('step 1 offers no back affordance — there is nowhere to go',
-      (tester) async {
+  testWidgets('the Terms gate can be declined', (tester) async {
     await tester.pumpWidget(wrap());
     await tester.pump(const Duration(seconds: 1));
 
-    // The user is already authenticated; backing out would strand them
-    // between signed-in and unusable.
-    expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsNothing);
+    // Everywhere else in this wizard backing out would strand an authenticated
+    // user with an unusable profile, which is why there was no back arrow at
+    // all. That reasoning does not survive a consent gate: someone who will
+    // not accept the terms has to be able to leave, so declining signs out.
+    expect(find.text('Not now'), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_back_ios_new_rounded), findsOneWidget);
+  });
+
+  testWidgets('profile questions stay behind the gate', (tester) async {
+    await tester.pumpWidget(wrap());
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('About You'), findsNothing);
   });
 }

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/providers/auth_availability_provider.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
-import 'package:flame/screens/auth/registration/legal_document_sheet.dart';
+import 'package:flame/screens/auth/registration/widgets/terms_consent.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flame/core/validation/auth_validators.dart';
@@ -34,18 +33,11 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
   bool _checking = false;
   String? _emailAvailabilityError;
 
-  late final TapGestureRecognizer _termsRecognizer;
-  late final TapGestureRecognizer _privacyRecognizer;
-
   @override
   void initState() {
     super.initState();
     _emailController.text = widget.data.email;
     _passwordController.text = widget.data.password;
-    _termsRecognizer = TapGestureRecognizer()
-      ..onTap = () => showLegalDocumentSheet(context, LegalDoc.terms);
-    _privacyRecognizer = TapGestureRecognizer()
-      ..onTap = () => showLegalDocumentSheet(context, LegalDoc.privacy);
   }
 
   @override
@@ -53,8 +45,6 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _termsRecognizer.dispose();
-    _privacyRecognizer.dispose();
     super.dispose();
   }
 
@@ -269,55 +259,10 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
     );
   }
 
-  Widget _buildConsentRow() {
-    final linkStyle = const TextStyle(
-      color: AppTheme.primaryColor,
-      fontWeight: FontWeight.w600,
-      decoration: TextDecoration.underline,
-    );
-    final baseStyle =
-        AppTypography.bodySmall.copyWith(color: AppColors.gray700, height: 1.4);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          height: 24,
-          width: 24,
-          child: Checkbox(
-            value: _agreedToTerms,
-            onChanged: (v) => setState(() => _agreedToTerms = v ?? false),
-            activeColor: AppTheme.primaryColor,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 3),
-            child: Text.rich(
-              TextSpan(
-                style: baseStyle,
-                children: [
-                  TextSpan(text: context.l10n.registerAgreePrefix),
-                  TextSpan(
-                    text: context.l10n.registerTermsOfService,
-                    style: linkStyle,
-                    recognizer: _termsRecognizer,
-                  ),
-                  TextSpan(text: context.l10n.registerAgreeConjunction),
-                  TextSpan(
-                    text: context.l10n.registerPrivacyPolicy,
-                    style: linkStyle,
-                    recognizer: _privacyRecognizer,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _buildConsentRow() => TermsConsent(
+        value: _agreedToTerms,
+        onChanged: (v) => setState(() => _agreedToTerms = v),
+      );
 
   Widget _buildContinueButton() {
     final enabled = _agreedToTerms && !_checking;

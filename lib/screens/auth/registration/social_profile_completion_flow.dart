@@ -14,6 +14,7 @@ import 'photo_uploader.dart';
 import 'registration_flow.dart';
 import 'step_wizard.dart';
 import 'steps/step_bio_interests.dart';
+import 'steps/step_consent.dart';
 import 'steps/step_looking_for.dart';
 import 'steps/step_photos.dart';
 import 'steps/step_profile_info.dart';
@@ -21,8 +22,13 @@ import 'steps/step_profile_info.dart';
 /// Profile completion for a user who signed in with Google, Apple or Facebook.
 ///
 /// The same wizard registration uses, minus the email/password step — a social
-/// user already has credentials. No exit: they are authenticated but their
-/// profile is unusable, so backing out would strand them between the two.
+/// user already has credentials — plus the Terms and Privacy gate the email
+/// step has always carried. Without it this path produced finished accounts
+/// belonging to people who had never been shown either document.
+///
+/// The exit exists for that gate. Everywhere else backing out would strand an
+/// authenticated user with an unusable profile, but someone who will not
+/// accept the terms must be able to leave, so declining signs them out.
 class SocialProfileCompletionFlow extends ConsumerStatefulWidget {
   const SocialProfileCompletionFlow({super.key});
 
@@ -34,8 +40,23 @@ class SocialProfileCompletionFlow extends ConsumerStatefulWidget {
 class _SocialProfileCompletionFlowState
     extends ConsumerState<SocialProfileCompletionFlow> {
   final RegistrationData _data = RegistrationData();
+  // Lives on the flow so swiping back to the gate does not wipe the answer.
+  final ValueNotifier<bool> _accepted = ValueNotifier<bool>(false);
   bool _isUploading = false;
   bool _prefilled = false;
+
+  @override
+  void dispose() {
+    _accepted.dispose();
+    super.dispose();
+  }
+
+  /// Declining is not "go back" — there is nowhere to go back to. Sign out, so
+  /// the app returns to the welcome screen rather than holding someone inside a
+  /// wizard they have refused to finish.
+  Future<void> _declineAndSignOut() async {
+    await ref.read(authProvider.notifier).logout();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +72,18 @@ class _SocialProfileCompletionFlowState
     return StepWizard(
       isBusy: _isUploading,
       onComplete: _completeSocialProfile,
+      onExit: _declineAndSignOut,
       steps: [
+        WizardStep(
+          title: context.l10n.registerStepConsentTitle,
+          subtitle: context.l10n.registerStepConsentSubtitle,
+          builder: (context, onNext) =>
+              StepConsent(
+                accepted: _accepted,
+                onNext: onNext,
+                onDecline: _declineAndSignOut,
+              ),
+        ),
         WizardStep(
           title: context.l10n.registerStepAboutTitle,
           subtitle: context.l10n.registerStepAboutSubtitle,
