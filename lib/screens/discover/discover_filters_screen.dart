@@ -27,6 +27,28 @@ class DiscoverFiltersScreen extends ConsumerStatefulWidget {
 class _DiscoverFiltersScreenState extends ConsumerState<DiscoverFiltersScreen> {
   bool _isSaving = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Show the filters the user actually has. Without this the sheet opened on
+    // the const defaults and Apply wrote those back, so opening the sheet and
+    // confirming it wiped their real filters.
+    //
+    // Here rather than in the provider's factory: the provider may be built
+    // before the profile has loaded, and a sheet seeded from a null user would
+    // be the same defaults-shaped lie.
+    //
+    // Post-frame because Riverpod forbids writing a provider while the tree is
+    // building, which is what initState still counts as.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final user = ref.read(currentUserProvider).valueOrNull;
+      if (user != null) {
+        ref.read(filterProvider.notifier).initFromUser(user);
+      }
+    });
+  }
+
   Future<void> _applyFilters() async {
     setState(() => _isSaving = true);
     final saved = await ref

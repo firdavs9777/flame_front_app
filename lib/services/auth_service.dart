@@ -121,10 +121,16 @@ class AuthService {
     // that escapes here — offline, a timeout, an auth-lost unwind — used to
     // skip clearTokens() below and leave the user exactly where they were
     // after tapping Log out.
-    try {
-      await _apiClient.post('/auth/logout');
-    } catch (_) {
-      // best-effort: the refresh tokens expire on their own
+    // Skip the call entirely with no access token. The route requires one, so
+    // the request can only come back 401 MISSING_TOKEN — which is exactly what
+    // was showing up in the console every time someone signed out of a session
+    // the client had already dropped. Nothing to revoke, nothing to report.
+    if (_apiClient.hasTokens) {
+      try {
+        await _apiClient.post('/auth/logout');
+      } catch (_) {
+        // best-effort: the refresh tokens expire on their own
+      }
     }
     await _apiClient.clearTokens();
   }

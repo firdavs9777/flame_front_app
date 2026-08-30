@@ -396,9 +396,16 @@ class SettingsScreen extends ConsumerWidget {
             child: Text(context.l10n.settingsCancel),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(authProvider.notifier).logout();
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              navigator.pop();
+              await ref.read(authProvider.notifier).logout();
+              // Flipping auth state rebuilds MaterialApp's `home`, but Settings
+              // was PUSHED on top of it and stays exactly where it is — so the
+              // user tapped Log out, landed back on Settings, and reasonably
+              // concluded the button was dead. Unwind to the root route, which
+              // by now is the welcome screen.
+              navigator.popUntil((route) => route.isFirst);
             },
             child: Text(
               context.l10n.settingsLogout,
@@ -463,7 +470,12 @@ class SettingsScreen extends ConsumerWidget {
                   .deleteAccount(password: hasPassword ? password : null);
               if (failure == null) {
                 messenger.showSnackBar(SnackBar(content: Text(deleted)));
+                final navigator = Navigator.of(context);
                 await ref.read(authProvider.notifier).logout();
+                // Same unwind as Log out, and it matters more here: the account
+                // is gone, so every screen still on the stack is showing data
+                // that no longer exists.
+                navigator.popUntil((route) => route.isFirst);
               } else {
                 messenger.showSnackBar(
                   SnackBar(

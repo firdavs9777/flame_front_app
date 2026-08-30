@@ -20,8 +20,12 @@ class FilterNotifier extends StateNotifier<DiscoveryFilters> {
     state = state.copyWith(maxDistance: distance);
   }
 
+  /// null is "Everyone" — the sheet's own first option.
   void setGenderPreference(Gender? gender) {
-    state = state.copyWith(genderPreference: gender);
+    state = state.copyWith(
+      genderPreference: gender,
+      clearGender: gender == null,
+    );
   }
 
   void setInterests(List<String> interests) {
@@ -32,13 +36,24 @@ class FilterNotifier extends StateNotifier<DiscoveryFilters> {
     state = const DiscoveryFilters();
   }
 
-  /// Initialize filters from user preferences
+  /// Loads the filters the user actually has.
+  ///
+  /// This existed and nothing called it, so the sheet always opened on the
+  /// const defaults (18–50, 50 km, no interests) no matter what the user had
+  /// saved — and Apply then wrote those defaults back, silently wiping their
+  /// real filters. Opening the sheet and tapping Apply was a destructive
+  /// no-op.
+  ///
+  /// `lookingFor == other` is the profile's way of saying "everyone", which is
+  /// the sheet's null. Mapping it to Gender.other instead would pre-select a
+  /// gender the user never chose.
   void initFromUser(User user) {
     state = DiscoveryFilters(
       minAge: user.minAgePreference,
       maxAge: user.maxAgePreference,
       maxDistance: user.maxDistancePreference,
-      genderPreference: user.lookingFor,
+      genderPreference:
+          user.lookingFor == Gender.other ? null : user.lookingFor,
       interests: user.interestsFilter,
     );
   }
@@ -69,8 +84,10 @@ class FilterNotifier extends StateNotifier<DiscoveryFilters> {
     );
     if (!prefs.success) return false;
 
-    final gender = state.genderPreference;
-    if (gender == null) return true;
+    // null is "Everyone", which the profile stores as Gender.other. Returning
+    // early on null meant choosing Everyone never persisted — the previous
+    // gender stayed on the profile and kept filtering the deck.
+    final gender = state.genderPreference ?? Gender.other;
     final profile = await _userService.updateProfile(lookingFor: gender);
     return profile.success;
   }
@@ -91,18 +108,23 @@ class DiscoveryFilters {
     this.interests = const [],
   });
 
+  /// [clearGender] is the only way back to "Everyone": a plain
+  /// `genderPreference: null` is indistinguishable from "not passed", so
+  /// selecting Everyone silently kept whatever gender was set before.
   DiscoveryFilters copyWith({
     int? minAge,
     int? maxAge,
     double? maxDistance,
     Gender? genderPreference,
+    bool clearGender = false,
     List<String>? interests,
   }) {
     return DiscoveryFilters(
       minAge: minAge ?? this.minAge,
       maxAge: maxAge ?? this.maxAge,
       maxDistance: maxDistance ?? this.maxDistance,
-      genderPreference: genderPreference ?? this.genderPreference,
+      genderPreference:
+          clearGender ? null : (genderPreference ?? this.genderPreference),
       interests: interests ?? this.interests,
     );
   }

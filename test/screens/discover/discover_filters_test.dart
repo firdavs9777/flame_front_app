@@ -12,7 +12,8 @@ import 'package:flame/providers/location_provider.dart';
 import 'package:flame/screens/discover/discover_filters_screen.dart';
 import 'package:flame/services/discovery_service.dart';
 import 'package:flame/services/location_service.dart';
-import 'package:flame/services/user_service.dart' show ServiceResult;
+import 'package:flame/providers/user_provider.dart';
+import 'package:flame/services/user_service.dart' show ServiceResult, UserService;
 
 /// Records reloads so a test can prove a failed save did not touch the deck.
 class _RecordingDiscovery extends DiscoveryNotifier {
@@ -38,6 +39,13 @@ class _Filters extends FilterNotifier {
   _Filters({required this.succeeds});
   final bool succeeds;
   int saves = 0;
+  int seeded = 0;
+
+  @override
+  void initFromUser(User user) {
+    seeded++;
+    super.initFromUser(user);
+  }
 
   @override
   Future<bool> savePreferencesToApi() async {
@@ -49,12 +57,32 @@ class _Filters extends FilterNotifier {
 late _RecordingDiscovery deck;
 late _Filters filters;
 
+/// Seeds currentUserProvider without a network, following the _Seeded pattern
+/// used elsewhere in the suite.
+class _SeededUser extends CurrentUserNotifier {
+  _SeededUser(User? user) : super(UserService()) {
+    state = AsyncValue.data(user);
+  }
+}
+
+/// A profile with filters that are visibly NOT the const defaults.
+User _savedUser() => User.fromJson({
+      'id': 'u1', 'name': 'Alex', 'age': 30, 'bio': '',
+      'interests': const <String>[], 'gender': 'male',
+      'looking_for': 'female', 'photos': const <String>[],
+      'preferences': {
+        'min_age': 25, 'max_age': 34, 'max_distance': 12.0,
+        'interests_filter': ['Travel'],
+      },
+    });
+
 Future<void> pumpSheet(
   WidgetTester tester, {
   LocationAvailability availability = LocationAvailability.granted,
   bool saveSucceeds = true,
   Size size = const Size(390, 844),
   double textScale = 1.0,
+  User? user,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
@@ -80,6 +108,9 @@ Future<void> pumpSheet(
       discoveryProvider.overrideWith((ref) => deck),
       filterProvider.overrideWith((ref) => filters),
       locationRefresherProvider.overrideWithValue(refresher),
+      currentUserProvider.overrideWith(
+        (ref) => _SeededUser(user),
+      ),
     ],
     child: MaterialApp(
       locale: const Locale('en'),
@@ -107,6 +138,8 @@ Future<void> tapApply(WidgetTester tester) async {
 }
 
 void main() {
+  _seedingTests();
+
   testWidgets('the distance slider is disabled, with a reason, without location',
       (tester) async {
     await pumpSheet(tester, availability: LocationAvailability.denied);
@@ -173,5 +206,44 @@ void main() {
 
     final width = tester.getSize(find.byKey(const ValueKey('filters-body'))).width;
     expect(width, lessThanOrEqualTo(kSheetMaxWidth));
+  });
+}
+
+// The sheet must open on the filters the user actually has.
+//
+// initFromUser existed and had ZERO call sites, so the sheet always opened on
+// the const defaults and Apply wrote those back — opening the sheet and
+// confirming it wiped the user's real filters. A unit test on initFromUser
+// would have kept passing throughout; only the wiring was broken.
+void _seedingTests() {
+  testWidgets('opening the sheet loads the saved filters', (tester) async {
+    await pumpSheet(tester, user: _savedUser());
+    await tester.pumpAndSettle();
+
+    expect(filters.seeded, 1,
+        reason: 'initFromUser had no call sites at all');
+    expect(filters.state.minAge, 25);
+    expect(filters.state.maxAge, 34);
+    expect(filters.state.maxDistance, 12);
+    expect(filters.state.interests, ['Travel']);
+  });
+
+  testWidgets('the sheet shows those values, not the defaults', (tester) async {
+    await pumpSheet(tester, user: _savedUser());
+    await tester.pumpAndSettle();
+
+    expect(find.text('25 – 34'), findsOneWidget);
+    expect(find.text('18 – 50'), findsNothing,
+        reason: 'the defaults look plausible, which is why this went unseen');
+  });
+
+  testWidgets('with no profile loaded the sheet does not invent filters',
+      (tester) async {
+    await pumpSheet(tester, user: null);
+    await tester.pumpAndSettle();
+
+    expect(filters.seeded, 0,
+        reason: 'seeding from a null user would be the same defaults-shaped '
+            'lie this fixes');
   });
 }
