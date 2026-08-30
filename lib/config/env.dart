@@ -120,7 +120,16 @@ class EnvConfig {
     realtimeEnabled: true,
     chatEnabled: true,
     googleSignInEnabled: true,
-    appleSignInEnabled: false,
+    // ON since the entitlement was wired (Runner.entitlements, verified in the
+    // signed binary) and FLAME_APPLE_CLIENT_ID was set on the server —
+    // /auth/apple now answers INVALID_SOCIAL_TOKEN for a junk token rather than
+    // 501 PROVIDER_NOT_CONFIGURED, which is the whole round trip working.
+    //
+    // Guideline 4.8 requires this wherever Google is offered, so shipping the
+    // pair is not optional.
+    appleSignInEnabled: true,
+    // Still off: placeholder native keys, and the backend has no
+    // FLAME_FACEBOOK_APP_ID / _SECRET, so the button would dead-end.
     facebookSignInEnabled: false,
     forgotPasswordEnabled: true,
   );

@@ -21,15 +21,21 @@ void main() {
   });
 
   group('prod', () {
-    test('ships Google only — the one provider that works end to end', () {
+    test('ships the two providers that work end to end', () {
       expect(EnvConfig.prodConfig.googleSignInEnabled, isTrue);
+      // Apple was off while it had no entitlement and the server had no
+      // FLAME_APPLE_CLIENT_ID. Both are now true — the entitlement is in the
+      // signed binary and /auth/apple rejects a junk token with
+      // INVALID_SOCIAL_TOKEN rather than 501 PROVIDER_NOT_CONFIGURED.
+      //
+      // It is also required: Guideline 4.8 does not allow offering Google
+      // without Sign in with Apple, so these two flags move together.
+      expect(EnvConfig.prodConfig.appleSignInEnabled, isTrue);
     });
 
-    test('keeps Apple and Facebook OFF so no user hits a dead button', () {
-      // Apple lacks its entitlement, Facebook has placeholder native keys, and
-      // the backend has neither provider's env vars. Showing them in prod would
-      // also fail App Store review. See docs/social-auth-setup.md.
-      expect(EnvConfig.prodConfig.appleSignInEnabled, isFalse);
+    test('keeps Facebook OFF so no user hits a dead button', () {
+      // Placeholder native keys, and the backend has no FLAME_FACEBOOK_APP_ID
+      // or _SECRET — the button would authenticate and then fail at the server.
       expect(EnvConfig.prodConfig.facebookSignInEnabled, isFalse);
     });
   });
