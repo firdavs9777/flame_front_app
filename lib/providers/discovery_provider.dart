@@ -79,6 +79,19 @@ class DiscoveryNotifier extends StateNotifier<AsyncValue<List<User>>> {
     await load(refresh: true);
   }
 
+  /// Drops a card from the deck.
+  ///
+  /// NOT called when a card is swiped, and that is the whole point. CardSwiper
+  /// owns its own cursor and only ever advances it; `didUpdateWidget` does not
+  /// reset it when `cardsCount` changes. So removing the swiped card shifted
+  /// every later card down one while the cursor moved up one, and the deck
+  /// skipped every other profile — u1, u3, u5 were never shown to anyone and
+  /// never swiped, and the cursor eventually ran past the end and rendered
+  /// blank cards that no longer reached the server.
+  ///
+  /// The deck is therefore append-only for as long as one CardSwiper is
+  /// walking it. Swiped cards stay in the list, behind the cursor, and the
+  /// server excludes them from the next load anyway.
   void removeUser(String userId) {
     final current = state.valueOrNull ?? const <User>[];
     state = AsyncValue.data(current.where((u) => u.id != userId).toList());

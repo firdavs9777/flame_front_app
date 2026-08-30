@@ -73,8 +73,6 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
     if (result.success && result.data != null) {
       final swipeResult = result.data!;
 
-      // Remove user from discovery
-      _ref.read(discoveryProvider.notifier).removeUser(user.id);
 
       if (swipeResult.isMatch && swipeResult.match != null) {
         // Add to matches
@@ -109,8 +107,6 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
     final result = await _swipeService.passUser(user.id);
 
     if (result.success) {
-      // Remove user from discovery
-      _ref.read(discoveryProvider.notifier).removeUser(user.id);
 
       state = SwipeState(
         isLoading: false,
@@ -141,8 +137,6 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
     if (result.success && result.data != null) {
       final swipeResult = result.data!;
 
-      // Remove user from discovery
-      _ref.read(discoveryProvider.notifier).removeUser(user.id);
 
       if (swipeResult.isMatch && swipeResult.match != null) {
         // Add to matches

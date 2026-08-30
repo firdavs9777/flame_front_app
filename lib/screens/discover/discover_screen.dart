@@ -22,6 +22,19 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   final CardSwiperController _swiperController = CardSwiperController();
+
+  /// Bumped whenever the deck is replaced rather than topped up.
+  ///
+  /// CardSwiper's cursor survives a `cardsCount` change, so a reloaded deck
+  /// would be walked from wherever the old one left off. Keying the widget on
+  /// this gives a replaced deck a fresh State, and therefore a cursor at zero.
+  int _deckGeneration = 0;
+
+  /// Set when the last card has been swiped and nothing more arrived.
+  ///
+  /// The deck no longer empties itself — swiped cards stay behind the cursor —
+  /// so `users.isEmpty` can no longer mean "you have seen everyone".
+  bool _deckExhausted = false;
   bool _initialized = false;
 
   @override
@@ -197,7 +210,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  void _reload() => ref.read(discoveryProvider.notifier).load(refresh: true);
+  /// Replaces the deck and restarts the swiper at the top of it.
+  void _reload() {
+    setState(() {
+      _deckGeneration++;
+      _deckExhausted = false;
+    });
+    ref.read(discoveryProvider.notifier).load(refresh: true);
+  }
 
   void _openFilters() => Navigator.pushNamed(context, '/discover/filters');
 
@@ -250,7 +270,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         error: (error, stack) =>
             DeckError(error: error.toString(), onRetry: _reload),
         data: (users) {
-          if (users.isEmpty) {
+          if (users.isEmpty || _deckExhausted) {
             // Which fact is true matters: one is actionable and one is not.
             return _filtersActive
                 ? DeckEmptyForFilters(onRelaxFilters: _openFilters)
@@ -271,8 +291,15 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: CardSwiper(
+                            // A replaced deck gets a fresh cursor; a topped-up
+                            // one keeps walking the same list.
+                            key: ValueKey(_deckGeneration),
                             controller: _swiperController,
                             cardsCount: users.length,
+                            // Looping would silently re-show cards the user has
+                            // already swiped, and makes "you have seen
+                            // everyone" unreachable.
+                            isLoop: false,
                             numberOfCardsDisplayed: users.length > 2
                                 ? 3
                                 : users.length,
@@ -283,8 +310,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               return true;
                             },
                             onEnd: () {
-                              // Load more when cards run out
-                              ref.read(discoveryProvider.notifier).refill();
+                              // The last card is gone. `_onSwipe` tops the deck
+                              // up well before this, so reaching it means the
+                              // server had nothing left to give.
+                              if (mounted) {
+                                setState(() => _deckExhausted = true);
+                              }
                             },
                             cardBuilder: (context, index, percentX, percentY) {
                               // CardSwiper holds its own index; when the deck shrinks
