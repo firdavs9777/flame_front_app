@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flame/l10n/gen/app_localizations.dart';
 import 'package:flame/screens/chat/voice_recording.dart';
 import 'package:flame/screens/chat/widgets/chat_input.dart';
 
@@ -29,6 +30,8 @@ void main() {
       required TextEditingController controller,
       VoidCallback? onStartRecording,
     }) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: ChatInput(
           controller: controller,
@@ -107,6 +110,8 @@ void main() {
       VoidCallback? onCancel,
       VoidCallback? onSend,
     }) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: ChatInput(
           controller: TextEditingController(),

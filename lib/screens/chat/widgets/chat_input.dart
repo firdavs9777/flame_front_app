@@ -1,6 +1,7 @@
 import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/chat/voice_recording.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
@@ -145,7 +146,7 @@ class ChatInput extends StatelessWidget {
                 controller: controller,
                 maxLines: null,
                 decoration: InputDecoration(
-                  hintText: 'Type a message...',
+                  hintText: context.l10n.chatComposerHint,
                   hintStyle: TextStyle(color: context.secondaryText),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),

@@ -39,7 +39,7 @@ class FaceDetectionService {
       if (faces.isEmpty) {
         return FaceValidationResult(
           isValid: false,
-          error: 'No face detected. Please upload a photo with your face visible.',
+          issue: FaceIssue.noFace,
           faceCount: 0,
         );
       }
@@ -48,7 +48,7 @@ class FaceDetectionService {
       if (strictMode && faces.length > 1) {
         return FaceValidationResult(
           isValid: false,
-          error: 'Multiple faces detected. Your main photo should show only you.',
+          issue: FaceIssue.multipleFaces,
           faceCount: faces.length,
         );
       }
@@ -63,7 +63,7 @@ class FaceDetectionService {
       if (faceArea < 2500) { // Minimum ~50x50 pixels
         return FaceValidationResult(
           isValid: false,
-          error: 'Face is too small. Please upload a photo where your face is more visible.',
+          issue: FaceIssue.tooSmall,
           faceCount: 1,
         );
       }
@@ -76,7 +76,7 @@ class FaceDetectionService {
       if (headEulerAngleY != null && headEulerAngleY.abs() > 55) {
         return FaceValidationResult(
           isValid: false,
-          error: 'Please upload a photo where your face is more visible.',
+          issue: FaceIssue.unclear,
           faceCount: 1,
         );
       }
@@ -85,7 +85,7 @@ class FaceDetectionService {
       if (headEulerAngleZ != null && headEulerAngleZ.abs() > 45) {
         return FaceValidationResult(
           isValid: false,
-          error: 'Please upload a photo where your face is more visible.',
+          issue: FaceIssue.unclear,
           faceCount: 1,
         );
       }
@@ -115,7 +115,7 @@ class FaceDetectionService {
       }
       return FaceValidationResult(
         isValid: false,
-        error: 'Failed to analyze photo. Please try a different image.',
+        issue: FaceIssue.analysisFailed,
         faceCount: 0,
       );
     }
@@ -135,9 +135,14 @@ class FaceDetectionService {
   }
 }
 
+/// Why a photo was refused. An enum rather than a message because this runs in
+/// a service with no BuildContext — an English string here is exactly what kept
+/// these six errors untranslated in an app that ships 32 languages.
+enum FaceIssue { noFace, multipleFaces, tooSmall, unclear, analysisFailed }
+
 class FaceValidationResult {
   final bool isValid;
-  final String? error;
+  final FaceIssue? issue;
   final int faceCount;
   final bool faceDetectionSkipped;
   final double? smilingProbability;
@@ -146,7 +151,7 @@ class FaceValidationResult {
 
   FaceValidationResult({
     required this.isValid,
-    this.error,
+    this.issue,
     required this.faceCount,
     this.faceDetectionSkipped = false,
     this.smilingProbability,
@@ -156,6 +161,6 @@ class FaceValidationResult {
 
   @override
   String toString() {
-    return 'FaceValidationResult(isValid: $isValid, error: $error, faceCount: $faceCount)';
+    return 'FaceValidationResult(isValid: \$isValid, issue: \$issue, faceCount: \$faceCount)';
   }
 }

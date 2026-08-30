@@ -495,7 +495,7 @@ class _StepPhotosState extends State<StepPhotos> {
 
         showAuthSnackBar(
           context,
-          message: result.error ?? context.l10n.registerPhotoValidationFailed,
+          message: _faceIssueMessage(result.issue),
           type: AuthSnackBarType.error,
         );
         return;
@@ -542,6 +542,17 @@ class _StepPhotosState extends State<StepPhotos> {
       _photos[index] = null;
     });
   }
+
+  /// The localised reason a photo was refused. Lives here, not on FaceIssue:
+  /// the enum belongs to a service that has no BuildContext.
+  String _faceIssueMessage(FaceIssue? issue) => switch (issue) {
+        FaceIssue.noFace => context.l10n.photoNoFace,
+        FaceIssue.multipleFaces => context.l10n.photoMultipleFaces,
+        FaceIssue.tooSmall => context.l10n.photoFaceTooSmall,
+        FaceIssue.unclear => context.l10n.photoFaceUnclear,
+        FaceIssue.analysisFailed => context.l10n.photoAnalysisFailed,
+        null => context.l10n.registerPhotoValidationFailed,
+      };
 
   void _handleComplete() {
     if (_photoCount < 2) {

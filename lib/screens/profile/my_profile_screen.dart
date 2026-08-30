@@ -199,9 +199,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildStat('Photos', user.photos.length.toString()),
-                    _buildStat('Interests', user.interests.length.toString()),
-                    _buildStat('Matches', matchCount.toString()),
+                    _buildStat(context.l10n.profilePhotos, user.photos.length.toString()),
+                    _buildStat(context.l10n.profileInterests, user.interests.length.toString()),
+                    _buildStat(context.l10n.navMatches, matchCount.toString()),
                   ],
                 ),
                 const SizedBox(height: 30),

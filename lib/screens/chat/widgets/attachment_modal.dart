@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 import 'package:flame/screens/chat/chat_attachments.dart';
 import 'package:flame/theme/app_theme.dart';
@@ -40,7 +41,7 @@ class AttachmentModal extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            Text('Share', style: theme.textTheme.titleMedium),
+            Text(context.l10n.chatShare, style: theme.textTheme.titleMedium),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,

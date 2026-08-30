@@ -1,5 +1,7 @@
 // lib/core/widgets/app_loading.dart
 import 'package:flutter/material.dart';
+
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/theme/app_theme.dart';
 
 /// Loading indicator with Bananatalk styling
@@ -259,7 +261,7 @@ class AppErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              title ?? 'Something went wrong',
+              title ?? context.l10n.errorGeneric,
               style: AppTypography.headlineSmall,
               textAlign: TextAlign.center,
             ),
@@ -278,7 +280,7 @@ class AppErrorState extends StatelessWidget {
               TextButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Try Again'),
+                label: Text(context.l10n.retry),
               ),
             ],
           ],

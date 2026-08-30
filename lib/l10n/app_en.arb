@@ -1381,5 +1381,37 @@
   "termsReviewTitle": "Please review our terms",
   "@termsReviewTitle": {
     "description": "Title of the screen shown to an already-signed-in user who has never accepted the Terms and Privacy Policy. Not 'Before you start' — they have already started."
+  },
+  "chatComposerHint": "Type a message…",
+  "@chatComposerHint": {
+    "description": "Placeholder inside the chat message composer"
+  },
+  "chatShare": "Share",
+  "@chatShare": {
+    "description": "Title of the chat attachment sheet"
+  },
+  "discoverSendMessage": "Send message",
+  "@discoverSendMessage": {
+    "description": "Button on the match celebration that opens the new conversation"
+  },
+  "photoNoFace": "No face detected. Upload a photo with your face visible.",
+  "@photoNoFace": {
+    "description": "Shown when the on-device face check finds no face in the chosen photo"
+  },
+  "photoMultipleFaces": "More than one face detected. Your main photo should show only you.",
+  "@photoMultipleFaces": {
+    "description": "Shown when the face check finds several faces in the main photo"
+  },
+  "photoFaceTooSmall": "Your face is too small in this photo. Upload one where it is more visible.",
+  "@photoFaceTooSmall": {
+    "description": "Shown when a face is detected but occupies too little of the frame"
+  },
+  "photoFaceUnclear": "Upload a photo where your face is more visible.",
+  "@photoFaceUnclear": {
+    "description": "Shown when a face is detected but turned away or obscured"
+  },
+  "photoAnalysisFailed": "Couldn't analyse that photo. Try a different image.",
+  "@photoAnalysisFailed": {
+    "description": "Shown when the face check itself errors on the image"
   }
 }

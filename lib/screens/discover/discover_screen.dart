@@ -1,5 +1,6 @@
 import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flutter/material.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:flame/models/models.dart';
@@ -184,7 +185,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         backgroundColor: context.onOverlay,
                         foregroundColor: AppTheme.primaryColor,
                       ),
-                      child: const Text('Send Message'),
+                      child: Text(context.l10n.discoverSendMessage),
                     ),
                   ),
                 ],

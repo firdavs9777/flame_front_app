@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:flame/l10n/gen/app_localizations.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/chat_provider.dart';
 import 'package:flame/screens/chat/chat_attachments.dart';
@@ -151,6 +153,8 @@ void main() {
     Future<void> pump(WidgetTester tester, {VoidCallback? onTap}) {
       return tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: AttachmentModal(onPick: (_) => onTap?.call()),
           ),
@@ -179,6 +183,8 @@ void main() {
       final picked = <ChatAttachmentKind>[];
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(body: AttachmentModal(onPick: picked.add)),
         ),
       );
@@ -192,6 +198,8 @@ void main() {
 
   group('ChatInput', () {
     Widget host({VoidCallback? onAttach}) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: ChatInput(
           controller: TextEditingController(),
@@ -229,6 +237,8 @@ void main() {
       var taps = 0;
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ChatInput(
               controller: TextEditingController(),

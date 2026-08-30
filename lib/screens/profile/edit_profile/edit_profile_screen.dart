@@ -80,7 +80,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       appBar: AppBar(title: Text(context.l10n.profileEditProfile)),
       body: userState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
+        error: (error, _) =>
+            Center(child: Text(context.l10n.errorWithDetail('$error'))),
         data: (user) {
           if (user == null) {
             return Center(child: Text(context.l10n.profileNoUserData));
