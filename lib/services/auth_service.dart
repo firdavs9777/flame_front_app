@@ -66,10 +66,15 @@ class AuthService {
     required List<String> photos,
     required double latitude,
     required double longitude,
+    bool termsAccepted = false,
   }) async {
     final response = await _apiClient.post(
       '/auth/register',
       body: {
+        // The server stamps the date and the version itself — this only states
+        // that the box was ticked. A client-supplied timestamp would be a claim
+        // about consent rather than a record of it, so it is not sent.
+        'termsAccepted': termsAccepted,
         'email': email,
         'password': password,
         'name': name,

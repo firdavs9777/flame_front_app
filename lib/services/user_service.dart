@@ -11,6 +11,7 @@ Map<String, dynamic> buildUpdateProfileBody({
   Gender? lookingFor,
   Gender? gender,
   int? age,
+  bool? termsAccepted,
 }) {
   final body = <String, dynamic>{};
   if (name != null) body['name'] = name;
@@ -22,6 +23,10 @@ Map<String, dynamic> buildUpdateProfileBody({
   }
   if (gender != null) body['gender'] = gender.toApiString();
   if (age != null) body['age'] = age;
+  // A social signup has no /auth/register call to carry its consent, and this
+  // PATCH is the first request after the gate. Only ever sent as true — there
+  // is no such thing as withdrawing consent by editing a bio.
+  if (termsAccepted == true) body['termsAccepted'] = true;
   return body;
 }
 
@@ -60,10 +65,12 @@ class UserService {
     Gender? lookingFor,
     Gender? gender,
     int? age,
+    bool? termsAccepted,
   }) async {
     final body = buildUpdateProfileBody(
       name: name,
       bio: bio,
+      termsAccepted: termsAccepted,
       interests: interests,
       lookingFor: lookingFor,
       gender: gender,

@@ -4,6 +4,34 @@ import 'package:flame/services/user_service.dart';
 
 void main() {
   group('buildUpdateProfileBody', () {
+    // A social signup has no /auth/register call to carry its consent, so this
+    // PATCH is the only place it can be recorded. Until it was, those accounts
+    // reached a finished state having agreed to nothing.
+    test('carries the social path\'s consent when it was given', () {
+      final body = buildUpdateProfileBody(name: 'Ann', termsAccepted: true);
+      expect(body['termsAccepted'], true);
+    });
+
+    test('says nothing about consent when none was given', () {
+      // An ordinary profile edit must not restate consent, and there is no such
+      // thing as withdrawing it by editing a bio — so false is silence, not
+      // `termsAccepted: false`.
+      expect(buildUpdateProfileBody(bio: 'hi').containsKey('termsAccepted'),
+          isFalse);
+      expect(
+          buildUpdateProfileBody(bio: 'hi', termsAccepted: false)
+              .containsKey('termsAccepted'),
+          isFalse);
+    });
+
+    test('never sends a client-chosen acceptance time', () {
+      // The server stamps the date and the version. A timestamp from the client
+      // is a claim about consent, not a record of it.
+      final body = buildUpdateProfileBody(termsAccepted: true);
+      expect(body.containsKey('termsAcceptedAt'), isFalse);
+      expect(body.containsKey('termsVersion'), isFalse);
+    });
+
     test('omits null fields', () {
       final body = buildUpdateProfileBody(name: 'Ann');
       expect(body.keys, ['name']);

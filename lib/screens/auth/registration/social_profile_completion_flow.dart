@@ -127,6 +127,10 @@ class _SocialProfileCompletionFlowState
         lookingFor: _data.lookingFor,
         gender: _data.gender,
         age: _data.age,
+        // The gate is step 1, so this is always true by the time the wizard
+        // completes. Sent from the notifier rather than hardcoded so the record
+        // reflects what the user actually did.
+        termsAccepted: _accepted.value,
       );
       if (!mounted) return;
 

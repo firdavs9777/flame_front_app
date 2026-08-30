@@ -261,7 +261,11 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
 
   Widget _buildConsentRow() => TermsConsent(
         value: _agreedToTerms,
-        onChanged: (v) => setState(() => _agreedToTerms = v),
+        onChanged: (v) => setState(() {
+          _agreedToTerms = v;
+          // Onto the shared data so the flow can send it with register().
+          widget.data.termsAccepted = v;
+        }),
       );
 
   Widget _buildContinueButton() {

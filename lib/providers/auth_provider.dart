@@ -180,10 +180,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required List<String> photos,
     required double latitude,
     required double longitude,
+    bool termsAccepted = false,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
 
     final result = await _authService.register(
+      termsAccepted: termsAccepted,
       email: email,
       password: password,
       name: name,

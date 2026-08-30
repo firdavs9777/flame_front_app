@@ -69,6 +69,7 @@ void main() {
       photos: const ['https://cdn/1.jpg', 'https://cdn/2.jpg'],
       latitude: 37.42,
       longitude: -122.08,
+      termsAccepted: true,
     );
 
     expect(result.success, true);
@@ -83,6 +84,12 @@ void main() {
     expect(body['lookingFor'], 'male');
     expect(body['latitude'], 37.42);
     expect(body['longitude'], -122.08);
+    // The checkbox used to gate the Continue button and then be discarded, so
+    // nothing recorded that consent was ever given. GDPR Art. 7(1) asks the
+    // controller to be able to demonstrate it. The server stamps the date and
+    // version; the client only reports the tick.
+    expect(body['termsAccepted'], true);
+    expect(body.containsKey('termsAcceptedAt'), false);
     expect(body['photos'], ['https://cdn/1.jpg', 'https://cdn/2.jpg']);
   });
 

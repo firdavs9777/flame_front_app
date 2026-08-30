@@ -31,6 +31,12 @@ class RegistrationData {
   List<File> photoFiles = []; // Local files before upload
   double? latitude;
   double? longitude;
+
+  /// Whether the Terms and Privacy box was ticked. Lives here, not only inside
+  /// the step's State, because the server has to be told: a checkbox that gates
+  /// a button and is then discarded records nothing, and GDPR Art. 7(1) asks
+  /// the controller to be able to demonstrate consent.
+  bool termsAccepted = false;
 }
 
 class RegistrationFlow extends ConsumerStatefulWidget {
@@ -231,6 +237,7 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
             photos: photoUrls,
             latitude: _data.latitude!,
             longitude: _data.longitude!,
+            termsAccepted: _data.termsAccepted,
           );
       if (!mounted) return;
       setState(() => _isUploading = false);
