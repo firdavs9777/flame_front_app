@@ -44,7 +44,10 @@ class _SplashScreenState extends State<SplashScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFFFF6B6B), Color(0xFFE75A7C), Color(0xFFFF8E53)],
+            // Sampled from the logo, so the native splash (a flat #CF461E with
+            // the same droplet) hands over to this without a colour jump. The
+            // middle stop used to be #E75A7C, the previous pink brand.
+            colors: [Color(0xFFF4A523), Color(0xFFCF461E), Color(0xFF5C0F14)],
             stops: [0.0, 0.5, 1.0],
           ),
         ),
@@ -52,10 +55,11 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                    Icons.local_fire_department_rounded,
-                    size: 80,
-                    color: Colors.white,
+              // Was a stock Material flame glyph, which is not the logo.
+              Image.asset(
+                    'assets/images/logo_mark.png',
+                    width: 96,
+                    height: 96,
                   )
                   .animate()
                   .fadeIn(duration: 600.ms)

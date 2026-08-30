@@ -103,22 +103,16 @@ class WelcomeScreen extends StatelessWidget {
     return Column(
       children: [
         // App Logo
-        Container(
+        // The mark on its own, not the square app icon. The icon carries its
+        // own gradient, so tiling it onto this gradient reads as a pasted
+        // screenshot — and the rounded-rect shadow it used to sit under has
+        // nothing to cast from once the art is transparent.
+        SizedBox(
           width: 120,
           height: 120,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(30),
-            child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
+          child: Image.asset(
+            'assets/images/logo_mark.png',
+            fit: BoxFit.contain,
           ),
         ),
         const SizedBox(height: 24),

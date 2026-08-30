@@ -104,15 +104,26 @@ flutter_launcher_icons:
   image_path_ios: "assets/icon/app_icon_ios.png"
   min_sdk_android: 21
   remove_alpha_ios: true
-  adaptive_icon_background: "#E75A7C"
-  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  # Android masks an adaptive icon into the launcher's shape and only the
+  # central 66/108dp is guaranteed to survive. The foreground is therefore the
+  # droplet alone on transparency, and the background is the brand gradient
+  # with the droplet inpainted out — feeding the full square to both would
+  # crop the droplet and stack it on a second copy of itself.
+  adaptive_icon_background: "assets/icon/app_icon_background.png"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
 
 flutter_native_splash:
-  color: "#E75A7C"
-  color_dark: "#E75A7C"
+  # Sampled from the middle of the logo gradient. It was #E75A7C — the pink of
+  # the previous brand — which flashed pink before an orange app every launch.
+  color: "#CF461E"
+  color_dark: "#CF461E"
+  image: "assets/icon/splash_logo.png"
+  image_dark: "assets/icon/splash_logo.png"
   android_12:
-    color: "#E75A7C"
-    color_dark: "#E75A7C"
+    color: "#CF461E"
+    color_dark: "#CF461E"
+    image: "assets/icon/splash_logo.png"
+    image_dark: "assets/icon/splash_logo.png"
   ios: true
   android: true
 

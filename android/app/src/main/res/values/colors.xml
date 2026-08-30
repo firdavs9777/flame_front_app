@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#E75A7C</color>
+    <!-- The adaptive icon background is a gradient drawable
+         (@drawable/ic_launcher_background), not a flat colour. The old
+         #E75A7C entry here was the previous pink brand and nothing read it. -->
 </resources>
