@@ -401,6 +401,11 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
+    // A social-only signup has no password to confirm with. Demanding one made
+    // the account deletion Google Play requires unreachable for every Google
+    // user — and Google is the only social provider live in prod.
+    final hasPassword =
+        ref.read(currentUserProvider).valueOrNull?.hasPassword ?? true;
     final passwordController = TextEditingController();
     final messenger = ScaffoldMessenger.of(context);
     showDialog(
@@ -411,18 +416,21 @@ class SettingsScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'This action cannot be undone. Enter your password to confirm.',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: context.l10n.settingsPassword,
-                border: OutlineInputBorder(),
+            // Was a hardcoded English sentence. The password field below is
+            // labelled, so one localised line covers both cases.
+            Text(context.l10n.settingsDeleteAccountBody),
+            if (hasPassword) ...[
+              const SizedBox(height: 16),
+              TextField(
+                key: const Key('delete_account_password'),
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: context.l10n.settingsPassword,
+                  border: const OutlineInputBorder(),
+                ),
               ),
-            ),
+            ],
           ],
         ),
         actions: [
@@ -431,13 +439,16 @@ class SettingsScreen extends ConsumerWidget {
             child: Text(context.l10n.settingsCancel),
           ),
           TextButton(
+            key: const Key('delete_account_confirm'),
             onPressed: () async {
               final password = passwordController.text;
-              if (password.isEmpty) return;
+              // Only a password account can be blocked on an empty box; for a
+              // social one there is nothing to type and nothing to wait for.
+              if (hasPassword && password.isEmpty) return;
               Navigator.pop(dialogContext);
               final ok = await ref
                   .read(currentUserProvider.notifier)
-                  .deleteAccount(password: password);
+                  .deleteAccount(password: hasPassword ? password : null);
               if (ok) {
                 messenger.showSnackBar(
                   SnackBar(content: Text(context.l10n.settingsAccountDeleted)),
@@ -451,8 +462,7 @@ class SettingsScreen extends ConsumerWidget {
                 );
               }
             },
-            child: Text(context.l10n.settingsDelete,
-                style: TextStyle(color: AppTheme.errorColor)),
+            child: Text(context.l10n.settingsDelete),
           ),
         ],
       ),

@@ -170,7 +170,7 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
   /// Deletes the account via the API. On success clears the local user; the
   /// caller is responsible for logging out / routing away. Returns false on
   /// failure (e.g. wrong password) with state unchanged.
-  Future<bool> deleteAccount({required String password}) async {
+  Future<bool> deleteAccount({String? password}) async {
     final result = await _userService.deleteAccount(password: password);
     if (result.success) {
       clearUser();

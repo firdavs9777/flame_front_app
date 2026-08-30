@@ -183,13 +183,17 @@ class UserService {
   }
 
   // Delete account
+  /// Deletes the account and its data.
+  ///
+  /// [password] is optional because a social-only signup has none — requiring
+  /// it put the account deletion Google Play mandates out of reach for every
+  /// Google user. The server enforces it for the accounts that do have one.
   Future<ServiceResult<void>> deleteAccount({
-    required String password,
+    String? password,
     String? reason,
   }) async {
-    final body = <String, dynamic>{
-      'password': password,
-    };
+    final body = <String, dynamic>{};
+    if (password != null) body['password'] = password;
     if (reason != null) body['reason'] = reason;
 
     final response = await _apiClient.delete('/users/me', body: body);
