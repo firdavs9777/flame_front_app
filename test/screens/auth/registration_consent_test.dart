@@ -66,7 +66,10 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
-    expect(find.text('1. Acceptance of Terms'), findsOneWidget);
+    // The placeholder copy ("1. Acceptance of Terms") is gone — these are the
+    // real documents now. Pin the first heading so an empty or unstyled sheet
+    // still fails, and keep it in step with docs/legal/terms.html.
+    expect(find.text('1. Who can use Flame'), findsOneWidget);
     expect(find.text('Close'), findsOneWidget);
   });
 
@@ -87,6 +90,6 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
-    expect(find.text('1. Information We Collect'), findsOneWidget);
+    expect(find.text('1. What we collect'), findsOneWidget);
   });
 }

@@ -52,8 +52,6 @@ class _LegalDocumentSheet extends StatelessWidget {
                 controller: scrollController,
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                 children: [
-                  _PlaceholderBanner(),
-                  const SizedBox(height: 16),
                   for (final s in sections) ...[
                     Text(s.heading, style: AppTypography.titleMedium),
                     const SizedBox(height: 6),
@@ -85,32 +83,6 @@ class _LegalDocumentSheet extends StatelessWidget {
   }
 }
 
-class _PlaceholderBanner extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.warningLight,
-        borderRadius: AppRadius.borderMD,
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.info_outline, size: 18, color: AppColors.warning),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Placeholder text — replace with your finalized, '
-              'counsel-approved legal copy before launch.',
-              style: AppTypography.labelMedium.copyWith(color: AppColors.gray800),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _Section {
   final String heading;
   final String body;
@@ -118,61 +90,156 @@ class _Section {
 }
 
 // ---------------------------------------------------------------------------
-// PLACEHOLDER legal copy. Structured like real documents so the UX is faithful,
-// but the wording is not legal advice — replace before launch.
+// The same documents published at flamedating.net/terms and /privacy, kept in
+// the app so they are readable during signup without leaving the flow and
+// without a network connection.
+//
+// THEY MUST STAY IN SYNC. If you change one, change the other in the same
+// commit — docs/legal/{terms,privacy}.html in this repo is the canonical copy.
+// Every factual claim here was checked against the codebase; the wording is a
+// draft pending review by counsel.
 // ---------------------------------------------------------------------------
 
-const _lorem =
-    'This section is placeholder content. Replace it with the finalized wording '
-    'provided by your legal counsel. It should clearly describe the relevant '
-    'terms in plain, accurate language for your users.';
-
 const List<_Section> _termsSections = [
-  _Section('1. Acceptance of Terms',
-      'By creating an account you agree to these Terms of Service. $_lorem'),
-  _Section('2. Eligibility',
-      'You must be at least 18 years old to use Flame. $_lorem'),
-  _Section('3. Your Account',
-      'You are responsible for the security of your account and credentials. $_lorem'),
-  _Section('4. Community Guidelines',
-      'You agree to treat other members with respect and not to harass, '
-          'impersonate, or share prohibited content. $_lorem'),
-  _Section('5. Your Content',
-      'You retain ownership of the photos and text you post, and grant Flame a '
-          'license to display them within the service. $_lorem'),
-  _Section('6. Prohibited Conduct',
-      'Spam, solicitation, illegal activity, and abuse are not permitted. $_lorem'),
-  _Section('7. Termination',
-      'We may suspend or terminate accounts that violate these terms. $_lorem'),
-  _Section('8. Disclaimers & Liability',
-      'The service is provided "as is" to the extent permitted by law. $_lorem'),
-  _Section('9. Changes to These Terms',
-      'We may update these terms and will notify you of material changes. $_lorem'),
-  _Section('10. Contact',
-      'Questions about these terms can be sent to support@flame.app. $_lorem'),
+  _Section('1. Who can use Flame',
+      'You must be at least 18, legally allowed to use a dating service where '
+          'you live, and not previously removed from Flame. One person, one '
+          'account.'),
+  _Section('2. Your account',
+      'Keep your password to yourself — anything done through your account is '
+          'treated as done by you. Tell us at support@flamedating.net if you '
+          'think someone else has access. If you sign in with Google, that '
+          'account controls access to your Flame account.'),
+  _Section('3. Your profile must be you',
+      'Use your own photos, of yourself, recent enough to be recognisable. '
+          'Your main photo must contain your face — Flame checks for one on '
+          'your device before the photo can be used. Do not impersonate anyone '
+          'or post someone else\'s pictures.'),
+  _Section('4. What is not allowed',
+      'Harassment, threats, stalking or intimidation. Hate speech. Nudity or '
+          'sexual content in photos or stories. Sexual content involving '
+          'minors, in any form — this is reported to the authorities without '
+          'exception. Asking other users for money, promoting anything, or '
+          'recruiting. Prostitution, trafficking or arranging anything '
+          'illegal. Sharing someone else\'s private information, including '
+          'screenshots of your conversations. Fake accounts, bots, scraping or '
+          'automating the app. Trying to break, overload or reverse engineer '
+          'the service.\n\n'
+          'If you see any of this, use Report inside the app. You can also '
+          'block anyone at any time — blocking is immediate and mutual.'),
+  _Section('5. What you post stays yours',
+      'Your photos and messages are yours. You give us permission to host, '
+          'copy and display them for the purpose of running Flame — showing '
+          'your profile to other users and delivering your messages — and '
+          'nothing else. That permission ends when you delete the content or '
+          'your account.'),
+  _Section('6. Translation',
+      'Translations are produced automatically and may be wrong, clumsy or '
+          'miss the tone of the original. Do not rely on one for anything that '
+          'matters. Tapping Translate sends that message\'s text to our '
+          'translation provider; the Privacy Policy explains exactly what is '
+          'sent.'),
+  _Section('7. Meeting people is your decision',
+      'We do not run background checks on anyone. Requiring a face in a photo '
+          'makes fake profiles harder; it does not make anyone safe. We do not '
+          'verify identity, criminal history, marital status, or anything '
+          'anyone tells you.\n\n'
+          'You are meeting strangers, and you do so at your own risk. Meet in '
+          'public. Tell someone where you are going. Do not send money to '
+          'anyone you have not met, whatever they tell you. If something feels '
+          'wrong, leave.'),
+  _Section('8. Payments',
+      'Flame is currently free. There are no subscriptions and no in-app '
+          'purchases. If we introduce paid features we will publish the terms '
+          'before we do.'),
+  _Section('9. Ending things',
+      'You can delete your account at any time in Settings → Delete account. '
+          'It is immediate and permanent. We may suspend or remove an account '
+          'that breaks these terms, immediately and without warning where it '
+          'puts other people at risk.'),
+  _Section('10. What we do and do not promise',
+      'We work to keep Flame running and to fix what breaks, but we do not '
+          'promise it will be uninterrupted, error free, or that you will meet '
+          'anyone. To the extent the law allows, we are not liable for what '
+          'other users do, for what happens when you meet someone, or for '
+          'indirect losses. Nothing here limits liability that cannot lawfully '
+          'be limited, and if you are a consumer your statutory rights are '
+          'unaffected.'),
+  _Section('11. Changes',
+      'We may update these terms. We will tell you in the app before anything '
+          'material takes effect. The current version is always at '
+          'flamedating.net/terms.'),
 ];
 
 const List<_Section> _privacySections = [
-  _Section('1. Information We Collect',
-      'We collect the profile details, photos, and usage data you provide. $_lorem'),
-  _Section('2. How We Use Your Data',
-      'We use your data to operate matching, messaging, and safety features. $_lorem'),
-  _Section('3. Location Data',
-      'With your permission we use approximate location to show nearby matches. $_lorem'),
-  _Section('4. Sharing',
-      'We do not sell your personal data. Limited sharing occurs with service '
-          'providers who help us run the app. $_lorem'),
-  _Section('5. Data Retention',
-      'We keep your data while your account is active and for a limited period '
-          'afterward. $_lorem'),
-  _Section('6. Your Rights',
-      'You can access, correct, export, or delete your personal data. $_lorem'),
-  _Section('7. Security',
-      'We use industry-standard measures to protect your information. $_lorem'),
-  _Section('8. Children’s Privacy',
-      'Flame is not directed to anyone under 18. $_lorem'),
-  _Section('9. Changes to This Policy',
-      'We will post updates to this policy and notify you of material changes. $_lorem'),
-  _Section('10. Contact',
-      'Privacy questions can be sent to privacy@flame.app. $_lorem'),
+  _Section('1. What we collect',
+      'What you give us: email and password (stored only as a bcrypt hash — we '
+          'cannot read yours), name, age, gender, who you want to meet, bio, '
+          'interests, photos, your precise location, and the messages, stories '
+          'and reports you send.\n\n'
+          'What we record as you use Flame: who you liked, passed on, matched '
+          'with or blocked; whether you are online and when you were last '
+          'active; your preferences and settings; and a device token for each '
+          'device, so we can send push notifications.'),
+  _Section('2. What we do not collect',
+      'Flame contains no analytics SDK, no crash-reporting SDK and no '
+          'advertising SDK. We do not track you across other apps or websites, '
+          'we do not build advertising profiles, and we do not sell your data. '
+          'There is nothing to opt out of because there is nothing running.'),
+  _Section('3. Sensitive information',
+      'Your gender and who you are looking to meet may together reveal '
+          'something about your sexual orientation, which is special category '
+          'data in the UK and EU. We process it only to run the matching Flame '
+          'exists to provide, and only because you chose to provide it. You '
+          'can change either field at any time, or delete your account.'),
+  _Section('4. Photos and face detection',
+      'Your main photo must contain a detectable human face. That check runs '
+          'entirely on your phone: the image is analysed locally and only the '
+          'result — a face was found, or was not — decides whether the photo '
+          'can be used.\n\n'
+          'We do not run face recognition, do not compute a faceprint or any '
+          'biometric identifier, and do not compare your face against any '
+          'database. Photos are not sent anywhere for this check.'),
+  _Section('5. Who else processes your data',
+      'DigitalOcean Spaces stores your photos and story media (United States). '
+          'Mailgun sends our emails. Google provides Sign in with Google and '
+          'delivers push notifications. OpenAI translates individual messages '
+          '— see the next section.'),
+  _Section('6. Message translation',
+      'This is not automatic. When, and only when, you tap Translate on a '
+          'message, the text of that one message is sent to OpenAI to be '
+          'translated and the translation is returned to you. Messages you '
+          'never translate are never sent. We do not send the sender\'s name, '
+          'your identity, or anything else about the conversation.\n\n'
+          'If you would rather no message text left our servers, do not use '
+          'the translate button.'),
+  _Section('7. Where your data is held',
+      'Flame\'s servers and database are hosted in the United States. If you '
+          'use Flame from elsewhere, your information is transferred there. We '
+          'rely on the Standard Contractual Clauses, and the UK Addendum where '
+          'it applies, for those transfers.'),
+  _Section('8. Deleting your account',
+      'Settings → Delete account. It is immediate and cannot be undone. We '
+          'erase your photos, messages and conversations, matches, every like '
+          'and pass you made and every one made about you, your stories, the '
+          'reports you filed, and every signed-in session.\n\n'
+          'Your email address is released rather than kept — we no longer hold '
+          'it, and you are free to sign up again later with the same address. '
+          'What remains is an anonymous record that the account existed, so '
+          'that conversations other people had do not break.'),
+  _Section('9. Your rights',
+      'You can ask us to give you a copy of your data, correct it, delete it, '
+          'restrict or object to how we use it, or send it to another service. '
+          'Most of this is in the app already. For anything else, write to '
+          'privacy@flamedating.net and we will respond within one month.'),
+  _Section('10. Security',
+      'Passwords are stored as bcrypt hashes. Password reset codes are stored '
+          'hashed, expire after fifteen minutes, are single use, and stop '
+          'working after five wrong attempts. Traffic is encrypted in transit. '
+          'Changing your password signs out every other device.\n\n'
+          'No service can promise perfect security and we will not pretend '
+          'otherwise. If a breach affects you we will tell you.'),
+  _Section('11. Contact',
+      'Privacy questions go to privacy@flamedating.net. The current version of '
+          'this policy is always at flamedating.net/privacy.'),
 ];

@@ -1,0 +1,28 @@
+/* Shared by privacy.html and terms.html. Deliberately plain: these pages are
+   read by users looking for a specific answer and by store reviewers checking
+   the URL resolves. */
+:root { --ink:#1a1a1a; --muted:#5b5b5b; --rule:#e4e4e4; --accent:#FF6B6B; --bg:#fff; }
+@media (prefers-color-scheme: dark) {
+  :root { --ink:#ececec; --muted:#a6a6a6; --rule:#333; --bg:#141414; }
+}
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink);
+  font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+.wrap { max-width:46rem; margin:0 auto; padding:3rem 1.25rem 5rem; }
+header { border-bottom:2px solid var(--accent); padding-bottom:1rem; margin-bottom:2rem; }
+h1 { font-size:1.9rem; margin:0 0 .35rem; letter-spacing:-.02em; }
+h2 { font-size:1.15rem; margin:2.5rem 0 .6rem; letter-spacing:-.01em; }
+h3 { font-size:1rem; margin:1.5rem 0 .4rem; }
+.meta { color:var(--muted); font-size:.9rem; margin:0; }
+.lead { font-size:1.05rem; color:var(--muted); }
+table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:.94rem; display:block; overflow-x:auto; }
+th,td { text-align:left; padding:.6rem .7rem; border-bottom:1px solid var(--rule); vertical-align:top; }
+th { font-weight:600; }
+ul { padding-left:1.2rem; }
+li { margin:.35rem 0; }
+a { color:var(--accent); }
+code { background:rgba(128,128,128,.14); padding:.1rem .35rem; border-radius:3px; font-size:.9em; }
+.callout { border-left:3px solid var(--accent); padding:.75rem 1rem; margin:1.5rem 0;
+  background:rgba(255,107,107,.07); border-radius:0 6px 6px 0; }
+footer { margin-top:3.5rem; padding-top:1.25rem; border-top:1px solid var(--rule);
+  color:var(--muted); font-size:.9rem; }
