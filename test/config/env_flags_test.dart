@@ -35,7 +35,7 @@ void main() {
 
     test('keeps notifications OFF while the app cannot send one', () {
       // No firebase_messaging dependency, no GoogleService-Info.plist or
-      // google-services.json, and registerDevice() is never called — the app
+      // google-services.json, and nothing registers a device token — the app
       // has no way to receive a push. The backend agrees: pushService no-ops
       // without FLAME_FIREBASE_PROJECT_ID. Offering settings for deliveries
       // that cannot happen is worse than offering nothing.

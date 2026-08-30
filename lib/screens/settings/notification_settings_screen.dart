@@ -57,7 +57,7 @@ class _NotificationSettingsScreenState
                     title: Text(context.l10n.notifAll),
                     subtitle: Text(context.l10n.notifAllSubtitle),
                     value: settings.enabled,
-                    activeColor: AppTheme.primaryColor,
+                    activeThumbColor: AppTheme.primaryColor,
                     onChanged: (value) => _setEnabled(context, value),
                   ),
                   const Divider(height: 1),
@@ -65,7 +65,7 @@ class _NotificationSettingsScreenState
                     title: Text(context.l10n.notifMessages),
                     subtitle: Text(context.l10n.notifMessagesSubtitle),
                     value: settings.chatMessages,
-                    activeColor: AppTheme.primaryColor,
+                    activeThumbColor: AppTheme.primaryColor,
                     onChanged: settings.enabled
                         ? (value) => _setChatMessages(context, value)
                         : null,
@@ -74,7 +74,7 @@ class _NotificationSettingsScreenState
                     title: Text(context.l10n.notifNewMatches),
                     subtitle: Text(context.l10n.notifNewMatchesSubtitle),
                     value: settings.matches,
-                    activeColor: AppTheme.primaryColor,
+                    activeThumbColor: AppTheme.primaryColor,
                     onChanged: settings.enabled
                         ? (value) => _setMatches(context, value)
                         : null,
@@ -90,7 +90,7 @@ class _NotificationSettingsScreenState
                     title: Text(context.l10n.notifReminders),
                     subtitle: Text(context.l10n.notifRemindersSubtitle),
                     value: settings.reengagement,
-                    activeColor: AppTheme.primaryColor,
+                    activeThumbColor: AppTheme.primaryColor,
                     onChanged: (value) => _setReengagement(context, value),
                   ),
                   const Divider(height: 1),
@@ -98,7 +98,7 @@ class _NotificationSettingsScreenState
                     title: Text(context.l10n.notifPromotions),
                     subtitle: Text(context.l10n.notifPromotionsSubtitle),
                     value: settings.promotions,
-                    activeColor: AppTheme.primaryColor,
+                    activeThumbColor: AppTheme.primaryColor,
                     onChanged: (value) => _setPromotions(context, value),
                   ),
                 ],

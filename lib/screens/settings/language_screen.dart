@@ -17,22 +17,27 @@ class LanguageScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.languagePickerTitle)),
-      body: ListView(
-        children: [
-          for (final locale in kSupportedLocales)
-            RadioListTile<Locale>(
-              value: locale,
-              groupValue: current,
-              onChanged: (picked) => _select(context, ref, picked),
-              title: Text(displayNameOf(locale)),
+      // The group wraps the list rather than sitting inside it: a Column of
+      // all 32 tiles would be a single ListView child, built eagerly, and the
+      // list would stop being lazy for the one screen that has 32 rows.
+      body: RadioGroup<Locale>(
+        groupValue: current,
+        onChanged: (picked) => _select(context, ref, picked),
+        child: ListView(
+          children: [
+            for (final locale in kSupportedLocales)
+              RadioListTile<Locale>(
+                value: locale,
+                title: Text(displayNameOf(locale)),
+              ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.phone_iphone),
+              title: Text(context.l10n.languageUseDevice),
+              onTap: () => _useDevice(context, ref),
             ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.phone_iphone),
-            title: Text(context.l10n.languageUseDevice),
-            onTap: () => _useDevice(context, ref),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

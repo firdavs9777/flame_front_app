@@ -219,22 +219,6 @@ class UserService {
     return ServiceResult.failure(response.error ?? 'Failed to delete account');
   }
 
-  // Register device for push notifications
-  Future<ServiceResult<void>> registerDevice({
-    required String token,
-    required String platform,
-  }) async {
-    final response = await _apiClient.post('/devices', body: {
-      'token': token,
-      'platform': platform,
-    });
-
-    if (response.success) {
-      return ServiceResult.success(null);
-    }
-
-    return ServiceResult.failure(response.error ?? 'Failed to register device');
-  }
 }
 
 // Photo model

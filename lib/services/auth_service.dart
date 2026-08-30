@@ -326,10 +326,6 @@ class AuthService {
     );
   }
 
-  // Refresh Token
-  Future<bool> refreshToken() async {
-    return await _apiClient.refreshAccessToken();
-  }
 }
 
 class AuthResult {

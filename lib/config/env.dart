@@ -62,7 +62,8 @@ class EnvConfig {
   ///
   /// OFF everywhere. The app has no push capability: there is no
   /// firebase_messaging dependency, no GoogleService-Info.plist or
-  /// google-services.json, and registerDevice() is defined but never called.
+  /// google-services.json, and nothing ever registers a device token — the
+  /// UserService.registerDevice() that used to sit unused was deleted.
   /// The backend agrees — pushService no-ops unless FLAME_FIREBASE_PROJECT_ID
   /// is set.
   ///

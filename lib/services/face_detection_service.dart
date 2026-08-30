@@ -121,11 +121,6 @@ class FaceDetectionService {
     }
   }
 
-  /// Quick check if image contains at least one face
-  Future<bool> containsFace(File imageFile) async {
-    final result = await validateFace(imageFile);
-    return result.isValid;
-  }
 
   void dispose() {
     if (_initialized) {

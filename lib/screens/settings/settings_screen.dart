@@ -101,7 +101,7 @@ class SettingsScreen extends ConsumerWidget {
 
           // Notifications section. Hidden while the app cannot actually send a
           // notification — no firebase_messaging dependency, no FCM config, and
-          // registerDevice() is never called. Tuning delivery that has no
+          // nothing that registers a device token. Tuning delivery that has no
           // delivery is worse than not offering the screen.
           if (EnvConfig.current.notificationsEnabled) ...[
             _buildSectionHeader(context, context.l10n.settingsNotifications),
@@ -162,32 +162,35 @@ class SettingsScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  RadioListTile<ThemeMode>(
-                    value: ThemeMode.system,
+                  RadioGroup<ThemeMode>(
                     groupValue: settings.themeMode,
                     onChanged: _onThemeModeChanged(ref),
-                    title: Text(context.l10n.themeSystem),
-                    secondary: const Icon(Icons.brightness_auto_outlined),
-                    activeColor: AppTheme.primaryColor,
-                    dense: true,
-                  ),
-                  RadioListTile<ThemeMode>(
-                    value: ThemeMode.light,
-                    groupValue: settings.themeMode,
-                    onChanged: _onThemeModeChanged(ref),
-                    title: Text(context.l10n.themeLight),
-                    secondary: const Icon(Icons.light_mode_outlined),
-                    activeColor: AppTheme.primaryColor,
-                    dense: true,
-                  ),
-                  RadioListTile<ThemeMode>(
-                    value: ThemeMode.dark,
-                    groupValue: settings.themeMode,
-                    onChanged: _onThemeModeChanged(ref),
-                    title: Text(context.l10n.themeDark),
-                    secondary: const Icon(Icons.dark_mode_outlined),
-                    activeColor: AppTheme.primaryColor,
-                    dense: true,
+                    child: Column(
+                      children: [
+                        RadioListTile<ThemeMode>(
+                          value: ThemeMode.system,
+                          title: Text(context.l10n.themeSystem),
+                          secondary:
+                              const Icon(Icons.brightness_auto_outlined),
+                          activeColor: AppTheme.primaryColor,
+                          dense: true,
+                        ),
+                        RadioListTile<ThemeMode>(
+                          value: ThemeMode.light,
+                          title: Text(context.l10n.themeLight),
+                          secondary: const Icon(Icons.light_mode_outlined),
+                          activeColor: AppTheme.primaryColor,
+                          dense: true,
+                        ),
+                        RadioListTile<ThemeMode>(
+                          value: ThemeMode.dark,
+                          title: Text(context.l10n.themeDark),
+                          secondary: const Icon(Icons.dark_mode_outlined),
+                          activeColor: AppTheme.primaryColor,
+                          dense: true,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -376,7 +379,7 @@ class SettingsScreen extends ConsumerWidget {
       title: Text(title),
       subtitle: Text(subtitle),
       value: value,
-      activeColor: AppTheme.primaryColor,
+      activeThumbColor: AppTheme.primaryColor,
       onChanged: onChanged,
     );
   }
