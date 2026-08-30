@@ -12,6 +12,7 @@ Map<String, dynamic> buildUpdateProfileBody({
   Gender? gender,
   int? age,
   bool? termsAccepted,
+  bool? profileComplete,
 }) {
   final body = <String, dynamic>{};
   if (name != null) body['name'] = name;
@@ -27,6 +28,9 @@ Map<String, dynamic> buildUpdateProfileBody({
   // PATCH is the first request after the gate. Only ever sent as true — there
   // is no such thing as withdrawing consent by editing a bio.
   if (termsAccepted == true) body['termsAccepted'] = true;
+  // Only ever true. Nothing should be able to un-complete a profile by editing
+  // a bio, so false is silence rather than profileComplete: false.
+  if (profileComplete == true) body['profileComplete'] = true;
   return body;
 }
 
@@ -66,11 +70,13 @@ class UserService {
     Gender? gender,
     int? age,
     bool? termsAccepted,
+    bool? profileComplete,
   }) async {
     final body = buildUpdateProfileBody(
       name: name,
       bio: bio,
       termsAccepted: termsAccepted,
+      profileComplete: profileComplete,
       interests: interests,
       lookingFor: lookingFor,
       gender: gender,

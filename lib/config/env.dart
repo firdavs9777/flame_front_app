@@ -58,6 +58,20 @@ class EnvConfig {
   /// either affordance until that changes.
   final bool chatEnabled;
 
+  /// Whether to offer notification settings at all.
+  ///
+  /// OFF everywhere. The app has no push capability: there is no
+  /// firebase_messaging dependency, no GoogleService-Info.plist or
+  /// google-services.json, and registerDevice() is defined but never called.
+  /// The backend agrees — pushService no-ops unless FLAME_FIREBASE_PROJECT_ID
+  /// is set.
+  ///
+  /// So the settings screen was letting people tune notifications that cannot
+  /// arrive. Hiding it is not a downgrade; a control that promises something
+  /// the app cannot do is worse than no control. Flip this back on in the same
+  /// commit that adds FCM.
+  final bool notificationsEnabled;
+
 
   const EnvConfig._(
     this.env,
@@ -69,6 +83,7 @@ class EnvConfig {
     this.facebookSignInEnabled = false,
     this.forgotPasswordEnabled = false,
     this.chatEnabled = false,
+    this.notificationsEnabled = false,
   });
 
   /// Test-only seam for exercising flag combinations that no real environment
@@ -82,6 +97,7 @@ class EnvConfig {
        apiBase = '',
        wsBase = '',
        realtimeEnabled = false,
+       notificationsEnabled = false,
        forgotPasswordEnabled = false,
        chatEnabled = false;
 
@@ -107,6 +123,9 @@ class EnvConfig {
     facebookSignInEnabled: true,
     forgotPasswordEnabled: true,
     chatEnabled: true,
+    // No FCM in the app and no FLAME_FIREBASE_PROJECT_ID on the server, so
+    // there is nothing to configure yet.
+    notificationsEnabled: false,
   );
 
   static const _prod = EnvConfig._(
@@ -132,6 +151,9 @@ class EnvConfig {
     // FLAME_FACEBOOK_APP_ID / _SECRET, so the button would dead-end.
     facebookSignInEnabled: false,
     forgotPasswordEnabled: true,
+    // See the field doc: the app has no push capability at all, so the
+    // settings screen was offering to tune deliveries that cannot happen.
+    notificationsEnabled: false,
   );
 
   /// The two shipped presets, exposed so tests can assert each one's flags

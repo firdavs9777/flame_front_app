@@ -33,6 +33,16 @@ void main() {
       expect(EnvConfig.prodConfig.appleSignInEnabled, isTrue);
     });
 
+    test('keeps notifications OFF while the app cannot send one', () {
+      // No firebase_messaging dependency, no GoogleService-Info.plist or
+      // google-services.json, and registerDevice() is never called — the app
+      // has no way to receive a push. The backend agrees: pushService no-ops
+      // without FLAME_FIREBASE_PROJECT_ID. Offering settings for deliveries
+      // that cannot happen is worse than offering nothing.
+      expect(EnvConfig.prodConfig.notificationsEnabled, isFalse);
+      expect(EnvConfig.localConfig.notificationsEnabled, isFalse);
+    });
+
     test('keeps Facebook OFF so no user hits a dead button', () {
       // Placeholder native keys, and the backend has no FLAME_FACEBOOK_APP_ID
       // or _SECRET — the button would authenticate and then fail at the server.

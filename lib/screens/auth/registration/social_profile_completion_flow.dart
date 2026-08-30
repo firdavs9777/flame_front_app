@@ -131,6 +131,11 @@ class _SocialProfileCompletionFlowState
         // completes. Sent from the notifier rather than hardcoded so the record
         // reflects what the user actually did.
         termsAccepted: _accepted.value,
+        // Tells the server the wizard is finished, so is_profile_complete flips
+        // and the next session restore does not send them back here. Sent with
+        // the PATCH rather than after the photo/location steps because those are
+        // best-effort — the PATCH is the only one whose failure aborts the flow.
+        profileComplete: true,
       );
       if (!mounted) return;
 

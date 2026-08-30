@@ -98,20 +98,25 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
-          // Notifications section
-          _buildSectionHeader(context, context.l10n.settingsNotifications),
-          _buildListTile(
-            context: context,
-            icon: Icons.notifications_outlined,
-            title: context.l10n.settingsNotifications,
-            subtitle: context.l10n.settingsNotificationsSubtitle,
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                AppRoutes.notificationSettings,
-              );
-            },
-          ),
+          // Notifications section. Hidden while the app cannot actually send a
+          // notification — no firebase_messaging dependency, no FCM config, and
+          // registerDevice() is never called. Tuning delivery that has no
+          // delivery is worse than not offering the screen.
+          if (EnvConfig.current.notificationsEnabled) ...[
+            _buildSectionHeader(context, context.l10n.settingsNotifications),
+            _buildListTile(
+              context: context,
+              icon: Icons.notifications_outlined,
+              title: context.l10n.settingsNotifications,
+              subtitle: context.l10n.settingsNotificationsSubtitle,
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.notificationSettings,
+                );
+              },
+            ),
+          ],
 
           // Language entry
           ListTile(
