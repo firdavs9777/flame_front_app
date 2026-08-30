@@ -5,16 +5,21 @@ class ReportService {
   final ApiClient _apiClient = ApiClient();
 
   // Report user
+  /// Reports [userId]. Pass [messageId] to report one message rather than the
+  /// person — a moderator can act on "harassment" far faster with the offending
+  /// message attached than with an account id alone.
   Future<ServiceResult<void>> reportUser({
     required String userId,
     required ReportReason reason,
     String? details,
+    String? messageId,
   }) async {
     final body = <String, dynamic>{
       'user_id': userId,
       'reason': reason.toApiString(),
     };
     if (details != null) body['details'] = details;
+    if (messageId != null) body['message_id'] = messageId;
 
     final response = await _apiClient.post('/reports', body: body);
 
@@ -90,22 +95,9 @@ enum ReportReason {
     }
   }
 
-  String get displayName {
-    switch (this) {
-      case ReportReason.inappropriateContent:
-        return 'Inappropriate Content';
-      case ReportReason.fakeProfile:
-        return 'Fake Profile';
-      case ReportReason.harassment:
-        return 'Harassment';
-      case ReportReason.spam:
-        return 'Spam';
-      case ReportReason.underage:
-        return 'Underage';
-      case ReportReason.other:
-        return 'Other';
-    }
-  }
+  // No displayName here on purpose: a service-layer enum has no BuildContext,
+  // and an English getter is what kept this flow untranslated. The label comes
+  // from reportReasonLabel() in widgets/report_block_menu.dart.
 }
 
 class BlockedUser {

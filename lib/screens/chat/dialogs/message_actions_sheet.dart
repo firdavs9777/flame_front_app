@@ -22,6 +22,7 @@ void showMessageActions({
   required bool isPinned,
   required VoidCallback onTogglePin,
   required VoidCallback onReply,
+  required VoidCallback onReport,
 }) {
   // Edit and delete are offered only on the current user's own, not-yet-deleted
   // messages.
@@ -70,6 +71,14 @@ void showMessageActions({
               );
             }
           : null,
+      // You cannot report yourself, and a deleted message has no content left
+      // to moderate.
+      onReport: isOwn || message.isDeleted
+          ? null
+          : () {
+              Navigator.pop(sheetContext);
+              onReport();
+            },
     ),
   );
 }
@@ -81,6 +90,10 @@ class MessageActionsSheet extends StatelessWidget {
   // their presence gates whether the Edit/Delete rows are shown at all.
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+
+  /// Non-null only for someone else's live message. Apple's UGC rules expect
+  /// the offending content to be reportable, not just its author.
+  final VoidCallback? onReport;
 
   /// Pin state and toggle. Pinning is per-user, so this reflects whether the
   /// CALLER has pinned it, not whether anyone has.
@@ -95,6 +108,7 @@ class MessageActionsSheet extends StatelessWidget {
     required this.onTogglePin,
     this.onEdit,
     this.onDelete,
+    this.onReport,
   });
 
   @override
@@ -146,6 +160,13 @@ class MessageActionsSheet extends StatelessWidget {
               title: Text(context.l10n.chatDelete,
                   style: TextStyle(color: AppTheme.errorColor)),
               onTap: onDelete,
+            ),
+          if (onReport != null)
+            ListTile(
+              leading: Icon(Icons.flag_outlined, color: AppTheme.errorColor),
+              title: Text(context.l10n.safetyReportMessage,
+                  style: TextStyle(color: AppTheme.errorColor)),
+              onTap: onReport,
             ),
           const SizedBox(height: 8),
         ],

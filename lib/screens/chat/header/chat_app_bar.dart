@@ -17,6 +17,8 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.isMuted,
     required this.onToggleMute,
     required this.onOpenProfile,
+    required this.onReport,
+    required this.onBlock,
   });
 
   final User otherUser;
@@ -24,6 +26,12 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool isMuted;
   final VoidCallback onToggleMute;
   final VoidCallback onOpenProfile;
+
+  /// Reporting and blocking have to be reachable from the conversation itself.
+  /// They lived only behind the partner's profile screen, which is two taps
+  /// away and the last place someone looks when a chat turns abusive.
+  final VoidCallback onReport;
+  final VoidCallback onBlock;
 
   static const double _avatarDiameter = 40;
 
@@ -111,6 +119,10 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                 onToggleMute();
               case 'profile':
                 onOpenProfile();
+              case 'report':
+                onReport();
+              case 'block':
+                onBlock();
             }
           },
           itemBuilder: (context) => [
@@ -146,6 +158,38 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   Flexible(
                     child: Text(
                       context.l10n.chatViewProfile,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const PopupMenuDivider(),
+            PopupMenuItem(
+              value: 'report',
+              child: Row(
+                children: [
+                  const Icon(Icons.flag_outlined),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Text(
+                      context.l10n.safetyReport,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'block',
+              child: Row(
+                children: [
+                  Icon(Icons.block, color: AppTheme.errorColor),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Text(
+                      context.l10n.safetyBlock,
+                      style: TextStyle(color: AppTheme.errorColor),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

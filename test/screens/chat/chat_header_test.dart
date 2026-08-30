@@ -17,6 +17,8 @@ User _user({bool online = false}) => User.fromJson({
 
 var muteTaps = 0;
 var profileTaps = 0;
+var reportTaps = 0;
+var blockTaps = 0;
 
 Widget _appBarHost(
   ThreadPresenceState presence, {
@@ -34,6 +36,8 @@ Widget _appBarHost(
           isMuted: isMuted,
           onToggleMute: () => muteTaps++,
           onOpenProfile: () => profileTaps++,
+          onReport: () => reportTaps++,
+          onBlock: () => blockTaps++,
         ),
       ),
     );
@@ -45,9 +49,51 @@ void main() {
   setUp(() {
     muteTaps = 0;
     profileTaps = 0;
+    reportTaps = 0;
+    blockTaps = 0;
   });
 
   group('ChatAppBar', () {
+    // Reporting and blocking used to live only behind the partner's profile,
+    // two taps from the conversation where the problem is actually happening.
+    // Apple's UGC rules expect both from the messaging surface itself.
+    testWidgets('the overflow menu offers Report and Block', (tester) async {
+      await tester.pumpWidget(_appBarHost(_idle));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Report'), findsOneWidget);
+      expect(find.text('Block'), findsOneWidget);
+    });
+
+    testWidgets('Report fires its callback', (tester) async {
+      await tester.pumpWidget(_appBarHost(_idle));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Report'));
+      await tester.pumpAndSettle();
+
+      expect(reportTaps, 1);
+      expect(blockTaps, 0);
+    });
+
+    testWidgets('Block fires its callback', (tester) async {
+      await tester.pumpWidget(_appBarHost(_idle));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Block'));
+      await tester.pumpAndSettle();
+
+      expect(blockTaps, 1);
+      expect(reportTaps, 0);
+    });
+
     testWidgets('shows the partner name', (tester) async {
       await tester.pumpWidget(_appBarHost(_idle));
       await tester.pumpAndSettle();

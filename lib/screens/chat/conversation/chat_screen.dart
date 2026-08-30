@@ -22,6 +22,7 @@ import 'package:flame/screens/chat/voice_recording.dart';
 import 'package:flame/screens/chat/widgets/chat_snackbar.dart';
 import 'package:flame/screens/chat/widgets/widgets.dart';
 import 'package:flame/services/chat_service.dart' show PinnedMessage;
+import 'package:flame/widgets/report_block_menu.dart';
 
 /// One open conversation.
 ///
@@ -155,6 +156,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         isMuted: _isMuted,
         onToggleMute: _toggleMute,
         onOpenProfile: _openProfile,
+        onReport: _reportPartner,
+        onBlock: _blockPartner,
       ),
       body: Column(
         children: [
@@ -326,7 +329,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ? _unpin(message.id)
           : _pin(message),
       onReply: () => _setReplyingTo(message),
+      onReport: () => showReportSheet(
+        context,
+        ref,
+        userId: _otherUser.id,
+        messageId: message.id,
+      ),
     );
+  }
+
+  Future<void> _reportPartner() =>
+      showReportSheet(context, ref, userId: _otherUser.id);
+
+  /// Blocking ends the conversation, so the screen it happened on is about
+  /// someone the user can no longer see. Leave it rather than sit on a dead
+  /// thread.
+  Future<void> _blockPartner() async {
+    final blocked = await confirmAndBlock(
+      context,
+      ref,
+      userId: _otherUser.id,
+      userName: _otherUser.name,
+    );
+    if (blocked && mounted) Navigator.of(context).pop();
   }
 
   // ==================== Voice ====================
