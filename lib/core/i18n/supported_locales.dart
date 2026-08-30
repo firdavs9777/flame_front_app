@@ -5,6 +5,9 @@ import 'package:flutter/widgets.dart';
 const List<Locale> kSupportedLocales = [
   Locale('en'),
   Locale('es'),
+  // European Portuguese. app_pt.arb shipped from the start but was never listed
+  // here, so it could not be reached and every Portugal user read Brazilian.
+  Locale('pt'),
   Locale('pt', 'BR'),
   Locale('fr'),
   Locale('de'),
@@ -24,6 +27,8 @@ String displayNameOf(Locale locale) {
       return 'English';
     case 'es':
       return 'Español';
+    case 'pt':
+      return 'Português (Portugal)';
     case 'pt-BR':
       return 'Português (Brasil)';
     case 'fr':

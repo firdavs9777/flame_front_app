@@ -77,7 +77,7 @@ class SaveButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Align(
-      alignment: Alignment.centerRight,
+      alignment: AlignmentDirectional.centerEnd,
       child: ElevatedButton(
         key: buttonKey,
         onPressed: isSaving ? null : onPressed,

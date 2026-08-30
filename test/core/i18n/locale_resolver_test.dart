@@ -53,13 +53,17 @@ void main() {
     expect(result, const Locale('pt', 'BR'));
   });
 
-  test('pt_PT device locale falls back to pt_BR (only Portuguese we have)', () {
+  // Was 'falls back to pt_BR (only Portuguese we have)'. That premise was
+  // wrong: app_pt.arb — European Portuguese — shipped from the start but was
+  // missing from kSupportedLocales, so it could not be reached and Portugal
+  // read Brazilian wording. Listing it fixed the resolution, not this test.
+  test('pt_PT device locale resolves to European Portuguese', () {
     final result = resolveLocale(
       saved: null,
       deviceLocales: [const Locale('pt', 'PT')],
       supported: kSupportedLocales,
     );
-    expect(result, const Locale('pt', 'BR'));
+    expect(result, const Locale('pt'));
   });
 
   test('unsupported language falls back to English', () {

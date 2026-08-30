@@ -165,7 +165,7 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
             ],
           ),
           Align(
-            alignment: Alignment.centerLeft,
+            alignment: AlignmentDirectional.centerStart,
             child: TextButton(
               onPressed: () => Navigator.of(context)
                   .pushReplacementNamed(AppRoutes.login),
