@@ -47,6 +47,12 @@ class User {
   // returned the field (e.g., during the deploy window or for old API
   // versions) — callers should fall back to a local heuristic in that case.
   final bool? isProfileComplete;
+  /// Whether this account can be asked to confirm with a password.
+  ///
+  /// False for a social-only signup, which has none — the delete-account
+  /// dialog must not demand one there. Self-view payloads only; defaults to
+  /// true when the backend omits it, so a password account keeps its prompt.
+  final bool hasPassword;
   // BCP 47 short form (e.g. "en", "es", "pt-BR"). Null when the user hasn't
   // explicitly picked a language in app settings.
   /// Which language the server will EMAIL this user in.
@@ -84,6 +90,7 @@ class User {
     this.premiumExpiresAt,
     this.superLikesRemaining = 3,
     this.isProfileComplete,
+    this.hasPassword = true,
     this.locale,
   });
 
@@ -198,6 +205,8 @@ class User {
               : null,
       superLikesRemaining: json['super_likes_remaining'] ?? 3,
       isProfileComplete: json['is_profile_complete'] as bool?,
+      hasPassword:
+          (json['has_password'] ?? json['hasPassword'] ?? true) as bool,
       locale: json['locale'] as String?,
     );
   }
@@ -259,6 +268,7 @@ class User {
     DateTime? premiumExpiresAt,
     int? superLikesRemaining,
     bool? isProfileComplete,
+    bool? hasPassword,
     String? locale,
   }) {
     return User(
@@ -289,6 +299,7 @@ class User {
       premiumExpiresAt: premiumExpiresAt ?? this.premiumExpiresAt,
       superLikesRemaining: superLikesRemaining ?? this.superLikesRemaining,
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
+      hasPassword: hasPassword ?? this.hasPassword,
       locale: locale ?? this.locale,
     );
   }

@@ -9,7 +9,7 @@ class _FakeUserService extends UserService {
 
   @override
   Future<ServiceResult<void>> deleteAccount({
-    required String password,
+    String? password,
     String? reason,
   }) async {
     deletedPassword = password;
