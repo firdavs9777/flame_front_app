@@ -54,6 +54,9 @@ Future<List<PinnedMessage>> handlePin({
       await ref.read(chatServiceProvider).pinMessage(conversationId, messageId);
   if (result.success) return result.data ?? const [];
 
+  // The thread can close while the request is in flight. Reporting the failure
+  // through a dead context is not a smaller bug than the failure itself.
+  if (!context.mounted) return current;
   showChatSnackBar(context,
       message: context.l10n.chatPinFailed, type: ChatSnackBarType.error);
   return current;
@@ -75,6 +78,7 @@ Future<List<PinnedMessage>> handleUnpin({
     return current.where((p) => p.messageId != messageId).toList();
   }
 
+  if (!context.mounted) return current;
   showChatSnackBar(context,
       message: context.l10n.chatUnpinFailed, type: ChatSnackBarType.error);
   return current;
@@ -95,6 +99,7 @@ Future<bool> handleToggleMute({
 
   if (result.success) return !wasMuted;
 
+  if (!context.mounted) return wasMuted;
   showChatSnackBar(context,
       message: context.l10n.chatMuteFailed, type: ChatSnackBarType.error);
   return wasMuted;

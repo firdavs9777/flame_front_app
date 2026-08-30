@@ -501,18 +501,27 @@ class _StepPhotosState extends State<StepPhotos> {
         return;
       }
 
-      // Face detected successfully
+      // A skipped check is NOT a pass. validateFace returns isValid: true when
+      // ML Kit could not run at all, so this branch covers both "a face was
+      // found" and "we could not look" — and telling the second group their
+      // face was verified is a claim the app has not earned, while the photos
+      // step and the privacy policy both promise we check.
+      final verified = !result.faceDetectionSkipped;
+
       if (!mounted) return;
       setState(() {
-        _photos[index] = PhotoData(
-          file: file,
-          faceVerified: true,
-        );
+        _photos[index] = PhotoData(file: file, faceVerified: verified);
         _isProcessing = false;
         _processingIndex = null;
       });
 
-      showAuthSnackBar(context, message: context.l10n.registerFaceVerifiedSuccess);
+      // Silence when we could not check. The photo appearing in its slot is
+      // its own confirmation, and it beats inventing a claim — or a string in
+      // 26 more locales — to describe having done nothing.
+      if (verified) {
+        showAuthSnackBar(context,
+            message: context.l10n.registerFaceVerifiedSuccess);
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -544,9 +553,13 @@ class _StepPhotosState extends State<StepPhotos> {
       return;
     }
 
-    // Check if at least the main photo has face verification
+    // Only that a main photo exists. A photo whose face check FAILED never
+    // reaches this list — _processPhoto refuses it at the point of picking —
+    // so the only photos here either passed or could not be checked, and
+    // someone whose device cannot run ML Kit must not be locked out of
+    // registering by a requirement they have no way to satisfy.
     final mainPhoto = _photos[0];
-    if (mainPhoto == null || !mainPhoto.faceVerified) {
+    if (mainPhoto == null) {
       showAuthSnackBar(
         context,
         message: context.l10n.registerMainPhotoFaceRequired,
@@ -568,6 +581,9 @@ class _StepPhotosState extends State<StepPhotos> {
 class PhotoData {
   final File? file;
   final String? url;
+  /// A face was actually detected. False when ML Kit could not run at all,
+  /// which is not the same as failing — a photo that fails the check never
+  /// reaches this list.
   final bool faceVerified;
 
   PhotoData({

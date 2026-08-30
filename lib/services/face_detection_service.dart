@@ -100,7 +100,12 @@ class FaceDetectionService {
       );
     } catch (e) {
       // ML Kit unavailable on this device/simulator — fail open so registration
-      // can proceed. Real validation will happen server-side.
+      // can proceed.
+      //
+      // There is NO server-side face validation to fall back on; the Flame
+      // backend has none. So this path accepts a photo nobody has looked at.
+      // The caller must not report it as verified — the photos step and the
+      // privacy policy both tell the user we check.
       if (e is PlatformException) {
         return FaceValidationResult(
           isValid: true,

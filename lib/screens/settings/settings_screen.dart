@@ -349,13 +349,14 @@ class SettingsScreen extends ConsumerWidget {
     bool value,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
+    // Read the string before the await, for the same reason the messenger is:
+    // context may belong to a disposed element by the time this resolves.
+    final failed = context.l10n.settingsSaveFailed;
     final ok = await ref
         .read(currentUserProvider.notifier)
         .updatePreferences(showOnlineStatus: value);
     if (!ok) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(context.l10n.settingsSaveFailed)),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(failed)));
     }
   }
 
@@ -451,13 +452,13 @@ class SettingsScreen extends ConsumerWidget {
               // social one there is nothing to type and nothing to wait for.
               if (hasPassword && password.isEmpty) return;
               Navigator.pop(dialogContext);
+              final deleted = context.l10n.settingsAccountDeleted;
+              final deleteFailed = context.l10n.settingsAccountDeleteFailed;
               final failure = await ref
                   .read(currentUserProvider.notifier)
                   .deleteAccount(password: hasPassword ? password : null);
               if (failure == null) {
-                messenger.showSnackBar(
-                  SnackBar(content: Text(context.l10n.settingsAccountDeleted)),
-                );
+                messenger.showSnackBar(SnackBar(content: Text(deleted)));
                 await ref.read(authProvider.notifier).logout();
               } else {
                 messenger.showSnackBar(
@@ -466,9 +467,7 @@ class SettingsScreen extends ConsumerWidget {
                     // mentions a password, which is misleading for a social
                     // account and told nobody anything when deletion failed
                     // for some other reason entirely.
-                    content: Text(failure.isEmpty
-                        ? context.l10n.settingsAccountDeleteFailed
-                        : failure),
+                    content: Text(failure.isEmpty ? deleteFailed : failure),
                   ),
                 );
               }
@@ -552,6 +551,11 @@ class SettingsScreen extends ConsumerWidget {
                 );
                 return;
               }
+              // Resolved BEFORE the pop: afterwards this context is on its way
+              // out, and ScaffoldMessenger.of() would be looking up a tree the
+              // dialog no longer belongs to.
+              final pwMessenger = ScaffoldMessenger.of(context);
+              final changed = context.l10n.settingsPasswordChanged;
               Navigator.pop(context);
               final success = await ref
                   .read(authProvider.notifier)
@@ -560,11 +564,7 @@ class SettingsScreen extends ConsumerWidget {
                     newPassword: newPasswordController.text,
                   );
               if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(context.l10n.settingsPasswordChanged),
-                  ),
-                );
+                pwMessenger.showSnackBar(SnackBar(content: Text(changed)));
               }
             },
             child: Text(
