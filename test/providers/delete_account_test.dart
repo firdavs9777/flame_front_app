@@ -29,20 +29,23 @@ void main() {
     final fake = _FakeUserService();
     final n = CurrentUserNotifier(fake)..setUser(_user());
 
-    final ok = await n.deleteAccount(password: 'secret');
+    final failure = await n.deleteAccount(password: 'secret');
 
-    expect(ok, isTrue);
+    expect(failure, isNull, reason: 'null means it worked');
     expect(fake.deletedPassword, 'secret');
     expect(n.state.value, isNull); // user cleared
   });
 
-  test('deleteAccount failure returns false and keeps the user', () async {
+  test('deleteAccount hands back the reason and keeps the user', () async {
     final fake = _FakeUserService()..succeed = false;
     final n = CurrentUserNotifier(fake)..setUser(_user());
 
-    final ok = await n.deleteAccount(password: 'wrong');
+    final failure = await n.deleteAccount(password: 'wrong');
 
-    expect(ok, isFalse);
+    // Was a bare bool, so the dialog could only say "Could not delete account.
+    // Check your password." — wrong advice for a social account, which has no
+    // password, and it hid whatever the server actually said.
+    expect(failure, isNotNull);
     expect(n.state.value, isNotNull); // user unchanged
   });
 }

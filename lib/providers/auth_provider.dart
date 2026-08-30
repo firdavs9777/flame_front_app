@@ -44,10 +44,15 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
-  final AuthService _authService = AuthService();
+  final AuthService _authService;
   final BillingService _billingService = BillingService();
 
-  AuthNotifier() : super(const AuthState()) {
+  /// [authService] is a test seam. Production calls this with no arguments and
+  /// gets the real one; a test can hand in a service that fails, which is the
+  /// only way to pin that logout signs out anyway.
+  AuthNotifier({AuthService? authService})
+      : _authService = authService ?? AuthService(),
+        super(const AuthState()) {
     // Wire the ApiClient's session-lost signal so refresh-failure / revoked
     // tokens / server-side logouts immediately flip the app to the login
     // screen without waiting for the next user action.
@@ -281,7 +286,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   // Logout
   Future<void> logout() async {
-    await _authService.logout();
+    // The state change is what actually signs someone out — routing watches it.
+    // Awaiting a network call before it meant a throw left the user logged in
+    // with the dialog already dismissed, which reads as a dead button.
+    try {
+      await _authService.logout();
+    } catch (_) {
+      // ignored on purpose: see AuthService.logout
+    }
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 

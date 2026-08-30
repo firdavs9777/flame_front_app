@@ -170,12 +170,18 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
   /// Deletes the account via the API. On success clears the local user; the
   /// caller is responsible for logging out / routing away. Returns false on
   /// failure (e.g. wrong password) with state unchanged.
-  Future<bool> deleteAccount({String? password}) async {
+  /// Deletes the account. Returns null on success, or the server's reason.
+  ///
+  /// Was a bare bool, so every failure surfaced as "Could not delete account.
+  /// Check your password." — advice that is actively wrong for a social
+  /// account, which has no password, and which hid whatever the server
+  /// actually said.
+  Future<String?> deleteAccount({String? password}) async {
     final result = await _userService.deleteAccount(password: password);
     if (result.success) {
       clearUser();
-      return true;
+      return null;
     }
-    return false;
+    return result.error ?? '';
   }
 }

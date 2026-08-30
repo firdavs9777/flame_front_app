@@ -451,10 +451,10 @@ class SettingsScreen extends ConsumerWidget {
               // social one there is nothing to type and nothing to wait for.
               if (hasPassword && password.isEmpty) return;
               Navigator.pop(dialogContext);
-              final ok = await ref
+              final failure = await ref
                   .read(currentUserProvider.notifier)
                   .deleteAccount(password: hasPassword ? password : null);
-              if (ok) {
+              if (failure == null) {
                 messenger.showSnackBar(
                   SnackBar(content: Text(context.l10n.settingsAccountDeleted)),
                 );
@@ -462,7 +462,13 @@ class SettingsScreen extends ConsumerWidget {
               } else {
                 messenger.showSnackBar(
                   SnackBar(
-                    content: Text(context.l10n.settingsAccountDeleteFailed),
+                    // The server's reason when it gave one. The canned line
+                    // mentions a password, which is misleading for a social
+                    // account and told nobody anything when deletion failed
+                    // for some other reason entirely.
+                    content: Text(failure.isEmpty
+                        ? context.l10n.settingsAccountDeleteFailed
+                        : failure),
                   ),
                 );
               }

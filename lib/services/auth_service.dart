@@ -117,7 +117,15 @@ class AuthService {
 
   // Logout
   Future<void> logout() async {
-    await _apiClient.post('/auth/logout');
+    // Revoking server-side is desirable; staying signed in is not. Anything
+    // that escapes here — offline, a timeout, an auth-lost unwind — used to
+    // skip clearTokens() below and leave the user exactly where they were
+    // after tapping Log out.
+    try {
+      await _apiClient.post('/auth/logout');
+    } catch (_) {
+      // best-effort: the refresh tokens expire on their own
+    }
     await _apiClient.clearTokens();
   }
 
