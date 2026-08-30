@@ -10,16 +10,52 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('defaults to ThemeMode.system', () {
+  test('defaults to dark', () {
+    // A deliberate look, not a deference to the OS: the palette and the deck
+    // were built dark-first, and following the system meant half the users
+    // never saw the app the way it was designed.
     final notifier = SettingsNotifier();
+    expect(notifier.state.themeMode, ThemeMode.dark);
+  });
+
+  test('an explicit System choice survives the change of default', () async {
+    // 'never chose' and 'chose System' used to collapse into the same branch.
+    // They are different answers, and only one of them may be overridden.
+    SharedPreferences.setMockInitialValues({'theme_mode': 'system'});
+
+    final notifier = SettingsNotifier();
+    await Future<void>.delayed(Duration.zero);
+
     expect(notifier.state.themeMode, ThemeMode.system);
+  });
+
+  test('an unrecognised stored value falls back to the default', () async {
+    SharedPreferences.setMockInitialValues({'theme_mode': 'chartreuse'});
+
+    final notifier = SettingsNotifier();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(notifier.state.themeMode, ThemeMode.dark);
   });
 
   test('setThemeMode updates state and persists the choice', () async {
     final notifier = SettingsNotifier();
 
-    await notifier.setThemeMode(ThemeMode.dark);
+    await notifier.setThemeMode(ThemeMode.light);
+    expect(notifier.state.themeMode, ThemeMode.light);
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('theme_mode'), 'light');
+  });
+
+  test('choosing the mode already on screen is still recorded', () async {
+    // Dark is the default, so tapping Dark is a no-op on state — but it is the
+    // moment "we chose this for them" becomes "they chose it", and a later
+    // change of default must not overrule it.
+    final notifier = SettingsNotifier();
     expect(notifier.state.themeMode, ThemeMode.dark);
+
+    await notifier.setThemeMode(ThemeMode.dark);
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('theme_mode'), 'dark');

@@ -52,16 +52,17 @@ void main() {
     ));
     await tester.pump();
 
-    expect(ref.read(settingsProvider).themeMode, ThemeMode.system);
+    expect(ref.read(settingsProvider).themeMode, ThemeMode.dark,
+        reason: 'dark is the default now');
 
     // The Appearance card is below the fold on a test-sized surface.
-    await tester.scrollUntilVisible(find.text('Dark'), 200);
-    await tester.tap(find.text('Dark'));
+    await tester.scrollUntilVisible(find.text('Light'), 200);
+    await tester.tap(find.text('Light'));
     await tester.pumpAndSettle();
 
     expect(
       ref.read(settingsProvider).themeMode,
-      ThemeMode.dark,
+      ThemeMode.light,
       reason: 'the RadioGroup ancestor must carry onChanged now that the '
           'tiles no longer do',
     );
@@ -77,6 +78,12 @@ void main() {
     );
     // groupValue lives on the ancestor now; the tile only knows its own value.
     expect(tile.value, ThemeMode.system);
+    expect(
+      tester.widget<RadioGroup<ThemeMode>>(find.byType(RadioGroup<ThemeMode>))
+          .groupValue,
+      ThemeMode.dark,
+      reason: 'the ancestor carries the selection, and it starts on dark',
+    );
   });
 
   testWidgets('tapping a language still changes the locale', (tester) async {
