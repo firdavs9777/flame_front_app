@@ -1,36 +1,74 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 
+/// Holds the brand screen until the app knows who the user is.
+///
+/// It used to hold for a flat 2500ms and then show [child] whatever state the
+/// session restore was in. That produced both halves of the same complaint: a
+/// returning user whose session restored in 200ms still waited two and a half
+/// seconds, and a user whose restore took longer than that got dropped on the
+/// welcome screen for a moment before being yanked to the main tabs — because
+/// `AuthStatus.initial` is neither authenticated nor profile-incomplete, so
+/// the router's ternary fell through to "signed out".
 class SplashScreen extends StatefulWidget {
   final Widget child;
-  const SplashScreen({super.key, required this.child});
+
+  /// Whether the session has been resolved — signed in or not, either is an
+  /// answer. False means the app does not yet know, and showing [child] would
+  /// be showing a guess.
+  final bool ready;
+
+  const SplashScreen({super.key, required this.child, this.ready = true});
+
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  bool _showSplash = true;
+  /// Long enough that the brand does not flash past on a warm start, short
+  /// enough that nobody notices waiting.
+  static const _minimumVisible = Duration(milliseconds: 700);
+
+  /// A restore that never answers must not strand the user on a logo. The
+  /// request behind it has its own 30s timeout, which is far too long to sit
+  /// looking at nothing; past this the app shows its best guess instead.
+  static const _ceiling = Duration(seconds: 5);
+
+  bool _minimumElapsed = false;
+  bool _gaveUpWaiting = false;
+
+  // Held so they can be cancelled: a pending callback that fires after dispose
+  // is a leak, and setState on a dead State throws.
+  Timer? _minimumTimer;
+  Timer? _ceilingTimer;
+
   @override
   void initState() {
     super.initState();
     FlutterNativeSplash.remove();
-    _navigateToHome();
+    _minimumTimer = Timer(_minimumVisible, () {
+      if (mounted) setState(() => _minimumElapsed = true);
+    });
+    _ceilingTimer = Timer(_ceiling, () {
+      if (mounted) setState(() => _gaveUpWaiting = true);
+    });
   }
 
-  Future<void> _navigateToHome() async {
-    await Future.delayed(const Duration(milliseconds: 2500));
-    if (mounted) {
-      setState(() {
-        _showSplash = false;
-      });
-    }
+  @override
+  void dispose() {
+    _minimumTimer?.cancel();
+    _ceilingTimer?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_showSplash) {
+    final settled = widget.ready || _gaveUpWaiting;
+    if (!_minimumElapsed || !settled) {
       return _buildSplashContent();
     }
     return widget.child;

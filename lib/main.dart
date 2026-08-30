@@ -87,6 +87,10 @@ class FlameApp extends ConsumerWidget {
         return child!;
       },
       home: SplashScreen(
+        // `initial` means the session restore is still running. Routing on it
+        // sent every returning user to the welcome screen for as long as the
+        // restore took, then swapped to the main tabs underneath them.
+        ready: authState.status != AuthStatus.initial,
         child: authState.isAuthenticated
             // Consent before the app. Accounts made before it was recorded —
             // and every social signup, whose path had no checkbox — report
