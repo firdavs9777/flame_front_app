@@ -73,6 +73,15 @@ class EnvConfig {
   /// commit that adds FCM.
   final bool notificationsEnabled;
 
+  /// Whether to offer AI-drafted profile bios.
+  ///
+  /// ON, and a kill switch rather than a gate: `/bio/suggestions` is a metered
+  /// outbound call to the same provider translation already uses, so if that
+  /// bill needs stopping in a hurry this is the one line to flip. It shares
+  /// OPENAI_API_KEY with translation, which has shipped for longer — if
+  /// translation works on a server, so does this.
+  final bool aiBioEnabled;
+
 
   const EnvConfig._(
     this.env,
@@ -85,6 +94,7 @@ class EnvConfig {
     this.forgotPasswordEnabled = false,
     this.chatEnabled = false,
     this.notificationsEnabled = false,
+    this.aiBioEnabled = true,
   });
 
   /// Test-only seam for exercising flag combinations that no real environment
@@ -97,6 +107,7 @@ class EnvConfig {
   }) : env = AppEnv.local,
        apiBase = '',
        wsBase = '',
+       aiBioEnabled = true,
        realtimeEnabled = false,
        notificationsEnabled = false,
        forgotPasswordEnabled = false,
@@ -127,6 +138,7 @@ class EnvConfig {
     // No FCM in the app and no FLAME_FIREBASE_PROJECT_ID on the server, so
     // there is nothing to configure yet.
     notificationsEnabled: false,
+    aiBioEnabled: true,
   );
 
   static const _prod = EnvConfig._(
@@ -155,6 +167,8 @@ class EnvConfig {
     // See the field doc: the app has no push capability at all, so the
     // settings screen was offering to tune deliveries that cannot happen.
     notificationsEnabled: false,
+    // Shares OPENAI_API_KEY with chat translation, which already runs here.
+    aiBioEnabled: true,
   );
 
   /// The two shipped presets, exposed so tests can assert each one's flags

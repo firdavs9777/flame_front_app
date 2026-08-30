@@ -6,6 +6,7 @@ import 'package:flame/screens/profile/edit_profile/edit_profile_screen.dart';
 import 'package:flame/screens/profile/edit_profile/section_chrome.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/widgets/bio_suggestions.dart';
 
 class AboutSection extends StatefulWidget {
   final User user;
@@ -155,6 +156,20 @@ class AboutSectionState extends State<AboutSection> {
             maxLength: 500,
             decoration:
                 fieldDecoration(context, context.l10n.profileBioHint),
+          ),
+          // Interests are edited in their own section, so these are the saved
+          // ones — which is the right input anyway: a draft built from tags the
+          // user has not saved yet would describe a profile nobody can see.
+          BioSuggestions(
+            interests: widget.user.interests,
+            onUse: (bio) => setState(() {
+              _bioController.text = bio;
+              // Land the caret at the end so the first keystroke edits the
+              // draft rather than replacing it.
+              _bioController.selection = TextSelection.collapsed(
+                offset: bio.length,
+              );
+            }),
           ),
           const SizedBox(height: 8),
           SaveButton(

@@ -6,6 +6,7 @@ import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/core/interests/interest_catalogue.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
+import 'package:flame/widgets/bio_suggestions.dart';
 
 class StepBioInterests extends StatefulWidget {
   final RegistrationData data;
@@ -86,6 +87,19 @@ class _StepBioInterestsState extends State<StepBioInterests> {
             _buildBioField()
                 .animate()
                 .fadeIn(delay: 100.ms, duration: 400.ms),
+
+            // Fed the live selection from the picker below rather than
+            // widget.data.interests: the two are the same list only until the
+            // user touches a chip, and a draft built from the stale one would
+            // describe the profile they just changed their mind about.
+            BioSuggestions(
+              interests: _selectedInterests,
+              onUse: (bio) => setState(() {
+                _bioController.text = bio;
+                _bioController.selection =
+                    TextSelection.collapsed(offset: bio.length);
+              }),
+            ),
 
             const SizedBox(height: 32),
 

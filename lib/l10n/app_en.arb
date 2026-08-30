@@ -1724,5 +1724,44 @@
   "profileViewPhoto": "View photo",
   "@profileViewPhoto": {
     "description": "Opens a photo full screen from the edit-profile grid"
+  },
+  "bioSuggestButton": "Suggest a bio",
+  "@bioSuggestButton": {
+    "description": "Asks the AI to draft profile bios"
+  },
+  "bioSuggestDisclaimer": "A starting point. Edit it so it sounds like you.",
+  "@bioSuggestDisclaimer": {
+    "description": "Sits under the drafted bios, so nobody mistakes them for their own words"
+  },
+  "bioSuggestNeedsInterests": "Pick an interest first — the suggestions are built from them.",
+  "@bioSuggestNeedsInterests": {
+    "description": "Shown when the button is tapped with nothing selected"
+  },
+  "bioTemplateInto": "Into {interests}. Say hi if any of that is your thing.",
+  "@bioTemplateInto": {
+    "description": "Drafted bio built from the user's interests",
+    "placeholders": {
+      "interests": {
+        "type": "String"
+      }
+    }
+  },
+  "bioTemplateFreeTime": "{interests} take up most of my free time. Looking for someone to share them with.",
+  "@bioTemplateFreeTime": {
+    "description": "Drafted bio built from the user's interests",
+    "placeholders": {
+      "interests": {
+        "type": "String"
+      }
+    }
+  },
+  "bioTemplateAskMe": "Ask me about {interest} and I won't stop talking.",
+  "@bioTemplateAskMe": {
+    "description": "Drafted bio built from the user's first interest",
+    "placeholders": {
+      "interest": {
+        "type": "String"
+      }
+    }
   }
 }

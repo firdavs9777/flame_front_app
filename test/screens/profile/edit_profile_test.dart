@@ -114,6 +114,8 @@ Widget _host(
 }
 
 void main() {
+  _bioDraftTests();
+
   group('About section', () {
     // Age is a bounded date picker rather than a number field, so an
     // ineligible age is unreachable instead of rejected after the fact. The
@@ -570,6 +572,62 @@ void main() {
             'takes the whole list — a subset would delete what it omits',
       );
       expect(find.text('Photo order updated'), findsOneWidget);
+    });
+  });
+}
+
+void _bioDraftTests() {
+  group('bio drafts', () {
+    testWidgets('a chosen draft lands in the field, editable', (tester) async {
+      await tester.pumpWidget(_host(
+        _user(bio: 'old bio'),
+      ));
+      await tester.pumpAndSettle();
+
+      final button = find.byKey(const Key('bio_suggest_button'));
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('bio_suggestion_0')));
+      await tester.pumpAndSettle();
+
+      final field = tester.widget<TextFormField>(
+        find.byKey(const Key('about_bio_field')),
+      );
+      final text = field.controller!.text;
+      expect(text, isNot('old bio'), reason: 'the draft replaced what was there');
+      expect(text, contains('Travel'), reason: 'built from the saved interests');
+      expect(
+        field.controller!.selection.baseOffset,
+        text.length,
+        reason: 'the caret lands at the end, so the first keystroke edits the '
+            'draft rather than replacing it',
+      );
+    });
+
+    testWidgets('choosing a draft does not save it', (tester) async {
+      // The last word stays the user's: they still have to press Save.
+      var saves = 0;
+      await tester.pumpWidget(_host(
+        _user(),
+        saveAbout: ({required name, required age, required bio}) async {
+          saves++;
+          return true;
+        },
+      ));
+      await tester.pumpAndSettle();
+
+      final button = find.byKey(const Key('bio_suggest_button'));
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('bio_suggestion_0')));
+      await tester.pumpAndSettle();
+
+      expect(saves, 0);
     });
   });
 }
