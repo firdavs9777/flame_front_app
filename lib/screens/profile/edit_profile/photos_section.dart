@@ -97,7 +97,7 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                'Main',
+                context.l10n.registerPhotoMainBadge,
                 style: TextStyle(
                   color: context.onPrimary,
                   fontSize: 10,
@@ -173,7 +173,9 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
                 if (!mounted) return;
                 messenger.showSnackBar(
                   SnackBar(
-                    content: Text(ok ? 'Photo deleted' : 'Could not delete photo'),
+                    content: Text(ok
+                        ? context.l10n.profilePhotoDeleted
+                        : context.l10n.profilePhotoDeleteFailed),
                   ),
                 );
               },
@@ -248,8 +250,8 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(success
-            ? 'Photo uploaded successfully'
-            : 'Failed to upload photo'),
+            ? context.l10n.profilePhotoUploaded
+            : context.l10n.profilePhotoUploadFailed),
       ),
     );
   }

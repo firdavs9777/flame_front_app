@@ -170,7 +170,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            'Online',
+                            context.l10n.presenceOnline,
                             style: TextStyle(
                               color: context.onOverlay,
                               fontSize: 12,
@@ -204,9 +204,9 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                   const SizedBox(height: 20),
 
                   // Bio
-                  const Text(
-                    'About',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.profileAbout,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -222,9 +222,9 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                   const SizedBox(height: 24),
 
                   // Interests
-                  const Text(
-                    'Interests',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.profileInterests,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flame/l10n/gen/app_localizations.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/screens/chat/widgets/sticker_panel.dart';
 import 'package:flame/screens/chat/widgets/message_bubble.dart';
@@ -13,6 +14,8 @@ void main() {
   group('StickerPanel', () {
     testWidgets('shows categories and emoji', (tester) async {
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: StickerPanel(onPick: (_) {})),
       ));
 
@@ -25,6 +28,8 @@ void main() {
     testWidgets('reports the emoji that was tapped', (tester) async {
       final picked = <String>[];
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: StickerPanel(onPick: picked.add)),
       ));
 
@@ -36,6 +41,8 @@ void main() {
 
     testWidgets('switching category changes the grid', (tester) async {
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(body: StickerPanel(onPick: (_) {})),
       ));
 
@@ -47,12 +54,12 @@ void main() {
     });
 
     test('every category has emoji, and none repeats within one', () {
-      for (final entry in stickerCategories.entries) {
-        expect(entry.value, isNotEmpty, reason: '${entry.key} is empty');
+      for (final category in stickerCategories) {
+        expect(category.emoji, isNotEmpty, reason: '${category.id} is empty');
         expect(
-          entry.value.toSet().length,
-          entry.value.length,
-          reason: '${entry.key} repeats an emoji',
+          category.emoji.toSet().length,
+          category.emoji.length,
+          reason: '${category.id} repeats an emoji',
         );
       }
     });
@@ -69,6 +76,8 @@ void main() {
 
     testWidgets('renders the emoji as text, not as an image URL', (tester) async {
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: MessageBubble(message: sticker('🎉'), isMe: false),
         ),
@@ -84,6 +93,8 @@ void main() {
     testWidgets('a sticker has no bubble background', (tester) async {
       // A big emoji inside a coloured pill reads as a typo, not a sticker.
       await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: MessageBubble(message: sticker('🎉'), isMe: true),
         ),

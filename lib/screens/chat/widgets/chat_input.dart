@@ -99,7 +99,7 @@ class ChatInput extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Replying to',
+                  context.l10n.chatReplyingTo,
                   style: TextStyle(
                     fontSize: 12,
                     color: AppTheme.primaryColor,
@@ -136,8 +136,8 @@ class ChatInput extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (onAttach != null) _buildAttachButton(),
-          if (onSticker != null) _buildStickerButton(),
+          if (onAttach != null) _buildAttachButton(context),
+          if (onSticker != null) _buildStickerButton(context),
           // Text field
           Expanded(
             child: Container(
@@ -207,7 +207,7 @@ class ChatInput extends StatelessWidget {
             icon: const Icon(Icons.delete_outline),
             color: Theme.of(context).colorScheme.error,
             onPressed: onCancelRecording,
-            tooltip: 'Discard recording',
+            tooltip: context.l10n.chatDiscardRecording,
           ),
           const SizedBox(width: 4),
           Container(
@@ -243,24 +243,24 @@ class ChatInput extends StatelessWidget {
     );
   }
 
-  Widget _buildStickerButton() {
+  Widget _buildStickerButton(BuildContext context) {
     return IconButton(
       onPressed: isSending ? null : onSticker,
       icon: const Icon(Icons.emoji_emotions_outlined),
       color: AppTheme.primaryColor,
-      tooltip: 'Send a sticker',
+      tooltip: context.l10n.chatSendSticker,
     );
   }
 
   /// Disabled while a send is in flight, for the same reason as the send
   /// button: starting a second upload on top of one already running is a
   /// mistake, not an intent.
-  Widget _buildAttachButton() {
+  Widget _buildAttachButton(BuildContext context) {
     return IconButton(
       onPressed: isSending ? null : onAttach,
       icon: const Icon(Icons.add_circle_outline),
       color: AppTheme.primaryColor,
-      tooltip: 'Attach a photo or video',
+      tooltip: context.l10n.chatAttachPhotoOrVideo,
     );
   }
 

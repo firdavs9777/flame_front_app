@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/theme/app_tokens.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 class TypingIndicator extends StatelessWidget {
   final String userPhotoUrl;
@@ -134,7 +135,7 @@ class RecordingVoiceIndicator extends StatelessWidget {
                 Icon(Icons.mic, size: 16, color: Colors.red[400]),
                 const SizedBox(width: 4),
                 Text(
-                  'Recording voice...',
+                  context.l10n.chatRecordingVoice,
                   style: TextStyle(
                     fontSize: 12,
                     color: context.secondaryText,

@@ -8,6 +8,13 @@ import 'package:flame/screens/profile/edit_profile/section_chrome.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
 
+/// Which bound the selection missed.
+///
+/// Held as a value rather than a finished sentence because the error outlives
+/// the frame that produced it: a string built at validation time would still
+/// be in the old language after the user changes locale.
+enum _InterestsBound { tooFew, tooMany }
+
 class InterestsSection extends StatefulWidget {
   final User user;
   final InterestsSave onSave;
@@ -33,7 +40,7 @@ class InterestsSectionState extends State<InterestsSection> {
 
   late Gender? _lookingFor;
   late List<String> _selectedInterests;
-  String? _boundsError;
+  _InterestsBound? _boundsError;
   bool _isSaving = false;
 
   @override
@@ -44,16 +51,20 @@ class InterestsSectionState extends State<InterestsSection> {
   }
 
   /// Names the bound that was hit, or null when the selection is savable.
-  String? _validate() {
+  _InterestsBound? _validate() {
     final count = _selectedInterests.length;
-    if (count < _minInterests) {
-      return 'Pick at least $_minInterests interest';
-    }
-    if (count > _maxInterests) {
-      return 'Pick at most $_maxInterests interests — $count are selected';
-    }
+    if (count < _minInterests) return _InterestsBound.tooFew;
+    if (count > _maxInterests) return _InterestsBound.tooMany;
     return null;
   }
+
+  String _boundsMessage(_InterestsBound bound) => switch (bound) {
+        _InterestsBound.tooFew => context.l10n.registerInterestsMin,
+        _InterestsBound.tooMany => context.l10n.profileInterestsMax(
+            _maxInterests,
+            _selectedInterests.length,
+          ),
+      };
 
   Future<void> _save() async {
     final error = _validate();
@@ -75,7 +86,9 @@ class InterestsSectionState extends State<InterestsSection> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? 'Interests updated' : 'Could not save — try again'),
+        content: Text(ok
+            ? context.l10n.profileInterestsUpdated
+            : context.l10n.profileSaveFailed),
       ),
     );
   }
@@ -85,17 +98,17 @@ class InterestsSectionState extends State<InterestsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        fieldLabel(context, 'Looking For'),
+        fieldLabel(context, context.l10n.profileLookingFor),
         const SizedBox(height: 12),
         _buildGenderSelector(context),
         const SizedBox(height: 20),
-        fieldLabel(context, 'Interests'),
+        fieldLabel(context, context.l10n.profileInterests),
         const SizedBox(height: 12),
         _buildInterestsSelector(context),
         if (_boundsError != null) ...[
           const SizedBox(height: 8),
           Text(
-            _boundsError!,
+            _boundsMessage(_boundsError!),
             key: const Key('interests_bounds_error'),
             style: TextStyle(color: AppTheme.errorColor, fontSize: 12),
           ),

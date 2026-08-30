@@ -1413,5 +1413,292 @@
   "photoAnalysisFailed": "Couldn't analyse that photo. Try a different image.",
   "@photoAnalysisFailed": {
     "description": "Shown when the face check itself errors on the image"
+  },
+  "commonChange": "Change",
+  "@commonChange": {
+    "description": "Confirms an edit in a dialog"
+  },
+  "commonSearchHint": "Search…",
+  "@commonSearchHint": {
+    "description": "Default placeholder in a search field"
+  },
+  "presenceOnline": "Online",
+  "@presenceOnline": {
+    "description": "Presence: the person is connected now"
+  },
+  "presenceOffline": "Offline",
+  "@presenceOffline": {
+    "description": "Presence: the person is not connected and last-seen is unknown"
+  },
+  "presenceJustNow": "Just now",
+  "@presenceJustNow": {
+    "description": "Presence: last seen under a minute ago"
+  },
+  "presenceMinutesAgo": "{count}m ago",
+  "@presenceMinutesAgo": {
+    "description": "Presence: last seen this many minutes ago. Keep it short — it sits under an avatar.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "presenceHoursAgo": "{count}h ago",
+  "@presenceHoursAgo": {
+    "description": "Presence: last seen this many hours ago. Keep it short.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "presenceDaysAgo": "{count}d ago",
+  "@presenceDaysAgo": {
+    "description": "Presence: last seen this many days ago. Keep it short.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "presenceLongAgo": "Long ago",
+  "@presenceLongAgo": {
+    "description": "Presence: last seen over a week ago"
+  },
+  "chatAttachGallery": "Gallery",
+  "@chatAttachGallery": {
+    "description": "Attachment sheet: pick an existing photo"
+  },
+  "chatAttachCamera": "Camera",
+  "@chatAttachCamera": {
+    "description": "Attachment sheet: take a photo now"
+  },
+  "chatAttachVideo": "Video",
+  "@chatAttachVideo": {
+    "description": "Attachment sheet: pick or record a video"
+  },
+  "chatReplyingTo": "Replying to",
+  "@chatReplyingTo": {
+    "description": "Label above the message being replied to"
+  },
+  "chatDiscardRecording": "Discard recording",
+  "@chatDiscardRecording": {
+    "description": "Tooltip: throw away the voice message being recorded"
+  },
+  "chatSendSticker": "Send a sticker",
+  "@chatSendSticker": {
+    "description": "Tooltip on the sticker button"
+  },
+  "chatAttachPhotoOrVideo": "Attach a photo or video",
+  "@chatAttachPhotoOrVideo": {
+    "description": "Tooltip on the attachment button"
+  },
+  "chatRecordingVoice": "Recording voice…",
+  "@chatRecordingVoice": {
+    "description": "Shown where the typing indicator sits, while the other person records"
+  },
+  "chatMessageDeleted": "This message was deleted",
+  "@chatMessageDeleted": {
+    "description": "Placeholder left behind by a deleted message"
+  },
+  "chatNoMessagesTitle": "No messages yet",
+  "@chatNoMessagesTitle": {
+    "description": "Empty state on the matches list"
+  },
+  "chatNoMessagesBody": "Match with someone to start chatting!",
+  "@chatNoMessagesBody": {
+    "description": "Empty state on the matches list"
+  },
+  "stickerSmileys": "Smileys",
+  "@stickerSmileys": {
+    "description": "Sticker picker category: smiling and happy faces"
+  },
+  "stickerFeelings": "Feelings",
+  "@stickerFeelings": {
+    "description": "Sticker picker category: other emotional faces"
+  },
+  "stickerGestures": "Gestures",
+  "@stickerGestures": {
+    "description": "Sticker picker category: hands"
+  },
+  "stickerHearts": "Hearts",
+  "@stickerHearts": {
+    "description": "Sticker picker category: hearts and romance"
+  },
+  "matchItsAMatch": "It's a Match!",
+  "@matchItsAMatch": {
+    "description": "Headline on the mutual-like celebration dialog"
+  },
+  "matchLikedEachOther": "You and {name} liked each other",
+  "@matchLikedEachOther": {
+    "description": "Body of the mutual-like celebration dialog",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "matchKeepSwiping": "Keep swiping",
+  "@matchKeepSwiping": {
+    "description": "Dismisses the match dialog and returns to the deck"
+  },
+  "profileLoadFailed": "Failed to load profile",
+  "@profileLoadFailed": {
+    "description": "Error state on the user's own profile"
+  },
+  "profilePremium": "Premium",
+  "@profilePremium": {
+    "description": "Badge on a premium account"
+  },
+  "profileLookingFor": "Looking for",
+  "@profileLookingFor": {
+    "description": "Label for the gender preference"
+  },
+  "profileAboutUpdated": "About updated",
+  "@profileAboutUpdated": {
+    "description": "Confirmation after saving name, age and bio"
+  },
+  "profileInterestsUpdated": "Interests updated",
+  "@profileInterestsUpdated": {
+    "description": "Confirmation after saving interests"
+  },
+  "profileSaveFailed": "Could not save — try again",
+  "@profileSaveFailed": {
+    "description": "Shown when an edit-profile save fails"
+  },
+  "profileNameLabel": "Name",
+  "@profileNameLabel": {
+    "description": "Field label"
+  },
+  "profileNameHint": "Your name",
+  "@profileNameHint": {
+    "description": "Field placeholder"
+  },
+  "profileNameTooLongWithCount": "Name must be 50 characters or fewer (currently {count})",
+  "@profileNameTooLongWithCount": {
+    "description": "Validation error naming how far over the limit the name is",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileAgeLabel": "Age",
+  "@profileAgeLabel": {
+    "description": "Field label"
+  },
+  "profileAgeHint": "Your age",
+  "@profileAgeHint": {
+    "description": "Field placeholder"
+  },
+  "profileBioHint": "Tell others about yourself…",
+  "@profileBioHint": {
+    "description": "Placeholder in the bio field"
+  },
+  "profilePhotoDeleted": "Photo deleted",
+  "@profilePhotoDeleted": {
+    "description": "Confirmation after removing a photo"
+  },
+  "profilePhotoDeleteFailed": "Could not delete photo",
+  "@profilePhotoDeleteFailed": {
+    "description": "Shown when removing a photo fails"
+  },
+  "profileInterestsMax": "Pick at most {max} interests — {count} selected",
+  "@profileInterestsMax": {
+    "description": "Validation error when too many interests are selected",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "blockedEmpty": "You haven't blocked anyone yet.",
+  "@blockedEmpty": {
+    "description": "Empty state on the blocked-users list"
+  },
+  "blockedUnblockConfirmBody": "{name} will be able to see your profile and match with you again.",
+  "@blockedUnblockConfirmBody": {
+    "description": "Explains the consequence of unblocking",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedUnblockDone": "{name} has been unblocked",
+  "@blockedUnblockDone": {
+    "description": "Confirmation after unblocking",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedUnblockFailed": "Could not unblock {name}",
+  "@blockedUnblockFailed": {
+    "description": "Shown when unblocking fails",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsNotSet": "Not set",
+  "@settingsNotSet": {
+    "description": "Stands in for a value the account does not have yet"
+  },
+  "settingsSectionPrivacySafety": "Privacy & Safety",
+  "@settingsSectionPrivacySafety": {
+    "description": "Settings section header"
+  },
+  "settingsSectionLegal": "Legal",
+  "@settingsSectionLegal": {
+    "description": "Settings section header"
+  },
+  "settingsSectionAccountActions": "Account Actions",
+  "@settingsSectionAccountActions": {
+    "description": "Settings section header, above sign out and delete"
+  },
+  "settingsVersion": "Version {version}",
+  "@settingsVersion": {
+    "description": "Build version at the foot of Settings",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "filterAgeRangeValue": "{min} – {max}",
+  "@filterAgeRangeValue": {
+    "description": "The selected age range, shown above the slider",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "distanceValueKm": "{value} km",
+  "@distanceValueKm": {
+    "description": "A distance with no direction, e.g. a search radius",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceValueMiles": "{value} mi",
+  "@distanceValueMiles": {
+    "description": "A distance with no direction, e.g. a search radius",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
   }
 }

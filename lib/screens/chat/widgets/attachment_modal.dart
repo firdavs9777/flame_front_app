@@ -48,19 +48,19 @@ class AttachmentModal extends StatelessWidget {
               children: [
                 _AttachmentOption(
                   icon: Icons.photo_library,
-                  label: 'Gallery',
+                  label: context.l10n.chatAttachGallery,
                   color: AppColors.attachmentPhoto,
                   onTap: () => onPick(ChatAttachmentKind.gallery),
                 ),
                 _AttachmentOption(
                   icon: Icons.camera_alt,
-                  label: 'Camera',
+                  label: context.l10n.chatAttachCamera,
                   color: AppColors.attachmentVideo,
                   onTap: () => onPick(ChatAttachmentKind.camera),
                 ),
                 _AttachmentOption(
                   icon: Icons.videocam,
-                  label: 'Video',
+                  label: context.l10n.chatAttachVideo,
                   color: Colors.red,
                   onTap: () => onPick(ChatAttachmentKind.video),
                 ),

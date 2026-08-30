@@ -123,7 +123,7 @@ class MessageBubble extends StatelessWidget {
                 Icon(Icons.block, size: 16, color: context.secondaryText),
                 const SizedBox(width: 8),
                 Text(
-                  'This message was deleted',
+                  context.l10n.chatMessageDeleted,
                   style: TextStyle(
                     color: context.secondaryText,
                     fontStyle: FontStyle.italic,

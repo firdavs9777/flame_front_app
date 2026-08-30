@@ -132,11 +132,11 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
             ),
 
             // Conversations section
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Messages',
+                  context.l10n.messagesTitle,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

@@ -353,7 +353,7 @@ void main() {
               'interests has min_length=1 server-side; deselecting your last '
               'interest used to produce a bare "Could not save — try again"',
         );
-        expect(find.text('Pick at least 1 interest'), findsOneWidget);
+        expect(find.text('Pick at least one interest'), findsOneWidget);
       },
     );
 
@@ -376,7 +376,7 @@ void main() {
 
         expect(calls, 0, reason: 'interests has max_length=10 server-side');
         expect(
-          find.text('Pick at most 10 interests — 11 are selected'),
+          find.text('Pick at most 10 interests — 11 selected'),
           findsOneWidget,
           reason:
               'the message must say which bound was hit, and how far over',

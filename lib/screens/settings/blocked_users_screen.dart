@@ -43,9 +43,9 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
         ),
         data: (blocked) {
           if (blocked.isEmpty) {
-            return const AppEmptyState(
+            return AppEmptyState(
               icon: Icons.block,
-              title: "You haven't blocked anyone yet.",
+              title: context.l10n.blockedEmpty,
             );
           }
           return RefreshIndicator(
@@ -81,7 +81,7 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(context.l10n.blockedUnblockConfirm),
-        content: Text('${user.name} will be able to see your profile and match with you again.'),
+        content: Text(context.l10n.blockedUnblockConfirmBody(user.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -90,7 +90,7 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(
-              'Unblock',
+              context.l10n.blockedUnblock,
               style: TextStyle(color: AppTheme.primaryColor),
             ),
           ),
@@ -107,7 +107,9 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          ok ? '${user.name} has been unblocked' : 'Could not unblock ${user.name}',
+          ok
+              ? context.l10n.blockedUnblockDone(user.name)
+              : context.l10n.blockedUnblockFailed(user.name),
         ),
       ),
     );

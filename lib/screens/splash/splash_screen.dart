@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 class SplashScreen extends StatefulWidget {
   final Widget child;
@@ -104,7 +105,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
               const SizedBox(height: 12),
               Text(
-                    'Find Your Match',
+                    context.l10n.welcomeHeadline,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w400,

@@ -1,5 +1,23 @@
 import 'package:flutter/material.dart';
 
+import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/l10n/gen/app_localizations.dart';
+
+/// One sticker category: a stable id, a localised label, and its emoji.
+///
+/// The id is what the panel tracks the selection by, and it is never shown.
+/// The two used to be the same string — a `Map<String, List<String>>` keyed by
+/// 'Smileys' — so the tab bar read English in every locale.
+class StickerCategory {
+  const StickerCategory(this.id, this._label, this.emoji);
+
+  final String id;
+  final String Function(AppLocalizations) _label;
+  final List<String> emoji;
+
+  String label(AppLocalizations l10n) => _label(l10n);
+}
+
 /// The stickers, by category.
 ///
 /// Unicode emoji, not hosted artwork — the model BananaTalk uses in
@@ -10,28 +28,33 @@ import 'package:flutter/material.dart';
 ///
 /// Being plain characters, they need no download, no cache, no licensing, and
 /// they render at any size on every platform.
-const Map<String, List<String>> stickerCategories = {
-  'Smileys': [
+const List<StickerCategory> stickerCategories = [
+  StickerCategory('smileys', _smileys, [
     '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣',
     '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰',
     '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜',
-  ],
-  'Feelings': [
+  ]),
+  StickerCategory('feelings', _feelings, [
     '🤪', '🤨', '🧐', '🤓', '😎', '🥸', '🤩', '🥳',
     '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️',
     '😤', '😠', '😡', '🥺', '😢', '😭', '😱', '😳',
-  ],
-  'Gestures': [
+  ]),
+  StickerCategory('gestures', _gestures, [
     '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙',
     '👈', '👉', '👆', '👇', '☝️', '👋', '🤚', '🖐️',
     '✋', '🖖', '👏', '🙌', '🤝', '🙏', '✍️', '💪',
-  ],
-  'Hearts': [
+  ]),
+  StickerCategory('hearts', _hearts, [
     '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍',
     '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖',
     '💘', '💝', '💟', '♥️', '💌', '💋', '💍', '🌹',
-  ],
-};
+  ]),
+];
+
+String _smileys(AppLocalizations l) => l.stickerSmileys;
+String _feelings(AppLocalizations l) => l.stickerFeelings;
+String _gestures(AppLocalizations l) => l.stickerGestures;
+String _hearts(AppLocalizations l) => l.stickerHearts;
 
 /// A sticker picker for the chat composer.
 class StickerPanel extends StatefulWidget {
@@ -44,12 +67,13 @@ class StickerPanel extends StatefulWidget {
 }
 
 class _StickerPanelState extends State<StickerPanel> {
-  late String _category = stickerCategories.keys.first;
+  late String _category = stickerCategories.first.id;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final emoji = stickerCategories[_category]!;
+    final emoji =
+        stickerCategories.firstWhere((c) => c.id == _category).emoji;
 
     return Container(
       height: 280,
@@ -66,14 +90,14 @@ class _StickerPanelState extends State<StickerPanel> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                children: stickerCategories.keys.map((name) {
-                  final selected = name == _category;
+                children: stickerCategories.map((category) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                     child: ChoiceChip(
-                      label: Text(name),
-                      selected: selected,
-                      onSelected: (_) => setState(() => _category = name),
+                      label: Text(category.label(context.l10n)),
+                      selected: category.id == _category,
+                      onSelected: (_) =>
+                          setState(() => _category = category.id),
                     ),
                   );
                 }).toList(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/core/format/distance_display.dart';
 import 'package:flame/core/interests/interest_catalogue.dart';
 import 'package:flame/core/layout/breakpoints.dart';
 import 'package:flame/models/models.dart';
@@ -57,6 +58,14 @@ class _DiscoverFiltersScreenState extends ConsumerState<DiscoverFiltersScreen> {
     final locationKnown =
         ref.watch(locationRefresherProvider).availability !=
         LocationAvailability.denied;
+    // The value above the slider and the slider's own bubble are the same
+    // reading, so they are the same string — they used to be two copies of
+    // '${...toInt()} km' that could only ever disagree by drifting apart.
+    final distanceLabel = formatDistanceValue(
+      filters.maxDistance,
+      context.l10n,
+      Localizations.localeOf(context).toString(),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -82,7 +91,7 @@ class _DiscoverFiltersScreenState extends ConsumerState<DiscoverFiltersScreen> {
               _SectionTitle(context.l10n.filterAgeRange),
               const SizedBox(height: 8),
               Text(
-                '${filters.minAge} – ${filters.maxAge}',
+                context.l10n.filterAgeRangeValue(filters.minAge, filters.maxAge),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -111,7 +120,7 @@ class _DiscoverFiltersScreenState extends ConsumerState<DiscoverFiltersScreen> {
               _SectionTitle(context.l10n.filterDistance),
               const SizedBox(height: 8),
               Text(
-                '${filters.maxDistance.toInt()} km',
+                distanceLabel,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -126,7 +135,7 @@ class _DiscoverFiltersScreenState extends ConsumerState<DiscoverFiltersScreen> {
                 max: 100,
                 divisions: 99,
                 activeColor: AppTheme.primaryColor,
-                label: '${filters.maxDistance.toInt()} km',
+                label: distanceLabel,
                 // Disabled rather than silently ineffective. A control that
                 // cannot work must not look like one that can — that was the
                 // original defect on this screen.

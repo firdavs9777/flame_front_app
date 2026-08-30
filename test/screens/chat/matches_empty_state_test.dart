@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flame/l10n/gen/app_localizations.dart';
 import 'package:flame/screens/chat/widgets/matches_empty_state.dart';
 
 // The empty state sits in a SliverFillRemaining under the "New Matches" strip,
@@ -12,6 +13,8 @@ import 'package:flame/screens/chat/widgets/matches_empty_state.dart';
 // It must degrade instead of overflowing, at any height.
 void main() {
   Widget host(double height) => MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
     home: Scaffold(
       body: CustomScrollView(
         slivers: [

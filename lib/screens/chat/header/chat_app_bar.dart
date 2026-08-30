@@ -6,6 +6,7 @@ import 'package:flame/models/models.dart';
 import 'package:flame/screens/chat/state/thread_presence_provider.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
+import 'package:flame/core/format/presence_display.dart';
 
 /// The open conversation's header: partner avatar with a presence dot, their
 /// name, and either "typing…" or their last-active line.
@@ -91,7 +92,13 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                   Text(
-                    isTyping ? context.l10n.chatTyping : otherUser.lastActiveText,
+                    isTyping
+                        ? context.l10n.chatTyping
+                        : presenceText(
+                            isOnline: otherUser.isOnline,
+                            lastSeen: otherUser.lastActive,
+                            l10n: context.l10n,
+                          ),
                     style: TextStyle(
                       fontSize: 12,
                       color: isTyping

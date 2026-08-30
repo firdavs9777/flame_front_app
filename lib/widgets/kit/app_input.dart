@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 /// A customizable text input following Bananatalk design system
 class AppInput extends StatefulWidget {
@@ -199,7 +200,7 @@ class _AppSearchInputState extends State<AppSearchInput> {
         onSubmitted: widget.onSubmitted,
         style: AppTypography.bodyMedium,
         decoration: InputDecoration(
-          hintText: widget.hint ?? 'Search...',
+          hintText: widget.hint ?? context.l10n.commonSearchHint,
           hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.gray500),
           prefixIcon: const Icon(
             Icons.search,

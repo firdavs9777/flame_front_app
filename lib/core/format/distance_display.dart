@@ -23,3 +23,23 @@ String formatDistanceAway(double km, AppLocalizations l10n, String localeName) {
 
   return imperial ? l10n.distanceAwayMiles(text) : l10n.distanceAwayKm(text);
 }
+
+/// "50 km" / "31 mi" — a distance with no direction, for a search radius.
+///
+/// Same unit rule as [formatDistanceAway]: the stored preference is always
+/// kilometres, and only the display converts. The filter slider and the
+/// read-only profile row both used a hardcoded " km", so a US reader set a
+/// radius in a unit they do not think in.
+///
+/// Unlike [formatDistanceAway] this keeps a decimal at any magnitude. The
+/// value is a preference the user set, not a measurement of someone else: a
+/// stored 24.6 must not read as "25 km" here and seed an editor with 24.6 one
+/// tap away. '0.#' drops the decimal only when there isn't one, so a round 50
+/// still reads "50 km".
+String formatDistanceValue(double km, AppLocalizations l10n, String localeName) {
+  final imperial = _imperialLocales.contains(localeName);
+  final value = imperial ? km / _kmPerMile : km;
+  final text = NumberFormat('0.#', localeName).format(value);
+
+  return imperial ? l10n.distanceValueMiles(text) : l10n.distanceValueKm(text);
+}

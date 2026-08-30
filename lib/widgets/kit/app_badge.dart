@@ -1,6 +1,8 @@
 // lib/core/widgets/app_badge.dart
 import 'package:flutter/material.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/core/format/presence_display.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 enum BadgeVariant { primary, secondary, success, warning, error, info }
 enum BadgeSize { small, medium, large }
@@ -270,20 +272,6 @@ class OnlineStatusIndicator extends StatelessWidget {
     this.showText = false,
   });
 
-  String get _statusText {
-    if (isOnline) return 'Online';
-    if (lastSeen == null) return 'Offline';
-
-    final now = DateTime.now();
-    final diff = now.difference(lastSeen!);
-
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return 'Long ago';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -300,7 +288,11 @@ class OnlineStatusIndicator extends StatelessWidget {
         if (showText) ...[
           const SizedBox(width: 6),
           Text(
-            _statusText,
+            presenceText(
+              isOnline: isOnline,
+              lastSeen: lastSeen,
+              l10n: context.l10n,
+            ),
             style: AppTypography.caption.copyWith(
               color: isOnline ? AppColors.online : AppColors.gray500,
             ),

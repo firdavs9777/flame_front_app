@@ -152,7 +152,7 @@ class _ProfileCardState extends State<ProfileCard> {
                         Icon(Icons.circle, size: 8, color: context.onOverlay),
                         SizedBox(width: 5),
                         Text(
-                          'Online',
+                          context.l10n.presenceOnline,
                           style: TextStyle(
                             color: context.onOverlay,
                             fontSize: 12,

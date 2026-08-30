@@ -132,7 +132,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "It's a Match!",
+                context.l10n.matchItsAMatch,
                 style: TextStyle(
                   color: context.onOverlay,
                   fontSize: 32,
@@ -141,7 +141,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                'You and ${user.name} liked each other',
+                context.l10n.matchLikedEachOther(user.name),
                 style: TextStyle(
                   color: context.onOverlay.withValues(alpha: 0.7),
                   fontSize: 16,
@@ -163,7 +163,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         Navigator.pop(context);
                       },
                       child: Text(
-                        'Keep Swiping',
+                        context.l10n.matchKeepSwiping,
                         style: TextStyle(
                           color: context.onOverlay.withValues(alpha: 0.7),
                         ),

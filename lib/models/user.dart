@@ -320,17 +320,6 @@ class User {
 
   String get primaryPhoto => photos.isNotEmpty ? photos.first : '';
 
-  String get lastActiveText {
-    final now = DateTime.now();
-    final diff = now.difference(lastActive);
-
-    if (isOnline) return 'Online now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return 'Long time ago';
-  }
-
   static Gender _parseGender(String? gender) {
     switch (gender?.toLowerCase()) {
       case 'male':

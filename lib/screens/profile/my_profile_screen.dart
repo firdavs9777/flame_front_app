@@ -7,7 +7,7 @@ import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
-import 'package:flame/core/format/distance_format.dart';
+import 'package:flame/core/format/distance_display.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/settings/widgets/settings_section.dart';
 
@@ -69,7 +69,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               Icon(Icons.error_outline, size: 60, color: context.secondaryText),
               const SizedBox(height: 16),
               Text(
-                'Failed to load profile',
+                context.l10n.profileLoadFailed,
                 style: TextStyle(color: context.secondaryText),
               ),
               const SizedBox(height: 16),
@@ -182,7 +182,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Premium',
+                          context.l10n.profilePremium,
                           style: TextStyle(
                             color: context.onPrimary,
                             fontSize: 13,
@@ -294,19 +294,26 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     child: Column(
                       children: [
                         _buildPreferenceRow(
-                          'Looking for',
+                          context.l10n.profileLookingFor,
                           user.lookingFor.displayName,
                         ),
                         _buildPreferenceRow(
-                          'Age Range',
-                          '${user.minAgePreference} - ${user.maxAgePreference}',
+                          context.l10n.filterAgeRange,
+                          context.l10n.filterAgeRangeValue(
+                            user.minAgePreference,
+                            user.maxAgePreference,
+                          ),
                         ),
                         _buildPreferenceRow(
-                          'Max Distance',
+                          context.l10n.filterDistance,
                           // Same formatter the editor seeds its field from, so
                           // a stored 24.6 does not read "24 km" here and "24.6"
                           // one tap away.
-                          '${formatDistance(user.maxDistancePreference)} km',
+                          formatDistanceValue(
+                            user.maxDistancePreference,
+                            context.l10n,
+                            Localizations.localeOf(context).toString(),
+                          ),
                         ),
                       ],
                     ),

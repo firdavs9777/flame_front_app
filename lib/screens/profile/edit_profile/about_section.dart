@@ -83,7 +83,11 @@ class AboutSectionState extends State<AboutSection> {
     setState(() => _isSaving = false);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(ok ? 'About updated' : 'Could not save — try again')),
+      SnackBar(
+        content: Text(ok
+            ? context.l10n.profileAboutUpdated
+            : context.l10n.profileSaveFailed),
+      ),
     );
   }
 
@@ -94,29 +98,28 @@ class AboutSectionState extends State<AboutSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          fieldLabel(context, 'Name'),
+          fieldLabel(context, context.l10n.profileNameLabel),
           const SizedBox(height: 8),
           TextFormField(
             key: const Key('about_name_field'),
             controller: _nameController,
-            decoration: fieldDecoration(context, 'Your name'),
+            decoration: fieldDecoration(context, context.l10n.profileNameHint),
             // Both bounds are the route's own: User.name is minlength 2,
             // maxlength 50. Only the floor was checked, so a 60-character
             // name went out and came back as a bare "Could not save".
             validator: (value) {
               final name = (value ?? '').trim();
               if (name.length < 2) {
-                return 'Name must be at least 2 characters';
+                return context.l10n.authNameTooShort;
               }
               if (name.length > 50) {
-                return 'Name must be 50 characters or fewer '
-                    '(currently ${name.length})';
+                return context.l10n.profileNameTooLongWithCount(name.length);
               }
               return null;
             },
           ),
           const SizedBox(height: 16),
-          fieldLabel(context, 'Age'),
+          fieldLabel(context, context.l10n.profileAgeLabel),
           const SizedBox(height: 8),
           // A picker rather than a number field: the bounds below make an
           // ineligible age unreachable, so there is no error state to report.
@@ -125,7 +128,7 @@ class AboutSectionState extends State<AboutSection> {
             onTap: _pickBirthDate,
             borderRadius: BorderRadius.circular(12),
             child: InputDecorator(
-              decoration: fieldDecoration(context, 'Your age'),
+              decoration: fieldDecoration(context, context.l10n.profileAgeHint),
               child: Row(
                 children: [
                   Icon(Icons.cake_outlined, size: 20, color: context.secondaryText),
@@ -143,14 +146,15 @@ class AboutSectionState extends State<AboutSection> {
             ),
           ),
           const SizedBox(height: 16),
-          fieldLabel(context, 'About Me'),
+          fieldLabel(context, context.l10n.profileAboutMe),
           const SizedBox(height: 8),
           TextFormField(
             key: const Key('about_bio_field'),
             controller: _bioController,
             maxLines: 4,
             maxLength: 500,
-            decoration: fieldDecoration(context, 'Tell others about yourself...'),
+            decoration:
+                fieldDecoration(context, context.l10n.profileBioHint),
           ),
           const SizedBox(height: 8),
           SaveButton(

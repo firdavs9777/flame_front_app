@@ -8,6 +8,7 @@ import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/i18n/locale_provider.dart';
 import 'package:flame/core/i18n/supported_locales.dart';
 import 'package:flame/widgets/kit/kit.dart';
+import 'package:flame/config/app_version.dart';
 import 'package:flame/config/env.dart';
 import 'package:flame/screens/auth/registration/legal_document_sheet.dart';
 import 'package:flame/screens/settings/widgets/settings_section.dart';
@@ -33,7 +34,7 @@ class SettingsScreen extends ConsumerWidget {
             context: context,
             icon: Icons.email_outlined,
             title: context.l10n.settingsEmail,
-            subtitle: user?.email ?? 'Not set',
+            subtitle: user?.email ?? context.l10n.settingsNotSet,
             onTap: () {
               _showChangeEmailDialog(context);
             },
@@ -50,7 +51,7 @@ class SettingsScreen extends ConsumerWidget {
               },
             ),
           const SizedBox(height: 20),
-          _buildSectionHeader(context, 'Privacy & Safety'),
+          _buildSectionHeader(context, context.l10n.settingsSectionPrivacySafety),
           _buildListTile(
             context: context,
             icon: Icons.block,
@@ -196,7 +197,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 20),
 
           // Legal section
-          _buildSectionHeader(context, 'Legal'),
+          _buildSectionHeader(context, context.l10n.settingsSectionLegal),
           _buildListTile(
             context: context,
             icon: Icons.description_outlined,
@@ -215,15 +216,15 @@ class SettingsScreen extends ConsumerWidget {
             title: context.l10n.settingsLicenses,
             onTap: () => showLicensePage(
               context: context,
-              applicationName: 'Flame',
-              applicationVersion: 'v1.0.0',
+              applicationName: context.l10n.appName,
+              applicationVersion: kAppVersion,
             ),
           ),
 
           const SizedBox(height: 20),
 
           // Danger zone
-          _buildSectionHeader(context, 'Account Actions'),
+          _buildSectionHeader(context, context.l10n.settingsSectionAccountActions),
           _buildListTile(
             context: context,
             icon: Icons.logout,
@@ -260,7 +261,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Flame v1.0.0',
+                  context.l10n.settingsVersion(kAppVersion),
                   style: TextStyle(color: context.secondaryText, fontSize: 14),
                 ),
               ],
@@ -568,7 +569,7 @@ class SettingsScreen extends ConsumerWidget {
               }
             },
             child: Text(
-              'Change',
+              context.l10n.commonChange,
               style: TextStyle(color: AppTheme.primaryColor),
             ),
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flame/theme/app_tokens.dart';
+import 'package:flame/core/i18n/build_context_ext.dart';
 
 /// Shown in the Messages list when the user has no conversations yet.
 ///
@@ -27,7 +28,7 @@ class MatchesEmptyState extends StatelessWidget {
             Icon(Icons.chat_bubble_outline, size: 80, color: context.secondaryText),
             const SizedBox(height: 16),
             Text(
-              'No messages yet',
+              context.l10n.chatNoMessagesTitle,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 20,
@@ -37,7 +38,7 @@ class MatchesEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Match with someone to start chatting!',
+              context.l10n.chatNoMessagesBody,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14, color: context.secondaryText),
             ),
