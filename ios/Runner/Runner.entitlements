@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Sign in with Apple. App Store Review Guideline 4.8 requires this
+	     wherever the app offers a third-party login (Flame offers Google), so
+	     shipping without it is a rejection, not a nice-to-have.
+
+	     This entitlement must also be enabled on the App ID at
+	     developer.apple.com. Until it is, a SIGNED build will fail to
+	     provision — an unsigned build is unaffected. -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+</dict>
+</plist>
