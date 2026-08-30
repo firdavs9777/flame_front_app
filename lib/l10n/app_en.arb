@@ -1700,5 +1700,29 @@
         "type": "String"
       }
     }
+  },
+  "profilePhotoPosition": "{index} of {total}",
+  "@profilePhotoPosition": {
+    "description": "Which photo of how many is on screen in the full-screen viewer",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "profileReorderHint": "Hold and drag a photo to reorder. The first one is your main photo.",
+  "@profileReorderHint": {
+    "description": "Explains the drag gesture above the photo grid"
+  },
+  "profilePhotosReordered": "Photo order updated",
+  "@profilePhotosReordered": {
+    "description": "Confirmation after dragging a photo to a new position"
+  },
+  "profileViewPhoto": "View photo",
+  "@profileViewPhoto": {
+    "description": "Opens a photo full screen from the edit-profile grid"
   }
 }

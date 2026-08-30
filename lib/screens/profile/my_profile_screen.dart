@@ -8,8 +8,10 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/core/format/distance_display.dart';
+import 'package:flame/core/interests/interest_catalogue.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/settings/widgets/settings_section.dart';
+import 'package:flame/screens/profile/photo_gallery.dart';
 
 class MyProfileScreen extends ConsumerStatefulWidget {
   const MyProfileScreen({super.key});
@@ -99,14 +101,23 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 // Profile picture
                 Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 60,
-                      backgroundImage: user.photos.isNotEmpty
-                          ? user.primaryPhoto.toImageProvider()
-                          : null,
-                      child: user.photos.isEmpty
-                          ? const Icon(Icons.person, size: 60)
-                          : null,
+                    // The avatar views; the camera badge on it changes. Both
+                    // used to open the picker, so there was no way to actually
+                    // look at your own main photo.
+                    GestureDetector(
+                      key: const Key('profile_avatar'),
+                      onTap: user.photos.isEmpty
+                          ? null
+                          : () => openPhotoGallery(context, user.photos, 0),
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundImage: user.photos.isNotEmpty
+                            ? user.primaryPhoto.toImageProvider()
+                            : null,
+                        child: user.photos.isEmpty
+                            ? const Icon(Icons.person, size: 60)
+                            : null,
+                      ),
                     ),
                     Positioned(
                       bottom: 0,
@@ -209,6 +220,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 // Photos grid
                 _buildSection(
                   title: context.l10n.profilePhotos,
+                  editKey: const Key('profile_edit_photos'),
+                  onEdit: () =>
+                      Navigator.pushNamed(context, AppRoutes.editProfile),
                   child: GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -223,7 +237,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                       if (index == user.photos.length) {
                         return _buildAddPhotoButton();
                       }
-                      return _buildPhotoTile(user.photos[index]);
+                      return _buildPhotoTile(user.photos, index);
                     },
                   ),
                 ),
@@ -250,12 +264,15 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 // Interests
                 _buildSection(
                   title: context.l10n.profileInterests,
+                  editKey: const Key('profile_edit_interests'),
+                  onEdit: () =>
+                      Navigator.pushNamed(context, AppRoutes.editProfile),
                   child: Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: user.interests.map((interest) {
                       return Chip(
-                        label: Text(interest),
+                        label: Text(interestLabel(interest, context.l10n)),
                         backgroundColor: AppTheme.primaryColor.withValues(
                           alpha: 0.1,
                         ),
@@ -348,13 +365,39 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     );
   }
 
-  Widget _buildSection({required String title, required Widget child}) {
+  /// A titled block, optionally with a way to go and edit what it shows.
+  ///
+  /// Read-only sections that hold editable content are a dead end otherwise:
+  /// Photos and Interests both render values the user owns, and neither gave
+  /// any indication that Edit Profile was where you change them.
+  Widget _buildSection({
+    required String title,
+    required Widget child,
+    VoidCallback? onEdit,
+    Key? editKey,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        Row(
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            if (onEdit != null)
+              TextButton.icon(
+                key: editKey,
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_outlined, size: 16),
+                label: Text(context.l10n.profileEditProfile),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.primaryColor,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 12),
         child,
@@ -362,16 +405,25 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     );
   }
 
-  Widget _buildPhotoTile(String photoUrl) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: SmartImage(
-        imageSource: photoUrl,
-        fit: BoxFit.cover,
-        placeholder: Container(color: context.fill),
-        errorWidget: Container(
-          color: context.fill,
-          child: const Icon(Icons.error),
+  /// A photo that opens full screen when tapped.
+  ///
+  /// It had no `onTap` at all: tapping your own photo on your own profile did
+  /// nothing, while the "+" tile beside it opened the picker. The one gesture
+  /// everyone tries was the one gesture that was not wired up.
+  Widget _buildPhotoTile(List<String> photos, int index) {
+    return GestureDetector(
+      key: Key('profile_photo_$index'),
+      onTap: () => openPhotoGallery(context, photos, index),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SmartImage(
+          imageSource: photos[index],
+          fit: BoxFit.cover,
+          placeholder: Container(color: context.fill),
+          errorWidget: Container(
+            color: context.fill,
+            child: const Icon(Icons.error),
+          ),
         ),
       ),
     );

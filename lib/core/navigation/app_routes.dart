@@ -83,10 +83,24 @@ class ProfileDetailArgs {
 }
 
 class MediaViewerArgs {
-  const MediaViewerArgs({required this.url, required this.heroTag});
+  /// One image, with a hero to expand it out of the thumbnail that opened it.
+  const MediaViewerArgs({required String url, required this.heroTag})
+      : urls = const [],
+        _url = url,
+        initialIndex = 0;
 
-  final String url;
-  final String heroTag;
+  /// A set of images to page through — a profile's photos.
+  const MediaViewerArgs.gallery({required this.urls, this.initialIndex = 0})
+      : _url = null,
+        heroTag = null;
+
+  final List<String> urls;
+  final String? _url;
+  final int initialIndex;
+  final String? heroTag;
+
+  /// The images to show, whichever constructor was used.
+  List<String> get images => _url != null ? [_url] : urls;
 }
 
 class StoryViewerArgs {

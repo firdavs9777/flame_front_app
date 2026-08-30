@@ -5,6 +5,7 @@ import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/widgets/report_block_menu.dart';
 import 'package:flame/core/format/distance_display.dart';
+import 'package:flame/core/interests/interest_catalogue.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/swipe_provider.dart';
@@ -247,7 +248,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                           ),
                         ),
                         child: Text(
-                          interest,
+                          interestLabel(interest, context.l10n),
                           style: TextStyle(
                             color: AppTheme.primaryColor,
                             fontWeight: FontWeight.w500,

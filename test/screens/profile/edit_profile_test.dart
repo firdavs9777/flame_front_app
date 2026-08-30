@@ -20,12 +20,39 @@ import 'package:flame/l10n/gen/app_localizations.dart';
 // tests goes through an injected callback, not this service.
 class _FakeUserService extends UserService {}
 
+/// Records the one call the reorder gesture is supposed to make, and echoes
+/// the requested order back the way the route does.
+class _ReorderingUserService extends UserService {
+  List<String>? reordered;
+
+  @override
+  Future<ServiceResult<List<Photo>>> reorderPhotos(List<String> ids) async {
+    reordered = ids;
+    return ServiceResult.success([
+      for (var i = 0; i < ids.length; i++)
+        Photo(id: ids[i], url: 'url-${ids[i]}', order: i),
+    ]);
+  }
+}
+
 // A 1x1 transparent PNG as a data URI. SmartImage routes `data:` sources to
 // Image.memory, so a photo tile renders without CachedNetworkImage reaching
 // for the network in a widget test.
 const _tinyPng = 'data:image/png;base64,'
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/'
     'q842iQAAAABJRU5ErkJggg==';
+
+/// Photos carrying real ids, which a reorder needs — the plain [_user] helper
+/// stores bare urls, and an id-less photo blocks the reorder by design.
+User _userWithPhotoIds() => User.fromJson({
+      'id': 'u1', 'name': 'Alex', 'age': 28, 'bio': '',
+      'interests': const <String>[], 'gender': 'male', 'looking_for': 'female',
+      'photos': const [
+        {'id': 'p1', 'url': _tinyPng},
+        {'id': 'p2', 'url': _tinyPng},
+        {'id': 'p3', 'url': _tinyPng},
+      ],
+    });
 
 User _user({
   String name = 'Alex',
@@ -62,11 +89,13 @@ Widget _host(
   AboutSave? saveAbout,
   InterestsSave? saveInterests,
   ThemeData? theme,
+  UserService? service,
 }) {
   return ProviderScope(
     overrides: [
       currentUserProvider.overrideWith(
-        (ref) => CurrentUserNotifier(_FakeUserService())..setUser(user),
+        (ref) => CurrentUserNotifier(service ?? _FakeUserService())
+          ..setUser(user),
       ),
     ],
     child: MaterialApp(
@@ -474,6 +503,73 @@ void main() {
       expect(find.text('Set as main photo'), findsNothing,
           reason: 'the route rejects a no-op reorder, so offering it would be '
               'offering a failure');
+    });
+  });
+
+  // Reordering is how you change your main photo, and a drag gesture nobody
+  // can see is a feature nobody has.
+  group('photo reorder', () {
+    testWidgets('the drag hint appears once there is something to reorder',
+        (tester) async {
+      await tester.pumpWidget(_host(_user(photos: const [_tinyPng, _tinyPng])));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Hold and drag'),
+        findsOneWidget,
+        reason: 'it also has to say that the first photo is the main one',
+      );
+    });
+
+    testWidgets('one photo has no order to change, so no hint', (tester) async {
+      await tester.pumpWidget(_host(_user(photos: const [_tinyPng])));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Hold and drag'), findsNothing);
+    });
+
+    testWidgets('every photo is a drag source and a drop target',
+        (tester) async {
+      await tester.pumpWidget(_host(
+        _user(photos: const [_tinyPng, _tinyPng, _tinyPng]),
+      ));
+      await tester.pumpAndSettle();
+
+      // Three photos, three empty "add" slots: only the photos take part.
+      expect(find.byType(LongPressDraggable<int>), findsNWidgets(3));
+      expect(find.byType(DragTarget<int>), findsNWidgets(3));
+    });
+
+    testWidgets('a long-press drag onto another tile reorders', (tester) async {
+      final service = _ReorderingUserService();
+      await tester.pumpWidget(_host(
+        _userWithPhotoIds(),
+        service: service,
+      ));
+      await tester.pumpAndSettle();
+
+      final third = tester.getCenter(find.byType(DragTarget<int>).at(2));
+      final first = tester.getCenter(find.byType(DragTarget<int>).at(0));
+
+      final gesture = await tester.startGesture(third);
+      // Long-press, not a plain drag: the grid sits inside a scrolling page,
+      // and a tile that stole a vertical drag would trap the scroll.
+      await tester.pump(const Duration(milliseconds: 600));
+      await gesture.moveTo(first);
+      await tester.pump();
+      await gesture.up();
+      // Explicit pumps rather than pumpAndSettle: the SnackBar that lands here
+      // holds a dismiss timer, so "settled" never arrives.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(
+        service.reordered,
+        ['p3', 'p1', 'p2'],
+        reason: 'the third photo was dragged onto the first, and the route '
+            'takes the whole list — a subset would delete what it omits',
+      );
+      expect(find.text('Photo order updated'), findsOneWidget);
     });
   });
 }

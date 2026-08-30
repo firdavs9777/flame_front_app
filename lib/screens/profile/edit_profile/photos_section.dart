@@ -9,6 +9,7 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/screens/profile/photo_gallery.dart';
 
 class PhotosSection extends ConsumerStatefulWidget {
   final User user;
@@ -27,6 +28,16 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // A drag gesture nobody can see is a feature nobody has. The second
+        // sentence is the part that matters: reordering is how you change your
+        // main photo, and that is not guessable from "drag to reorder".
+        if (widget.user.photos.length > 1) ...[
+          Text(
+            context.l10n.profileReorderHint,
+            style: TextStyle(fontSize: 12, color: context.secondaryText),
+          ),
+          const SizedBox(height: 12),
+        ],
         _buildPhotosGrid(widget.user),
         if (_isUploading) ...[
           const SizedBox(height: 12),
@@ -48,23 +59,97 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
       itemCount: 6,
       itemBuilder: (context, index) {
         if (index < user.photos.length) {
-          return _buildPhotoTile(user.photos[index], index);
+          return _buildDraggableTile(user, index);
         }
         return _buildAddPhotoButton(index);
       },
     );
   }
 
+  /// One photo, as both a drag source and a drop target.
+  ///
+  /// Long-press rather than plain drag: the grid scrolls with the page around
+  /// it, and a tile that steals a vertical drag would make the section
+  /// impossible to scroll past.
+  ///
+  /// ReorderableListView would have been less code, but it is a list — it lays
+  /// out in one direction and cannot express a 3-across grid. The reorder is
+  /// still a single move-one-to-a-position operation, which is exactly what the
+  /// backend's full-permutation route wants.
+  Widget _buildDraggableTile(User user, int index) {
+    final url = user.photos[index];
+    final tile = _buildPhotoTile(url, index);
+
+    return DragTarget<int>(
+      onWillAcceptWithDetails: (details) => details.data != index,
+      onAcceptWithDetails: (details) => _movePhoto(details.data, index),
+      builder: (context, candidate, rejected) {
+        final hovered = candidate.isNotEmpty;
+        return LongPressDraggable<int>(
+          data: index,
+          // The dragged copy is deliberately plain: the badge and the options
+          // button belong to a position, and the whole point of the drag is
+          // that the position is about to change.
+          feedback: SizedBox(
+            width: 96,
+            height: 96,
+            child: Opacity(
+              opacity: 0.85,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SmartImage(imageSource: url, fit: BoxFit.cover),
+              ),
+            ),
+          ),
+          childWhenDragging: DecoratedBox(
+            decoration: BoxDecoration(
+              color: context.fill,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const SizedBox.expand(),
+          ),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: hovered
+                  ? Border.all(color: AppTheme.primaryColor, width: 3)
+                  : null,
+            ),
+            child: tile,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _movePhoto(int from, int to) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+
+    final ok = await ref.read(currentUserProvider.notifier).movePhoto(from, to);
+    if (!mounted) return;
+
+    messenger.showSnackBar(SnackBar(
+      content: Text(ok ? l10n.profilePhotosReordered : l10n.profileSaveFailed),
+    ));
+  }
+
   Widget _buildPhotoTile(String photoUrl, int index) {
     return Stack(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: SmartImage(
-            imageSource: photoUrl,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: () => openPhotoGallery(context, widget.user.photos, index),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SmartImage(
+                imageSource: photoUrl,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
           ),
         ),
         Positioned(

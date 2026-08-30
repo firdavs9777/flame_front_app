@@ -141,7 +141,7 @@ void main() {
 
       final screen =
           tester.widget<MediaViewerScreen>(find.byType(MediaViewerScreen));
-      expect(screen.url, 'https://x/y.jpg');
+      expect(screen.urls, ['https://x/y.jpg']);
       expect(screen.heroTag, 'h1');
     });
   });

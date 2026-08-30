@@ -124,7 +124,11 @@ abstract final class AppRouter {
         return _typed<MediaViewerArgs>(
           settings,
           args,
-          (a) => MediaViewerScreen(url: a.url, heroTag: a.heroTag),
+          (a) => MediaViewerScreen.gallery(
+            urls: a.images,
+            initialIndex: a.initialIndex,
+            heroTag: a.heroTag,
+          ),
         );
 
       case AppRoutes.storyViewer:

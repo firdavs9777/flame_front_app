@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/user_provider.dart';
 import 'package:flame/screens/profile/my_profile_screen.dart';
@@ -36,16 +37,18 @@ User _user({
   bool isPremium = false,
   DateTime? premiumExpiresAt,
   double maxDistance = 25,
+  List<String> interests = const <String>[],
+  List<String> photos = const <String>[],
 }) {
   return User.fromJson({
     'id': 'u1',
     'name': 'Alex',
     'age': 28,
     'bio': 'Hello there',
-    'interests': <String>[],
+    'interests': interests,
     'gender': 'male',
     'looking_for': 'female',
-    'photos': <String>[],
+    'photos': photos,
     'preferences': {'max_distance': maxDistance},
     'is_verified': isVerified,
     'is_premium': isPremium,
@@ -54,7 +57,11 @@ User _user({
   });
 }
 
-Widget _host(User user, {ThemeData? theme}) {
+/// Every route the screen pushes, so a tap can be checked for where it went
+/// rather than only for having gone somewhere.
+final List<RouteSettings> _pushed = [];
+
+Widget _host(User user, {ThemeData? theme, Locale locale = const Locale('en')}) {
   return ProviderScope(
     overrides: [
       currentUserProvider.overrideWith(
@@ -65,15 +72,24 @@ Widget _host(User user, {ThemeData? theme}) {
       theme: theme,
       // The settings gear's tooltip reads from the ARBs, so the screen needs
       // localizations to build.
-      locale: const Locale('en'),
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      onGenerateRoute: (settings) {
+        if (settings.name != null) _pushed.add(settings);
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const Placeholder(),
+        );
+      },
       home: const MyProfileScreen(),
     ),
   );
 }
 
 void main() {
+  _phase4Tests();
+
   group('verification badge', () {
     testWidgets('a verified user shows a verification badge', (tester) async {
       await tester.pumpWidget(_host(_user(isVerified: true)));
@@ -210,5 +226,125 @@ void main() {
         expect(find.byKey(const Key('premium_badge')), findsOneWidget);
       });
     }
+  });
+}
+
+// The profile screen showed things the user owns and gave no way to act on
+// them: the photo grid had no onTap at all, and the Photos and Interests
+// blocks never mentioned that Edit Profile is where you change them. The
+// interest chips had a subtler problem — they rendered the stored token, so
+// every interest read English in all 32 locales while the translations for
+// them sat unused in the ARBs.
+void _phase4Tests() {
+  const photos = ['https://x/1.jpg', 'https://x/2.jpg'];
+
+  setUp(_pushed.clear);
+
+  group('photo tap targets', () {
+    testWidgets('tapping a photo opens the viewer on that photo', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_host(_user(photos: photos)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('profile_photo_1')));
+      await tester.pumpAndSettle();
+
+      expect(_pushed.single.name, AppRoutes.mediaViewer,
+          reason: 'the tile used to have no onTap at all');
+      final args = _pushed.single.arguments as MediaViewerArgs;
+      expect(args.images, photos, reason: 'you can swipe to the others');
+      expect(args.initialIndex, 1, reason: 'it opens on the one you tapped');
+    });
+
+    testWidgets('tapping the avatar views it instead of opening the picker', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_host(_user(photos: photos)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('profile_avatar')));
+      await tester.pumpAndSettle();
+
+      expect(_pushed.single.name, AppRoutes.mediaViewer);
+      expect((_pushed.single.arguments as MediaViewerArgs).initialIndex, 0);
+    });
+
+    testWidgets('with no photos the avatar has nothing to open', (tester) async {
+      await tester.pumpWidget(_host(_user()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('profile_avatar')));
+      await tester.pumpAndSettle();
+
+      expect(_pushed, isEmpty,
+          reason: 'an empty viewer is a black screen with a close button');
+    });
+  });
+
+  group('a way through to the editor', () {
+    testWidgets('Photos and Interests each lead to Edit Profile', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_host(_user(photos: photos)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('profile_edit_photos')));
+      await tester.pumpAndSettle();
+      expect(_pushed.single.name, AppRoutes.editProfile);
+
+      expect(find.byKey(const Key('profile_edit_interests')), findsNothing,
+          reason: 'we navigated away; the second is checked on a fresh pump');
+    });
+
+    testWidgets('the Interests block leads there too', (tester) async {
+      await tester.pumpWidget(_host(_user(photos: photos)));
+      await tester.pumpAndSettle();
+
+      // Interests sits below Photos, About and the stats row. ensureVisible,
+      // not scrollUntilVisible: the page holds several nested GridViews, so
+      // "the scrollable" is ambiguous.
+      final button = find.byKey(const Key('profile_edit_interests'));
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+
+      expect(_pushed.single.name, AppRoutes.editProfile);
+    });
+  });
+
+  group('interest chips', () {
+    testWidgets('a catalogue interest renders its localised label', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_host(
+        _user(interests: const ['Travel']),
+        locale: const Locale('ko'),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('여행'), findsOneWidget);
+      expect(
+        find.text('Travel'),
+        findsNothing,
+        reason: 'the stored token is an identifier, not display text',
+      );
+    });
+
+    testWidgets('an off-catalogue interest still renders, as itself', (
+      tester,
+    ) async {
+      // Registration accepted free text, so stored values exist that the
+      // catalogue has never heard of. Dropping them would hide a user's own
+      // data from them.
+      await tester.pumpWidget(_host(
+        _user(interests: const ['Speleology']),
+        locale: const Locale('ko'),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Speleology'), findsOneWidget);
+    });
   });
 }

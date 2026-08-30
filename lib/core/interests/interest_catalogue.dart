@@ -81,6 +81,15 @@ Interest? interestFor(String token) {
   return null;
 }
 
+/// The label to show for a stored interest token, in [l10n]'s language.
+///
+/// Both profile screens used to render the token itself, so every interest read
+/// "Travel" and "Coffee" in all 32 locales — the translations existed and
+/// nothing called them. Off-catalogue tokens still render as themselves, which
+/// is the only honest thing to do with a value this app did not define.
+String interestLabel(String token, AppLocalizations l10n) =>
+    interestFor(token)?.label(l10n) ?? token;
+
 /// The most interests a discovery filter may select, matching the backend's
 /// MAX_INTEREST_FILTER.
 const int kMaxInterestFilter = 10;

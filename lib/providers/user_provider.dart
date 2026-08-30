@@ -136,6 +136,36 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
     return true;
   }
 
+  /// Moves the photo at [from] to sit at [to], keeping every other photo's
+  /// relative order.
+  ///
+  /// The route takes a full permutation, never a subset: it rejects one
+  /// outright rather than silently deleting the photos left out. So this sends
+  /// the whole list, reordered locally, and adopts whatever comes back — the
+  /// server owns `isPrimary`, which moves to whichever photo ends up first.
+  Future<bool> movePhoto(int from, int to) async {
+    final currentUser = state.valueOrNull;
+    if (currentUser == null) return false;
+
+    final ids = [...currentUser.photoIds];
+    if (from < 0 || from >= ids.length) return false;
+    if (to < 0 || to >= ids.length) return false;
+    if (from == to) return false;
+    if (ids.any((id) => id.isEmpty)) return false;
+
+    ids.insert(to, ids.removeAt(from));
+
+    final result = await _userService.reorderPhotos(ids);
+    if (!result.success || result.data == null) return false;
+
+    final photos = result.data!;
+    state = AsyncValue.data(currentUser.copyWith(
+      photos: photos.map((p) => p.url).toList(),
+      photoIds: photos.map((p) => p.id).toList(),
+    ));
+    return true;
+  }
+
   /// Makes the photo at [index] the main photo by reordering it to the front.
   Future<bool> setMainPhotoAt(int index) async {
     final currentUser = state.valueOrNull;

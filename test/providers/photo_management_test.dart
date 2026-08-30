@@ -44,6 +44,8 @@ User _userWithPhotos() => User.fromJson({
     });
 
 void main() {
+  _moveTests();
+
   test('deletePhotoAt removes the photo + id at that index on success', () async {
     final fake = _FakeUserService();
     final n = CurrentUserNotifier(fake)..setUser(_userWithPhotos());
@@ -109,5 +111,86 @@ void main() {
     expect(n.state.value!.photoIds, ['p1', 'p2', 'p3'],
         reason: 'an optimistic reorder that reverts on the next fetch looks '
             'like the app forgetting what you asked for');
+  });
+}
+
+// movePhoto — the drag-to-reorder gesture in edit-profile.
+//
+// The route takes a full permutation and rejects a subset outright, because
+// accepting one would silently delete the photos left out of it. So the whole
+// contract here is "send every id, exactly once, in the new order".
+void _moveTests() {
+  test('movePhoto sends the full list in the new order', () async {
+    final fake = _FakeUserService();
+    final n = CurrentUserNotifier(fake)..setUser(_userWithPhotos());
+
+    final ok = await n.movePhoto(2, 0);
+
+    expect(ok, isTrue);
+    expect(fake.reorderedIds, ['p3', 'p1', 'p2'],
+        reason: 'a subset would delete the photos it omits');
+    expect(n.state.value!.photos, ['url-p3', 'url-p1', 'url-p2']);
+  });
+
+  test('moving forward keeps every other photo in its relative order', () async {
+    final fake = _FakeUserService();
+    final n = CurrentUserNotifier(fake)..setUser(_userWithPhotos());
+
+    await n.movePhoto(0, 2);
+
+    expect(fake.reorderedIds, ['p2', 'p3', 'p1']);
+  });
+
+  test('the response is adopted, not the locally-guessed order', () async {
+    // The server owns isPrimary and the canonical order. A client that keeps
+    // its own guess drifts the moment the two disagree.
+    final fake = _FakeUserService()..reorderSucceeds = true;
+    final n = CurrentUserNotifier(fake)..setUser(_userWithPhotos());
+
+    await n.movePhoto(1, 0);
+
+    expect(n.state.value!.photoIds, fake.reorderedIds);
+  });
+
+  test('a failed reorder leaves the order untouched', () async {
+    final fake = _FakeUserService()..reorderSucceeds = false;
+    final n = CurrentUserNotifier(fake)..setUser(_userWithPhotos());
+
+    final ok = await n.movePhoto(2, 0);
+
+    expect(ok, isFalse);
+    expect(n.state.value!.photoIds, ['p1', 'p2', 'p3'],
+        reason: 'the grid must not show an order the server refused');
+  });
+
+  test('a no-op move never reaches the network', () async {
+    final fake = _FakeUserService();
+    final n = CurrentUserNotifier(fake)..setUser(_userWithPhotos());
+
+    expect(await n.movePhoto(1, 1), isFalse);
+    expect(fake.reorderedIds, isNull, reason: 'the route rejects a no-op');
+  });
+
+  test('an out-of-range index never reaches the network', () async {
+    final fake = _FakeUserService();
+    final n = CurrentUserNotifier(fake)..setUser(_userWithPhotos());
+
+    expect(await n.movePhoto(0, 9), isFalse);
+    expect(await n.movePhoto(-1, 0), isFalse);
+    expect(fake.reorderedIds, isNull);
+  });
+
+  test('a photo with no id blocks the whole reorder', () async {
+    // An id-less photo would be sent as '', which the route reads as an
+    // unknown id and rejects — after the user has already seen the drag land.
+    final fake = _FakeUserService();
+    final u = User.fromJson({
+      'id': 'u1', 'name': 'A', 'age': 20, 'bio': '', 'interests': [],
+      'gender': 'female', 'photos': ['bare-url', 'other-url'],
+    });
+    final n = CurrentUserNotifier(fake)..setUser(u);
+
+    expect(await n.movePhoto(1, 0), isFalse);
+    expect(fake.reorderedIds, isNull);
   });
 }

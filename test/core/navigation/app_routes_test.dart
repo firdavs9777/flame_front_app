@@ -68,8 +68,19 @@ void main() {
 
     test('MediaViewerArgs keeps url and heroTag distinct', () {
       const args = MediaViewerArgs(url: 'https://x/y.jpg', heroTag: 'msg-1');
-      expect(args.url, 'https://x/y.jpg');
+      expect(args.images, ['https://x/y.jpg']);
       expect(args.heroTag, 'msg-1');
+    });
+
+    test('a gallery carries every photo and where to start', () {
+      const args = MediaViewerArgs.gallery(
+        urls: ['a.jpg', 'b.jpg', 'c.jpg'],
+        initialIndex: 2,
+      );
+      expect(args.images, ['a.jpg', 'b.jpg', 'c.jpg']);
+      expect(args.initialIndex, 2);
+      // A gallery has no single thumbnail to fly out of.
+      expect(args.heroTag, isNull);
     });
 
     test('StoryViewerArgs carries the users and the starting index', () {
