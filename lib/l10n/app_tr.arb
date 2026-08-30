@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "Başlamadan önce",
   "registerStepConsentSubtitle": "Devam etmek için bunları oku ve kabul et",
   "registerConsentDecline": "Şimdi değil",
+  "termsReviewTitle": "Lütfen şartlarımızı incele",
   "@@x-machine-translated": [
     "authConfirmPasswordRequired",
     "authNameTooLong",
@@ -448,6 +449,7 @@
     "safetyReportMessage",
     "safetyReportMessageTitle",
     "safetyReportSubmitted",
-    "safetyReportUserTitle"
+    "safetyReportUserTitle",
+    "termsReviewTitle"
   ]
 }

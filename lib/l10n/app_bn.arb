@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "শুরু করার আগে",
   "registerStepConsentSubtitle": "চালিয়ে যেতে এগুলি পড়ুন এবং সম্মত হন",
   "registerConsentDecline": "এখন নয়",
+  "termsReviewTitle": "অনুগ্রহ করে আমাদের শর্তাবলী দেখুন",
   "@@x-machine-translated": [
     "appName",
     "appTagline",
@@ -682,6 +683,7 @@
     "storyPost",
     "storyUploadFailed",
     "storyYourStory",
+    "termsReviewTitle",
     "themeDark",
     "themeLight",
     "themeSystem",

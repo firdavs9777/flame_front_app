@@ -107,7 +107,7 @@ const List<_Section> _termsSections = [
           'account.'),
   _Section('2. Your account',
       'Keep your password to yourself — anything done through your account is '
-          'treated as done by you. Tell us at support@flamedating.net if you '
+          'treated as done by you. Tell us at bananatalkmain@gmail.com if you '
           'think someone else has access. If you sign in with Google, that '
           'account controls access to your Flame account.'),
   _Section('3. Your profile must be you',
@@ -165,14 +165,24 @@ const List<_Section> _termsSections = [
           'indirect losses. Nothing here limits liability that cannot lawfully '
           'be limited, and if you are a consumer your statutory rights are '
           'unaffected.'),
-  _Section('11. Changes',
+  _Section('11. Changes to these terms',
       'We may update these terms. We will tell you in the app before anything '
           'material takes effect. The current version is always at '
           'flamedating.net/terms.'),
+  _Section('12. Law',
+      'These terms are governed by the laws of the Republic of Korea. If you '
+          'are a consumer, you keep the protection of the mandatory laws of '
+          'the country you live in, and you can bring proceedings there.'),
 ];
 
 const List<_Section> _privacySections = [
-  _Section('1. What we collect',
+  _Section('1. Who we are',
+      'Flame is operated by Flame Software, Gangnam-gu, Seoul, Republic of '
+          'Korea. For privacy questions, or to exercise any right described '
+          'here, write to bananatalkmain@gmail.com.\n\n'
+          'Flame is for adults. You must be 18 or over to create an account, '
+          'and the app will not accept an age below 18.'),
+  _Section('2. What we collect',
       'What you give us: email and password (stored only as a bcrypt hash — we '
           'cannot read yours), name, age, gender, who you want to meet, bio, '
           'interests, photos, your precise location, and the messages, stories '
@@ -181,18 +191,18 @@ const List<_Section> _privacySections = [
           'with or blocked; whether you are online and when you were last '
           'active; your preferences and settings; and a device token for each '
           'device, so we can send push notifications.'),
-  _Section('2. What we do not collect',
+  _Section('3. What we do not collect',
       'Flame contains no analytics SDK, no crash-reporting SDK and no '
           'advertising SDK. We do not track you across other apps or websites, '
           'we do not build advertising profiles, and we do not sell your data. '
           'There is nothing to opt out of because there is nothing running.'),
-  _Section('3. Sensitive information',
+  _Section('4. Sensitive information',
       'Your gender and who you are looking to meet may together reveal '
           'something about your sexual orientation, which is special category '
           'data in the UK and EU. We process it only to run the matching Flame '
           'exists to provide, and only because you chose to provide it. You '
           'can change either field at any time, or delete your account.'),
-  _Section('4. Photos and face detection',
+  _Section('5. Photos and face detection',
       'Your main photo must contain a detectable human face. That check runs '
           'entirely on your phone: the image is analysed locally and only the '
           'result — a face was found, or was not — decides whether the photo '
@@ -200,12 +210,12 @@ const List<_Section> _privacySections = [
           'We do not run face recognition, do not compute a faceprint or any '
           'biometric identifier, and do not compare your face against any '
           'database. Photos are not sent anywhere for this check.'),
-  _Section('5. Who else processes your data',
+  _Section('6. Who else processes your data',
       'DigitalOcean Spaces stores your photos and story media (United States). '
           'Mailgun sends our emails. Google provides Sign in with Google and '
-          'delivers push notifications. OpenAI translates individual messages '
-          '— see the next section.'),
-  _Section('6. Message translation',
+          'delivers push notifications. Apple provides Sign in with Apple. '
+          'OpenAI translates individual messages — see the next section.'),
+  _Section('7. Message translation',
       'This is not automatic. When, and only when, you tap Translate on a '
           'message, the text of that one message is sent to OpenAI to be '
           'translated and the translation is returned to you. Messages you '
@@ -213,33 +223,47 @@ const List<_Section> _privacySections = [
           'your identity, or anything else about the conversation.\n\n'
           'If you would rather no message text left our servers, do not use '
           'the translate button.'),
-  _Section('7. Where your data is held',
+  _Section('8. Where your data is held',
       'Flame\'s servers and database are hosted in the United States. If you '
           'use Flame from elsewhere, your information is transferred there. We '
           'rely on the Standard Contractual Clauses, and the UK Addendum where '
           'it applies, for those transfers.'),
-  _Section('8. Deleting your account',
+  _Section('9. How long we keep things',
+      'Your profile — while your account exists.\n\n'
+          'Messages — until you delete them, or until either participant '
+          'deletes their account.\n\n'
+          'Stories — they expire automatically and are removed after they '
+          'do.\n\n'
+          'Reports you make about other people — kept while we investigate, '
+          'and for a period afterwards so repeat behaviour can be '
+          'recognised.\n\n'
+          'After you delete your account — see the next section.'),
+  _Section('10. Deleting your account',
       'Settings → Delete account. It is immediate and cannot be undone. We '
           'erase your photos, messages and conversations, matches, every like '
           'and pass you made and every one made about you, your stories, the '
-          'reports you filed, and every signed-in session.\n\n'
+          'reports you filed, and every signed-in session. If you signed in '
+          'with Apple, we also revoke that sign-in grant.\n\n'
           'Your email address is released rather than kept — we no longer hold '
           'it, and you are free to sign up again later with the same address. '
           'What remains is an anonymous record that the account existed, so '
           'that conversations other people had do not break.'),
-  _Section('9. Your rights',
+  _Section('11. Your rights',
       'You can ask us to give you a copy of your data, correct it, delete it, '
           'restrict or object to how we use it, or send it to another service. '
           'Most of this is in the app already. For anything else, write to '
-          'privacy@flamedating.net and we will respond within one month.'),
-  _Section('10. Security',
+          'bananatalkmain@gmail.com and we will respond within one month.'),
+  _Section('12. Security',
       'Passwords are stored as bcrypt hashes. Password reset codes are stored '
           'hashed, expire after fifteen minutes, are single use, and stop '
           'working after five wrong attempts. Traffic is encrypted in transit. '
           'Changing your password signs out every other device.\n\n'
           'No service can promise perfect security and we will not pretend '
           'otherwise. If a breach affects you we will tell you.'),
-  _Section('11. Contact',
-      'Privacy questions go to privacy@flamedating.net. The current version of '
-          'this policy is always at flamedating.net/privacy.'),
+  _Section('13. Changes',
+      'If we change this policy we will update the date at the top, and we '
+          'will tell you in the app before anything material takes effect.'),
+  _Section('14. Contact',
+      'Privacy questions go to bananatalkmain@gmail.com. The current version '
+          'of this policy is always at flamedating.net/privacy.')
 ];

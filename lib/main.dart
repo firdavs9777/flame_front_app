@@ -8,6 +8,7 @@ import 'providers/providers.dart';
 import 'screens/main_shell.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/registration/social_profile_completion_flow.dart';
+import 'screens/auth/terms_review_screen.dart';
 import 'core/navigation/app_router.dart';
 import 'screens/splash/splash_screen.dart';
 import 'core/i18n/locale_provider.dart';
@@ -87,7 +88,12 @@ class FlameApp extends ConsumerWidget {
       },
       home: SplashScreen(
         child: authState.isAuthenticated
-            ? const MainShell()
+            // Consent before the app. Accounts made before it was recorded —
+            // and every social signup, whose path had no checkbox — report
+            // termsAcceptedAt: null and are asked once, here.
+            ? (authState.user?.termsAcceptedAt == null
+                  ? const TermsReviewScreen()
+                  : const MainShell())
             : authState.isProfileIncomplete
             ? const SocialProfileCompletionFlow()
             : const WelcomeScreen(),

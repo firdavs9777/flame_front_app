@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "开始之前",
   "registerStepConsentSubtitle": "请阅读并同意后继续",
   "registerConsentDecline": "暂不",
+  "termsReviewTitle": "请查看我们的条款",
   "@@x-machine-translated": [
     "authConfirmPasswordRequired",
     "authNameTooLong",
@@ -447,6 +448,7 @@
     "safetyReportMessage",
     "safetyReportMessageTitle",
     "safetyReportSubmitted",
-    "safetyReportUserTitle"
+    "safetyReportUserTitle",
+    "termsReviewTitle"
   ]
 }

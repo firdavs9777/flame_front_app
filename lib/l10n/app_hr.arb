@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "Prije nego počnete",
   "registerStepConsentSubtitle": "Pročitajte ih i prihvatite kako biste nastavili",
   "registerConsentDecline": "Ne sada",
+  "termsReviewTitle": "Pregledajte naše uvjete",
   "@@x-machine-translated": [
     "appName",
     "appTagline",
@@ -682,6 +683,7 @@
     "storyPost",
     "storyUploadFailed",
     "storyYourStory",
+    "termsReviewTitle",
     "themeDark",
     "themeLight",
     "themeSystem",

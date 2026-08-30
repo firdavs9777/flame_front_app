@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "시작하기 전에",
   "registerStepConsentSubtitle": "내용을 읽고 동의해야 계속할 수 있어요",
   "registerConsentDecline": "나중에 하기",
+  "termsReviewTitle": "약관을 확인해 주세요",
   "@@x-machine-translated": [
     "authConfirmPasswordRequired",
     "authNameTooLong",
@@ -447,6 +448,7 @@
     "safetyReportMessage",
     "safetyReportMessageTitle",
     "safetyReportSubmitted",
-    "safetyReportUserTitle"
+    "safetyReportUserTitle",
+    "termsReviewTitle"
   ]
 }

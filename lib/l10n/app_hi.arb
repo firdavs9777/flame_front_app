@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "शुरू करने से पहले",
   "registerStepConsentSubtitle": "जारी रखने के लिए इन्हें पढ़ें और स्वीकार करें",
   "registerConsentDecline": "अभी नहीं",
+  "termsReviewTitle": "कृपया हमारी शर्तें देखें",
   "@@x-machine-translated": [
     "appTagline",
     "archivedEmpty",
@@ -571,6 +572,7 @@
     "storyCaptionHint",
     "storyDeleteBody",
     "storyUploadFailed",
+    "termsReviewTitle",
     "unarchive",
     "unmatchBody",
     "unmatchConfirm",

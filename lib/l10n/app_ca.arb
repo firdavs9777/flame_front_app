@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "Abans de començar",
   "registerStepConsentSubtitle": "Llegeix-los i accepta'ls per continuar",
   "registerConsentDecline": "Ara no",
+  "termsReviewTitle": "Revisa les nostres condicions",
   "@@x-machine-translated": [
     "appName",
     "appTagline",
@@ -682,6 +683,7 @@
     "storyPost",
     "storyUploadFailed",
     "storyYourStory",
+    "termsReviewTitle",
     "themeDark",
     "themeLight",
     "themeSystem",

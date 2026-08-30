@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "Sebelum kamu mulai",
   "registerStepConsentSubtitle": "Baca dan setujui ini untuk melanjutkan",
   "registerConsentDecline": "Nanti saja",
+  "termsReviewTitle": "Tinjau ketentuan kami",
   "@@x-machine-translated": [
     "authConfirmPasswordRequired",
     "authNameTooLong",
@@ -449,6 +450,7 @@
     "safetyReportMessage",
     "safetyReportMessageTitle",
     "safetyReportSubmitted",
-    "safetyReportUserTitle"
+    "safetyReportUserTitle",
+    "termsReviewTitle"
   ]
 }

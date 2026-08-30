@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "Trước khi bắt đầu",
   "registerStepConsentSubtitle": "Vui lòng đọc và chấp nhận để tiếp tục",
   "registerConsentDecline": "Để sau",
+  "termsReviewTitle": "Vui lòng xem lại điều khoản của chúng tôi",
   "@@x-machine-translated": [
     "appTagline",
     "archivedEmpty",
@@ -571,6 +572,7 @@
     "storyCaptionHint",
     "storyDeleteBody",
     "storyUploadFailed",
+    "termsReviewTitle",
     "unarchive",
     "unmatchBody",
     "unmatchConfirm",

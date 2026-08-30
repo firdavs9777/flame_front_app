@@ -207,7 +207,10 @@ class _SocialProfileCompletionFlowState
       }
 
       setState(() => _isUploading = false);
-      ref.read(authProvider.notifier).markAuthenticated();
+      // Hand over the user the PATCH returned: it carries termsAcceptedAt and
+      // is_profile_complete, both of which routing reads. Promoting with the
+      // stale one sends someone who just accepted to the terms screen.
+      ref.read(authProvider.notifier).markAuthenticated(profileResult.data);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isUploading = false);

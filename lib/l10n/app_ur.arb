@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "شروع کرنے سے پہلے",
   "registerStepConsentSubtitle": "جاری رکھنے کے لیے انہیں پڑھیں اور قبول کریں",
   "registerConsentDecline": "ابھی نہیں",
+  "termsReviewTitle": "براہ کرم ہماری شرائط ملاحظہ کریں",
   "@@x-machine-translated": [
     "appName",
     "appTagline",
@@ -682,6 +683,7 @@
     "storyPost",
     "storyUploadFailed",
     "storyYourStory",
+    "termsReviewTitle",
     "themeDark",
     "themeLight",
     "themeSystem",

@@ -263,10 +263,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return false;
   }
 
-  // Promote profileIncomplete user to authenticated (after completion flow)
-  void markAuthenticated() {
-    state = state.copyWith(status: AuthStatus.authenticated);
+  // Promote profileIncomplete user to authenticated (after completion flow).
+  //
+  // Takes the updated user when the caller has one. The completion flow's PATCH
+  // is what records consent, and routing now reads termsAcceptedAt — so
+  // promoting without the fresh user would leave a stale null in state and
+  // bounce someone who has just accepted straight into the terms screen.
+  void markAuthenticated([User? user]) {
+    state = state.copyWith(
+      status: AuthStatus.authenticated,
+      user: user ?? state.user,
+    );
   }
+
+  /// Replaces the cached user after a profile write, without re-fetching.
+  void setUser(User user) => state = state.copyWith(user: user);
 
   // Logout
   Future<void> logout() async {

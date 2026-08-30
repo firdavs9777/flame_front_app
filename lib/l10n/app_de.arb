@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "Bevor du loslegst",
   "registerStepConsentSubtitle": "Bitte lies und akzeptiere sie, um fortzufahren",
   "registerConsentDecline": "Jetzt nicht",
+  "termsReviewTitle": "Bitte sieh dir unsere Bedingungen an",
   "@@x-machine-translated": [
     "appTagline",
     "authConfirmPasswordRequired",
@@ -476,6 +477,7 @@
     "settingsLogout",
     "settingsLogoutConfirmBody",
     "settingsLogoutConfirmTitle",
+    "termsReviewTitle",
     "welcomeHeadline",
     "welcomeSignIn",
     "welcomeSubheadline",

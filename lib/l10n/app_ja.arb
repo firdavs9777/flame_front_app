@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "はじめる前に",
   "registerStepConsentSubtitle": "内容をお読みのうえ、同意して続けてください",
   "registerConsentDecline": "今はしない",
+  "termsReviewTitle": "利用規約をご確認ください",
   "@@x-machine-translated": [
     "authConfirmPasswordRequired",
     "authNameTooLong",
@@ -447,6 +448,7 @@
     "safetyReportMessage",
     "safetyReportMessageTitle",
     "safetyReportSubmitted",
-    "safetyReportUserTitle"
+    "safetyReportUserTitle",
+    "termsReviewTitle"
   ]
 }

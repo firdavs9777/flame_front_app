@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "Før du starter",
   "registerStepConsentSubtitle": "Les og godta disse for å fortsette",
   "registerConsentDecline": "Ikke nå",
+  "termsReviewTitle": "Se gjennom vilkårene våre",
   "@@x-machine-translated": [
     "appName",
     "appTagline",
@@ -682,6 +683,7 @@
     "storyPost",
     "storyUploadFailed",
     "storyYourStory",
+    "termsReviewTitle",
     "themeDark",
     "themeLight",
     "themeSystem",

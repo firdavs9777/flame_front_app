@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "ก่อนเริ่มใช้งาน",
   "registerStepConsentSubtitle": "โปรดอ่านและยอมรับเพื่อดำเนินการต่อ",
   "registerConsentDecline": "ไว้ก่อน",
+  "termsReviewTitle": "โปรดตรวจสอบข้อกำหนดของเรา",
   "@@x-machine-translated": [
     "appTagline",
     "archivedEmpty",
@@ -571,6 +572,7 @@
     "storyCaptionHint",
     "storyDeleteBody",
     "storyUploadFailed",
+    "termsReviewTitle",
     "unarchive",
     "unmatchBody",
     "unmatchConfirm",

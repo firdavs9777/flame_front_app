@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "Prima di iniziare",
   "registerStepConsentSubtitle": "Leggili e accettali per continuare",
   "registerConsentDecline": "Non ora",
+  "termsReviewTitle": "Leggi le nostre condizioni",
   "@@x-machine-translated": [
     "appTagline",
     "archivedEmpty",
@@ -569,6 +570,7 @@
     "storyCaptionHint",
     "storyDeleteBody",
     "storyUploadFailed",
+    "termsReviewTitle",
     "unarchive",
     "unmatchBody",
     "unmatchConfirm",

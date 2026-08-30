@@ -1377,5 +1377,9 @@
   "registerConsentDecline": "Not now",
   "@registerConsentDecline": {
     "description": "Exit from the consent step. Signs the user out rather than stranding them in a wizard they will not finish"
+  },
+  "termsReviewTitle": "Please review our terms",
+  "@termsReviewTitle": {
+    "description": "Title of the screen shown to an already-signed-in user who has never accepted the Terms and Privacy Policy. Not 'Before you start' — they have already started."
   }
 }

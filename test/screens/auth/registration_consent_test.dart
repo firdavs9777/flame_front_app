@@ -90,6 +90,9 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
-    expect(find.text('1. What we collect'), findsOneWidget);
+    // Renumbered when the in-app policy and the published one were merged:
+    // the app had never carried "Who we are", which is where GDPR expects the
+    // controller to be identified.
+    expect(find.text('1. Who we are'), findsOneWidget);
   });
 }

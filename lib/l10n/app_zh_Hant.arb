@@ -348,6 +348,7 @@
   "registerStepConsentTitle": "開始之前",
   "registerStepConsentSubtitle": "請閱讀並同意後繼續",
   "registerConsentDecline": "暫時不要",
+  "termsReviewTitle": "請查看我們的條款",
   "@@x-machine-translated": [
     "appTagline",
     "archivedEmpty",
@@ -571,6 +572,7 @@
     "storyCaptionHint",
     "storyDeleteBody",
     "storyUploadFailed",
+    "termsReviewTitle",
     "unarchive",
     "unmatchBody",
     "unmatchConfirm",
