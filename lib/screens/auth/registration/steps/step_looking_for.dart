@@ -22,13 +22,24 @@ class StepLookingFor extends StatefulWidget {
 }
 
 class _StepLookingForState extends State<StepLookingFor> {
+  Gender? _selectedGender;
   Gender? _selectedPreference;
 
   @override
   void initState() {
     super.initState();
+    // Gender lives here now. It is the other half of one matching decision —
+    // "I am X, show me Y" — and it used to be asked a screen earlier as small
+    // chips, which gave it a fraction of the weight its counterpart got here.
+    _selectedGender =
+        widget.data.gender == Gender.other ? null : widget.data.gender;
     _selectedPreference = widget.data.lookingFor == Gender.other ? null : widget.data.lookingFor;
   }
+
+  /// The three a person picks for themselves. Deliberately not the same list
+  /// as the preference options below, which include "Everyone" — an answer to
+  /// who you want to see, never to who you are.
+  static const _identities = [Gender.male, Gender.female, Gender.nonBinary];
 
   @override
   Widget build(BuildContext context) {
@@ -50,14 +61,15 @@ class _StepLookingForState extends State<StepLookingFor> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              context.l10n.registerShowMeTitle,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
-              ),
-            ),
+            _sectionTitle(context.l10n.registerGenderQuestionLabel),
+            const SizedBox(height: 12),
+            _buildIdentityRow(),
+
+            const SizedBox(height: 28),
+            Divider(color: Colors.grey[200], height: 1),
+            const SizedBox(height: 28),
+
+            _sectionTitle(context.l10n.registerShowMeTitle),
             const SizedBox(height: 8),
             Text(
               context.l10n.registerSelectWhoToSee,
@@ -66,7 +78,7 @@ class _StepLookingForState extends State<StepLookingFor> {
                 color: Colors.grey[500],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Gender preference options
             ..._buildPreferenceOptions(),
@@ -83,6 +95,95 @@ class _StepLookingForState extends State<StepLookingFor> {
       ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0, duration: 400.ms),
     );
   }
+
+  Widget _sectionTitle(String text) => Text(
+        text,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: AppTheme.textPrimary,
+        ),
+      );
+
+  /// Three compact cards in a row, colour-coded to match the preference rows
+  /// below so the two questions visibly belong to each other. Compact rather
+  /// than full-width: it is one tap on a shorter list, and giving it the same
+  /// height as the four rows underneath would push the button off-screen.
+  Widget _buildIdentityRow() {
+    return Row(
+      children: [
+        for (final gender in _identities) ...[
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedGender = gender),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: _selectedGender == gender
+                      ? _identityColor(gender).withValues(alpha: 0.1)
+                      : Colors.grey[50],
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _selectedGender == gender
+                        ? _identityColor(gender)
+                        : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      _identityIcon(gender),
+                      size: 26,
+                      color: _selectedGender == gender
+                          ? _identityColor(gender)
+                          : Colors.grey[400],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _identityLabel(gender),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: _selectedGender == gender
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                        color: _selectedGender == gender
+                            ? AppTheme.textPrimary
+                            : Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (gender != _identities.last) const SizedBox(width: 12),
+        ],
+      ],
+    );
+  }
+
+  // Same three colours the preference rows use, so "I am a woman" and
+  // "show me women" read as the same category rather than two palettes.
+  Color _identityColor(Gender g) => switch (g) {
+        Gender.male => const Color(0xFF5B9BD5),
+        Gender.female => const Color(0xFFFF69B4),
+        _ => const Color(0xFF9B59B6),
+      };
+
+  IconData _identityIcon(Gender g) => switch (g) {
+        Gender.male => Icons.male_rounded,
+        Gender.female => Icons.female_rounded,
+        _ => Icons.transgender_rounded,
+      };
+
+  String _identityLabel(Gender g) => switch (g) {
+        Gender.male => context.l10n.registerGenderSelfMale,
+        Gender.female => context.l10n.registerGenderSelfFemale,
+        _ => context.l10n.registerGenderSelfNonBinary,
+      };
 
   List<Widget> _buildPreferenceOptions() {
     final options = [
@@ -198,6 +299,14 @@ class _StepLookingForState extends State<StepLookingFor> {
   }
 
   void _handleContinue() {
+    if (_selectedGender == null) {
+      showAuthSnackBar(
+        context,
+        message: context.l10n.registerGenderRequired,
+        type: AuthSnackBarType.error,
+      );
+      return;
+    }
     if (_selectedPreference == null) {
       showAuthSnackBar(
         context,
@@ -207,6 +316,7 @@ class _StepLookingForState extends State<StepLookingFor> {
       return;
     }
 
+    widget.data.gender = _selectedGender!;
     widget.data.lookingFor = _selectedPreference!;
     widget.onNext();
   }
