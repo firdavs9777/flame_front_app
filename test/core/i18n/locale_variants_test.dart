@@ -84,10 +84,16 @@ void main() {
           const Locale('zh'));
     });
 
-    test('zh-TW falls back to Simplified while Traditional is not shipped', () {
-      // Not ideal, and deliberate: Simplified is closer for a Traditional
-      // reader than English is. Phase B removes this compromise by adding Hant.
-      expect(_resolve(const Locale('zh', 'TW')), const Locale('zh'));
+    test('zh-TW falls back to Simplified only when Hant is absent', () {
+      // Phase B shipped Hant, so the live list now answers zh-TW correctly.
+      // The degraded path still has to work — Simplified is closer for a
+      // Traditional reader than English — so it is pinned against a list that
+      // omits Hant rather than deleted along with the compromise.
+      const noHant = [Locale('en'), Locale('zh')];
+      expect(_resolve(const Locale('zh', 'TW'), supported: noHant),
+          const Locale('zh'));
+      expect(_resolve(const Locale('zh', 'TW')), hant,
+          reason: 'the shipped list has Traditional now');
     });
   });
 

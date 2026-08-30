@@ -26,7 +26,7 @@ void main() {
     final result = resolveLocale(
       saved: null,
       deviceLocales: [
-        const Locale('it'),  // unsupported
+        const Locale('is'),  // unsupported (Italian ships since Phase B)
         const Locale('nl'),  // unsupported
         const Locale('de'),  // supported — should win
       ],
@@ -69,7 +69,7 @@ void main() {
   test('unsupported language falls back to English', () {
     final result = resolveLocale(
       saved: null,
-      deviceLocales: [const Locale('it')],
+      deviceLocales: [const Locale('is')],
       supported: kSupportedLocales,
     );
     expect(result, const Locale('en'));
@@ -88,7 +88,7 @@ void main() {
     // Defensive: if a user somehow has a stale unsupported tag stored,
     // we shouldn't honor it.
     final result = resolveLocale(
-      saved: const Locale('it'),
+      saved: const Locale('is'),
       deviceLocales: [const Locale('es')],
       supported: kSupportedLocales,
     );
