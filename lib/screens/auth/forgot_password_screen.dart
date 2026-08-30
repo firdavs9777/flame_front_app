@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/core/validation/auth_validators.dart';
 import 'package:flame/providers/auth_provider.dart';
+import 'package:flame/services/auth_service.dart';
 import 'package:flame/screens/auth/widgets/auth_gradient_scaffold.dart';
 import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 import 'package:flame/theme/app_theme.dart';
@@ -12,9 +13,14 @@ import 'package:flame/widgets/kit/kit.dart';
 
 /// Requests a password-reset email.
 ///
-/// Gated off — `EnvConfig.current.forgotPasswordEnabled` is false in both
-/// presets and `/auth/forgot-password` does not exist server-side yet. Kept in
-/// the codebase, and in the codebase's shape, so it is ready the day it does.
+/// Two steps in one screen: request a code, then enter it with a new password.
+///
+/// A six-digit code rather than an emailed link, so there is no web page to
+/// host, no domain to verify and no deep-link configuration — and it behaves
+/// identically on both platforms.
+///
+/// Completing the reset does NOT sign the user in: the server issues no tokens
+/// here, so they return to the login screen and sign in with the new password.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -25,12 +31,18 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _resetFormKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
+  final _codeController = TextEditingController();
+  final _newPasswordController = TextEditingController();
   bool _emailSent = false;
+  bool _resetting = false;
 
   @override
   void dispose() {
     _emailController.dispose();
+    _codeController.dispose();
+    _newPasswordController.dispose();
     super.dispose();
   }
 
@@ -144,6 +156,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     );
   }
 
+  /// Step two. Not a plain confirmation any more — the code arrives by email
+  /// and is entered here, so this card is where the reset actually happens.
   Widget _buildSuccessCard() {
     return AppCard(
       padding: const EdgeInsets.all(24),
@@ -179,8 +193,54 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ),
           ),
           const SizedBox(height: 24),
+          Form(
+            key: _resetFormKey,
+            child: Column(
+              children: [
+                AppInput(
+                  key: const Key('reset_code'),
+                  controller: _codeController,
+                  label: context.l10n.forgotPasswordCodeLabel,
+                  hint: context.l10n.forgotPasswordCodeHint,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  prefixIcon: Icons.pin_outlined,
+                  validator: (value) {
+                    final v = (value ?? '').trim();
+                    if (v.isEmpty) return context.l10n.forgotPasswordCodeRequired;
+                    if (!RegExp(r'^\d{6}$').hasMatch(v)) {
+                      return context.l10n.forgotPasswordCodeInvalid;
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                AppInput(
+                  key: const Key('reset_new_password'),
+                  controller: _newPasswordController,
+                  label: context.l10n.forgotPasswordNewPasswordLabel,
+                  obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  prefixIcon: Icons.lock_outline,
+                  validator: AuthValidators(context.l10n).password,
+                  onSubmitted: (_) => _handleReset(),
+                ),
+                const SizedBox(height: 24),
+                AppButton(
+                  key: const Key('reset_submit'),
+                  text: context.l10n.forgotPasswordResetSubmit,
+                  size: AppButtonSize.large,
+                  isFullWidth: true,
+                  isLoading: _resetting,
+                  onPressed: _handleReset,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           AppButton(
             text: context.l10n.forgotPasswordBackToLogin,
+            variant: AppButtonVariant.ghost,
             size: AppButtonSize.large,
             isFullWidth: true,
             onPressed: () => Navigator.of(context).pop(),
@@ -206,5 +266,32 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     if (!mounted) return;
 
     if (success) setState(() => _emailSent = true);
+  }
+
+  Future<void> _handleReset() async {
+    if (!_resetFormKey.currentState!.validate()) return;
+    setState(() => _resetting = true);
+
+    final result = await AuthService().resetPassword(
+      email: _emailController.text.trim(),
+      code: _codeController.text.trim(),
+      password: _newPasswordController.text,
+    );
+    if (!mounted) return;
+    setState(() => _resetting = false);
+
+    if (!result.success) {
+      showAuthSnackBar(
+        context,
+        message: result.error ?? context.l10n.forgotPasswordCodeInvalid,
+        type: AuthSnackBarType.error,
+      );
+      return;
+    }
+
+    showAuthSnackBar(context, message: context.l10n.forgotPasswordResetDone);
+    // No tokens come back from a reset, by design — they sign in with the new
+    // password like anyone else.
+    Navigator.of(context).pop();
   }
 }

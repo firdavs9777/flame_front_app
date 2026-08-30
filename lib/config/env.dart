@@ -42,6 +42,9 @@ class EnvConfig {
 
   /// Whether the forgot-password flow is shown. No /auth/forgot-password on the
   /// backend yet — off until it ships.
+  /// Whether the app offers password recovery. Off until /auth/forgot-password
+  /// and /auth/reset-password existed server-side; both ship now, so an account
+  /// created with an email is no longer permanently lost when the password is.
   final bool forgotPasswordEnabled;
 
   /// Whether the Chat tab is shown. The backend endpoints have shipped:
@@ -102,7 +105,7 @@ class EnvConfig {
     // so real users and App Store reviewers never reach a dead button.
     appleSignInEnabled: true,
     facebookSignInEnabled: true,
-    forgotPasswordEnabled: false,
+    forgotPasswordEnabled: true,
     chatEnabled: true,
   );
 
@@ -119,7 +122,7 @@ class EnvConfig {
     googleSignInEnabled: true,
     appleSignInEnabled: false,
     facebookSignInEnabled: false,
-    forgotPasswordEnabled: false,
+    forgotPasswordEnabled: true,
   );
 
   /// The two shipped presets, exposed so tests can assert each one's flags

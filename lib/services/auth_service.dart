@@ -163,6 +163,28 @@ class AuthService {
     );
   }
 
+  /// Consumes the six-digit code from the reset email and sets a new password.
+  ///
+  /// Deliberately does NOT sign the user in — the server issues no tokens here,
+  /// and they sign in with the new password like anyone else.
+  Future<AuthResult> resetPassword({
+    required String email,
+    required String code,
+    required String password,
+  }) async {
+    final response = await _apiClient.post(
+      '/auth/reset-password',
+      body: {'email': email, 'code': code, 'password': password},
+    );
+
+    return AuthResult(
+      success: response.success,
+      message: response.message,
+      error: response.error,
+      errorCode: response.errorCode,
+    );
+  }
+
   // Change password
   Future<AuthResult> changePassword({
     required String currentPassword,

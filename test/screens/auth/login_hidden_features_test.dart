@@ -21,7 +21,7 @@ Widget _host(Widget home) => ProviderScope(
     );
 
 void main() {
-  testWidgets('login shows Google but hides Apple/Facebook and forgot-password',
+  testWidgets('login shows Google and forgot-password, hides Apple/Facebook',
       (tester) async {
     await tester.pumpWidget(_host(const LoginScreen()));
     await tester.pumpAndSettle();
@@ -36,6 +36,10 @@ void main() {
     // Still hidden: no native config yet (see docs/social-auth-setup.md).
     expect(find.text('Continue with Apple'), findsNothing);
     expect(find.text('Continue with Facebook'), findsNothing);
-    expect(find.text('Forgot password?'), findsNothing);
+
+    // Was hidden while /auth/forgot-password did not exist. Both that route and
+    // /auth/reset-password ship now, so an account created with an email is no
+    // longer lost for good when the password is.
+    expect(find.text('Forgot password?'), findsOneWidget);
   });
 }
