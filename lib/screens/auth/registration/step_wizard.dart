@@ -199,7 +199,10 @@ class StepWizardState extends State<StepWizard> {
           return Expanded(
             child: Container(
               height: 4,
-              margin: EdgeInsets.only(right: index < total - 1 ? 8 : 0),
+              // Directional: in Arabic and Urdu the progress row mirrors,
+              // so the gap must trail the bar rather than sit on the right.
+              margin: EdgeInsetsDirectional.only(
+                  end: index < total - 1 ? 8 : 0),
               decoration: BoxDecoration(
                 color: index <= _currentStep
                     ? Colors.white

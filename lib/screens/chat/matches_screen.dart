@@ -187,7 +187,7 @@ class _MatchesScreenState extends ConsumerState<MatchesScreen> {
                         direction: DismissDirection.endToStart,
                         background: Container(
                           color: Colors.red,
-                          alignment: Alignment.centerRight,
+                          alignment: AlignmentDirectional.centerEnd,
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           // On the red swipe ground, not on a primary surface.
                           child: Icon(Icons.archive, color: context.onOverlay),

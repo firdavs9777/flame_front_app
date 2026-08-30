@@ -19,28 +19,61 @@ Locale resolveLocale({
     if (match != null) return match;
   }
 
-  // 2. Device locales — exact match preferred
+  // 2. Device locales — exact match preferred. Run across EVERY device locale
+  // before falling back, so an exact hit on the user's second choice beats an
+  // approximate hit on their first.
   for (final device in deviceLocales) {
     for (final s in supported) {
       if (s == device) return s;
     }
   }
 
-  // 3. Device locales — language code match
+  // 3. Device locales — language match, honouring script
   for (final device in deviceLocales) {
-    for (final s in supported) {
-      if (s.languageCode == device.languageCode) return s;
-    }
+    final match = _languageMatch(device, supported);
+    if (match != null) return match;
   }
 
   // 4. Hard fallback
   return const Locale('en');
 }
 
+/// Regions that write Chinese in Traditional characters.
+const _kTraditionalChineseRegions = {'TW', 'HK', 'MO'};
+
+/// Whether [locale] asks for Traditional Chinese, by explicit script tag or by
+/// region. A Traditional reader cannot comfortably read Simplified, so this is
+/// a real distinction rather than a cosmetic one — unlike en-GB vs en-US.
+bool _wantsTraditionalChinese(Locale locale) =>
+    locale.languageCode == 'zh' &&
+    (locale.scriptCode == 'Hant' ||
+        _kTraditionalChineseRegions.contains(locale.countryCode));
+
 Locale? _findMatch(Locale candidate, List<Locale> supported) {
   for (final s in supported) {
     if (s == candidate) return s;
   }
+  return _languageMatch(candidate, supported);
+}
+
+/// Best same-language match for [candidate], preferring one written in the same
+/// script.
+Locale? _languageMatch(Locale candidate, List<Locale> supported) {
+  final wantsHant = _wantsTraditionalChinese(candidate);
+
+  // Same language AND the script the candidate actually reads.
+  for (final s in supported) {
+    if (s.languageCode != candidate.languageCode) continue;
+    if (candidate.languageCode == 'zh' &&
+        (s.scriptCode == 'Hant') != wantsHant) {
+      continue;
+    }
+    return s;
+  }
+
+  // Same language, wrong script. Only reachable for Chinese, and only while one
+  // of the two scripts is unshipped: Simplified is closer for a Traditional
+  // reader than English is.
   for (final s in supported) {
     if (s.languageCode == candidate.languageCode) return s;
   }

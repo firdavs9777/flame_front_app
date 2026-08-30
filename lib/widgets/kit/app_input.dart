@@ -124,7 +124,8 @@ class _AppInputState extends State<AppInput> {
                   )
                 : widget.suffix != null
                     ? Padding(
-                        padding: const EdgeInsets.only(right: 12),
+                        padding:
+                            const EdgeInsetsDirectional.only(end: 12),
                         child: widget.suffix,
                       )
                     : null,
@@ -252,7 +253,8 @@ class AppOTPInput extends StatelessWidget {
         (index) => Container(
           width: 48,
           height: 56,
-          margin: EdgeInsets.only(right: index < length - 1 ? 8 : 0),
+          margin:
+              EdgeInsetsDirectional.only(end: index < length - 1 ? 8 : 0),
           child: TextField(
             textAlign: TextAlign.center,
             keyboardType: TextInputType.number,

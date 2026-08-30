@@ -3,10 +3,13 @@ import 'package:flutter/widgets.dart';
 import 'package:flame/core/i18n/supported_locales.dart';
 
 void main() {
-  test('exposes exactly eleven locales in expected order', () {
+  test('exposes exactly twelve locales in expected order', () {
     expect(kSupportedLocales, [
       const Locale('en'),
       const Locale('es'),
+      // European Portuguese precedes Brazilian so a bare `pt` device locale
+      // lands on Portugal's wording rather than Brazil's.
+      const Locale('pt'),
       const Locale('pt', 'BR'),
       const Locale('fr'),
       const Locale('de'),
@@ -27,6 +30,7 @@ void main() {
 
   test('display names are in the language itself', () {
     expect(displayNameOf(const Locale('es')), 'Español');
+    expect(displayNameOf(const Locale('pt')), 'Português (Portugal)');
     expect(displayNameOf(const Locale('pt', 'BR')), 'Português (Brasil)');
     expect(displayNameOf(const Locale('de')), 'Deutsch');
     expect(displayNameOf(const Locale('ru')), 'Русский');
