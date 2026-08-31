@@ -10,6 +10,7 @@ import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/profile/photo_gallery.dart';
+import 'package:flame/core/image/photo_variants.dart';
 
 class PhotosSection extends ConsumerStatefulWidget {
   final User user;
@@ -77,7 +78,8 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
   /// still a single move-one-to-a-position operation, which is exactly what the
   /// backend's full-permutation route wants.
   Widget _buildDraggableTile(User user, int index) {
-    final url = user.photos[index];
+    final photo = user.photos[index];
+    final url = photoUrlFor(photo, PhotoSize.medium);
     final tile = _buildPhotoTile(url, index);
 
     return DragTarget<int>(

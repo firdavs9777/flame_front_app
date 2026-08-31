@@ -10,6 +10,7 @@ import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/swipe_provider.dart';
 import 'package:flame/screens/settings/widgets/settings_snackbar.dart';
+import 'package:flame/core/image/photo_variants.dart';
 
 class ProfileDetailScreen extends ConsumerStatefulWidget {
   final User user;
@@ -84,7 +85,8 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                     },
                     itemBuilder: (context, index) {
                       return SmartImage(
-                        imageSource: widget.user.photos[index],
+                        imageSource: photoUrlFor(
+                            widget.user.photos[index], PhotoSize.full),
                         fit: BoxFit.cover,
                         placeholder: Container(
                           color: context.fill,

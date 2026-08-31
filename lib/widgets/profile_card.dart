@@ -5,6 +5,7 @@ import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/core/format/distance_display.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/theme/app_tokens.dart';
+import 'package:flame/core/image/photo_variants.dart';
 
 class ProfileCard extends StatefulWidget {
   final User user;
@@ -84,11 +85,13 @@ class _ProfileCardState extends State<ProfileCard> {
                         ),
                       )
                     : SmartImage(
-                        imageSource:
-                            widget.user.photos[_currentPhotoIndex.clamp(
-                              0,
-                              widget.user.photos.length - 1,
-                            )],
+                        imageSource: photoUrlFor(
+                          widget.user.photos[_currentPhotoIndex.clamp(
+                            0,
+                            widget.user.photos.length - 1,
+                          )],
+                          PhotoSize.full,
+                        ),
                         fit: BoxFit.cover,
                         placeholder: Container(
                           color: context.fill,

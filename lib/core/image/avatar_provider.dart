@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import 'package:flame/core/image/photo_variants.dart';
+import 'package:flame/models/photo.dart';
 import 'package:flame/widgets/smart_image.dart';
 
 /// An [ImageProvider] for an avatar, decoded at the size it will actually be
@@ -24,5 +26,22 @@ ImageProvider? avatarProvider(
     // Physical pixels: the decode target is what the device will rasterise, not
     // what the layout calls it.
     width: (diameter * devicePixelRatio).round(),
+  );
+}
+
+/// [avatarProvider] for a [Photo], picking the thumb variant.
+///
+/// Prefer this over the string form: passing a URL means the caller has already
+/// chosen a variant, and at avatar size that choice is always the thumb.
+ImageProvider? avatarProviderFor(
+  Photo? photo, {
+  required double diameter,
+  required double devicePixelRatio,
+}) {
+  if (photo == null) return null;
+  return avatarProvider(
+    photoUrlFor(photo, PhotoSize.thumb),
+    diameter: diameter,
+    devicePixelRatio: devicePixelRatio,
   );
 }

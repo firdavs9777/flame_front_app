@@ -12,6 +12,7 @@ import 'package:flame/screens/discover/widgets/deck_states.dart';
 import 'package:flame/core/layout/breakpoints.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/providers/location_provider.dart';
+import 'package:flame/core/image/avatar_provider.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -186,7 +187,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               const SizedBox(height: 20),
               CircleAvatar(
                 radius: 50,
-                backgroundImage: NetworkImage(user.primaryPhoto),
+                // Was NetworkImage, which has no disk cache at all and
+                // refetched the full-size photo on every rebuild.
+                backgroundImage: avatarProviderFor(
+                  user.primaryPhoto,
+                  diameter: 100,
+                  devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+                ),
               ),
               const SizedBox(height: 20),
               Row(

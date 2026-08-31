@@ -1,3 +1,4 @@
+import 'package:flame/models/photo.dart';
 /// Null for a missing, null, or zero distance — see [User.distance].
 double? _parseDistance(Object? raw) {
   final value = (raw as num?)?.toDouble();
@@ -11,10 +12,13 @@ class User {
   final String name;
   final int age;
   final String bio;
-  final List<String> photos;
-  /// Backend photo ids, index-aligned with [photos]. Empty string for a photo
-  /// that arrived as a bare URL (no id). Used for delete/reorder by id.
-  final List<String> photoIds;
+  final List<Photo> photos;
+
+  /// Backend photo ids, in photo order.
+  ///
+  /// Derived rather than stored: it used to be a second list held in step with
+  /// [photos], which is a class of bug this removes rather than manages.
+  List<String> get photoIds => photos.map((p) => p.id).toList();
   final String location;
   /// Kilometres to this user, or null when unknown — either side missing a
   /// location, or this user having turned `showDistance` off.
@@ -75,7 +79,6 @@ class User {
     required this.age,
     required this.bio,
     required this.photos,
-    this.photoIds = const [],
     required this.location,
     this.distance,
     required this.interests,
@@ -119,27 +122,13 @@ class User {
   }
 
   factory User.fromJson(Map<String, dynamic> json) {
-    // Parse photos into aligned URL + id lists. Entries can be bare URL strings
-    // or objects {url, id}; entries without a usable URL are dropped from both.
-    final photoUrls = <String>[];
-    final photoIdList = <String>[];
+    // Entries can be objects or bare URL strings; those with no usable URL
+    // are dropped rather than kept as an empty-URL photo that fails later at
+    // the image layer.
     final rawPhotos = json['photos'];
-    if (rawPhotos is List) {
-      for (final p in rawPhotos) {
-        String url = '';
-        String id = '';
-        if (p is String) {
-          url = p;
-        } else if (p is Map) {
-          url = p['url']?.toString() ?? '';
-          id = p['id']?.toString() ?? '';
-        }
-        if (url.isNotEmpty) {
-          photoUrls.add(url);
-          photoIdList.add(id);
-        }
-      }
-    }
+    final photos = rawPhotos is List
+        ? rawPhotos.map(Photo.tryFromJson).whereType<Photo>().toList()
+        : <Photo>[];
 
     // Handle location - can be string or object
     String parseLocation(dynamic location) {
@@ -165,8 +154,7 @@ class User {
       name: json['name'] ?? '',
       age: json['age'] ?? 18,
       bio: json['bio'] ?? '',
-      photos: photoUrls,
-      photoIds: photoIdList,
+      photos: photos,
       location: parseLocation(json['location']),
       // Zero counts as unknown. A server that has not deployed the real
       // computation still sends 0, and a genuine 0 km means standing on the exact
@@ -258,8 +246,7 @@ class User {
     String? name,
     int? age,
     String? bio,
-    List<String>? photos,
-    List<String>? photoIds,
+    List<Photo>? photos,
     String? location,
     double? distance,
     List<String>? interests,
@@ -291,7 +278,6 @@ class User {
       age: age ?? this.age,
       bio: bio ?? this.bio,
       photos: photos ?? this.photos,
-      photoIds: photoIds ?? this.photoIds,
       location: location ?? this.location,
       distance: distance ?? this.distance,
       interests: interests ?? this.interests,
@@ -318,7 +304,11 @@ class User {
     );
   }
 
-  String get primaryPhoto => photos.isNotEmpty ? photos.first : '';
+  /// The photo shown wherever one photo stands for the user.
+  ///
+  /// Null when they have none — callers must handle that rather than receive an
+  /// empty string that fails later at the image layer.
+  Photo? get primaryPhoto => photos.isEmpty ? null : photos.first;
 
   static Gender _parseGender(String? gender) {
     switch (gender?.toLowerCase()) {

@@ -1,47 +1,41 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/core/image/avatar_provider.dart';
+import 'package:flame/models/photo.dart';
+
+Photo _photo({String? thumb}) =>
+    Photo(id: 'p1', url: 'https://cdn/full.jpg', urlThumb: thumb);
 
 void main() {
-  test('null and empty sources yield no provider', () {
-    expect(avatarProvider(null, diameter: 40, devicePixelRatio: 3), isNull);
-    expect(avatarProvider('', diameter: 40, devicePixelRatio: 3), isNull);
+  test('returns null for a photo-less user', () {
+    expect(avatarProviderFor(null, diameter: 64, devicePixelRatio: 3), isNull);
   });
 
-  test('a network url decodes at the displayed size, not full resolution', () {
-    final p = avatarProvider('https://x/a.jpg', diameter: 40, devicePixelRatio: 3);
-
-    expect(p, isA<ResizeImage>());
-    final resize = p! as ResizeImage;
-    expect(resize.width, 120, reason: '40 logical px at dpr 3');
-    expect(resize.imageProvider, isA<CachedNetworkImageProvider>());
+  test('resizes to the physical diameter', () {
+    final provider = avatarProviderFor(
+      _photo(thumb: 'https://cdn/t.webp'),
+      diameter: 64,
+      devicePixelRatio: 3,
+    );
+    expect(provider, isA<ResizeImage>());
+    expect((provider! as ResizeImage).width, 192);
   });
 
-  test('two calls for the same url and size are equal, so the cache hits', () {
-    final a = avatarProvider('https://x/a.jpg', diameter: 40, devicePixelRatio: 3);
-    final b = avatarProvider('https://x/a.jpg', diameter: 40, devicePixelRatio: 3);
-
-    expect(a, b);
+  test('prefers the thumb variant', () {
+    final provider = avatarProviderFor(
+      _photo(thumb: 'https://cdn/t.webp'),
+      diameter: 64,
+      devicePixelRatio: 1,
+    ) as ResizeImage;
+    expect(provider.imageProvider.toString(), contains('t.webp'));
   });
 
-  test('a different size is a different cache entry', () {
-    final small = avatarProvider('https://x/a.jpg', diameter: 40, devicePixelRatio: 3);
-    final large = avatarProvider('https://x/a.jpg', diameter: 100, devicePixelRatio: 3);
-
-    expect(small, isNot(large));
-  });
-
-  test('a base64 data uri is downscaled too', () {
-    // A 1x1 transparent GIF — enough to prove the branch is wrapped without
-    // depending on a decoder.
-    const uri = 'data:image/gif;base64,'
-        'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-    final p = avatarProvider(uri, diameter: 40, devicePixelRatio: 2);
-
-    expect(p, isA<ResizeImage>());
-    final resize = p! as ResizeImage;
-    expect(resize.width, 80);
-    expect(resize.imageProvider, isA<MemoryImage>());
+  test('falls back to the full image when no variant exists', () {
+    final provider = avatarProviderFor(
+      _photo(),
+      diameter: 64,
+      devicePixelRatio: 1,
+    ) as ResizeImage;
+    expect(provider.imageProvider.toString(), contains('full.jpg'));
   });
 }

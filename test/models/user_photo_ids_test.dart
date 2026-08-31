@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/models/user.dart';
+import 'package:flame/models/photo.dart';
 
 Map<String, dynamic> _base(List photos) => {
       'id': 'u1',
@@ -17,13 +18,13 @@ void main() {
       {'id': 'p1', 'url': 'https://x/1.jpg'},
       {'id': 'p2', 'url': 'https://x/2.jpg'},
     ]));
-    expect(u.photos, ['https://x/1.jpg', 'https://x/2.jpg']);
+    expect(u.photos.map((p) => p.url).toList(), ['https://x/1.jpg', 'https://x/2.jpg']);
     expect(u.photoIds, ['p1', 'p2']);
   });
 
   test('bare string photos yield empty ids, still aligned', () {
     final u = User.fromJson(_base(['https://x/a.jpg']));
-    expect(u.photos, ['https://x/a.jpg']);
+    expect(u.photos.map((p) => p.url).toList(), ['https://x/a.jpg']);
     expect(u.photoIds, ['']);
   });
 
@@ -32,7 +33,7 @@ void main() {
       {'id': 'p1', 'url': ''},
       {'id': 'p2', 'url': 'https://x/2.jpg'},
     ]));
-    expect(u.photos, ['https://x/2.jpg']);
+    expect(u.photos.map((p) => p.url).toList(), ['https://x/2.jpg']);
     expect(u.photoIds, ['p2']);
   });
 
@@ -41,10 +42,12 @@ void main() {
     expect(u.photoIds, isEmpty);
   });
 
-  test('copyWith replaces photoIds', () {
+  test('copyWith carries ids along with the photos they belong to', () {
+    // photoIds used to be its own list that copyWith could replace
+    // independently, which meant a caller could put the two out of step. It is
+    // derived now, so replacing the photos is the only way to change the ids.
     final u = User.fromJson(_base(<dynamic>[])).copyWith(
-      photos: ['a'],
-      photoIds: ['x'],
+      photos: const [Photo(id: 'x', url: 'https://cdn/a.jpg')],
     );
     expect(u.photoIds, ['x']);
   });
