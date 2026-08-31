@@ -129,8 +129,9 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
     final result = await _userService.deletePhoto(photoId);
     if (!result.success) return false;
 
+    // No parallel id list to keep in step any more: photoIds derives from
+    // photos, so removing the photo removes its id.
     final photos = [...currentUser.photos]..removeAt(index);
-    final ids = [...currentUser.photoIds]..removeAt(index);
     state = AsyncValue.data(currentUser.copyWith(photos: photos));
     return true;
   }

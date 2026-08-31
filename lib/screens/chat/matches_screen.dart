@@ -7,7 +7,6 @@ import 'package:flame/screens/chat/widgets/matches_empty_state.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/stories/widgets/story_tray.dart';
-import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/core/image/avatar_provider.dart';
 
