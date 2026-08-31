@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flame/providers/story_provider.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/core/image/upload_limits.dart';
 
 /// Create a photo story: pick from camera/gallery → optional caption → post.
 /// No editing studio (photos-only, lean slice).
@@ -29,7 +30,14 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
   }
 
   Future<void> _pick(ImageSource source) async {
-    final picked = await _picker.pickImage(source: source, imageQuality: 85);
+    final picked = await _picker.pickImage(
+      source: source,
+      // A story is viewed full-bleed, so it wants the same edge a profile
+      // photo does. It had no dimension cap at all.
+      maxWidth: kProfilePhotoMaxEdge.toDouble(),
+      maxHeight: kProfilePhotoMaxEdge.toDouble(),
+      imageQuality: kUploadQuality,
+    );
     if (picked != null && mounted) {
       setState(() => _image = File(picked.path));
     }

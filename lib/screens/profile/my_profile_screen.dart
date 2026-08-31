@@ -15,6 +15,7 @@ import 'package:flame/screens/profile/photo_gallery.dart';
 import 'package:flame/core/image/avatar_provider.dart';
 import 'package:flame/core/image/photo_variants.dart';
 import 'package:flame/models/photo.dart';
+import 'package:flame/core/image/upload_limits.dart';
 
 class MyProfileScreen extends ConsumerStatefulWidget {
   const MyProfileScreen({super.key});
@@ -471,9 +472,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 Navigator.pop(context);
                 final photo = await picker.pickImage(
                   source: ImageSource.camera,
-                  maxWidth: 1024,
-                  maxHeight: 1024,
-                  imageQuality: 85,
+                  maxWidth: kProfilePhotoMaxEdge.toDouble(),
+                  maxHeight: kProfilePhotoMaxEdge.toDouble(),
+                  imageQuality: kUploadQuality,
                 );
                 if (photo != null) {
                   _uploadPhoto(File(photo.path));
@@ -487,9 +488,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 Navigator.pop(context);
                 final photo = await picker.pickImage(
                   source: ImageSource.gallery,
-                  maxWidth: 1024,
-                  maxHeight: 1024,
-                  imageQuality: 85,
+                  maxWidth: kProfilePhotoMaxEdge.toDouble(),
+                  maxHeight: kProfilePhotoMaxEdge.toDouble(),
+                  imageQuality: kUploadQuality,
                 );
                 if (photo != null) {
                   _uploadPhoto(File(photo.path));

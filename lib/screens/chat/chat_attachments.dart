@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:flame/providers/chat_provider.dart';
+import 'package:flame/core/image/upload_limits.dart';
 
 /// What a user can attach to a message.
 ///
@@ -38,10 +39,20 @@ Future<File?> pickAttachment(
   final p = picker ?? ImagePicker();
 
   final picked = switch (kind) {
-    ChatAttachmentKind.gallery =>
-      await p.pickImage(source: ImageSource.gallery, imageQuality: 85),
-    ChatAttachmentKind.camera =>
-      await p.pickImage(source: ImageSource.camera, imageQuality: 85),
+    // Dimension caps, not just quality: imageQuality alone still ships a
+    // 12MP camera photo at 12MP.
+    ChatAttachmentKind.gallery => await p.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: kChatImageMaxEdge.toDouble(),
+        maxHeight: kChatImageMaxEdge.toDouble(),
+        imageQuality: kUploadQuality,
+      ),
+    ChatAttachmentKind.camera => await p.pickImage(
+        source: ImageSource.camera,
+        maxWidth: kChatImageMaxEdge.toDouble(),
+        maxHeight: kChatImageMaxEdge.toDouble(),
+        imageQuality: kUploadQuality,
+      ),
     ChatAttachmentKind.video =>
       await p.pickVideo(source: ImageSource.gallery),
   };
