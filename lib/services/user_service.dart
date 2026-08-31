@@ -1,6 +1,10 @@
 import 'dart:io';
 import 'package:flame/models/user.dart';
 import 'package:flame/services/api_client.dart';
+import 'package:flame/models/photo.dart';
+// Re-exported so callers importing this service keep resolving Photo; the
+// model itself now lives in lib/models/, where a model belongs.
+export 'package:flame/models/photo.dart' show Photo;
 
 /// Builds the PATCH /users/me request body. The flame backend reads camelCase
 /// (`lookingFor`); snake_case (`looking_for`) is included for forward-compat.
@@ -221,38 +225,7 @@ class UserService {
 
 }
 
-// Photo model
-class Photo {
-  final String id;
-  final String url;
-  final bool isPrimary;
-  final int order;
 
-  Photo({
-    required this.id,
-    required this.url,
-    this.isPrimary = false,
-    this.order = 0,
-  });
-
-  factory Photo.fromJson(Map<String, dynamic> json) {
-    return Photo(
-      id: json['id'] ?? '',
-      url: json['url'] ?? '',
-      isPrimary: json['is_primary'] ?? false,
-      order: json['order'] ?? 0,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'url': url,
-      'is_primary': isPrimary,
-      'order': order,
-    };
-  }
-}
 
 // Generic service result
 class ServiceResult<T> {

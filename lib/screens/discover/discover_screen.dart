@@ -12,6 +12,9 @@ import 'package:flame/screens/discover/widgets/deck_states.dart';
 import 'package:flame/core/layout/breakpoints.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/providers/location_provider.dart';
+import 'package:flame/core/image/avatar_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flame/screens/discover/deck_prefetch.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -84,6 +87,21 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final remaining = previousIndex >= 0 ? users.length - previousIndex - 1 : 0;
     if (remaining <= DiscoveryNotifier.refillThreshold) {
       ref.read(discoveryProvider.notifier).refill();
+    }
+
+    _prefetchAhead(users, currentIndex ?? previousIndex + 1);
+  }
+
+  /// Warms the images of the cards just behind the visible one.
+  ///
+  /// Without this, a card's photo starts downloading when it becomes visible,
+  /// which is the moment it is too late.
+  void _prefetchAhead(List<User> deck, int currentIndex) {
+    for (final url in urlsToPrefetch(deck, currentIndex: currentIndex)) {
+      // Fire and forget: a failed prefetch costs nothing, and the card's own
+      // CachedNetworkImage will fetch it again when it is actually shown.
+      precacheImage(CachedNetworkImageProvider(url), context)
+          .catchError((Object _) {});
     }
   }
 
@@ -186,7 +204,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               const SizedBox(height: 20),
               CircleAvatar(
                 radius: 50,
-                backgroundImage: NetworkImage(user.primaryPhoto),
+                // Was NetworkImage, which has no disk cache at all and
+                // refetched the full-size photo on every rebuild.
+                backgroundImage: avatarProviderFor(
+                  user.primaryPhoto,
+                  diameter: 100,
+                  devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+                ),
               ),
               const SizedBox(height: 20),
               Row(
@@ -259,6 +283,15 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Warm the cards behind the top one whenever the deck changes, so the
+    // second card is ready before the first swipe rather than after it.
+    ref.listen(discoveryProvider, (_, next) {
+      final deck = next.valueOrNull;
+      if (deck != null && deck.isNotEmpty) {
+        _prefetchAhead(deck, ref.read(currentCardIndexProvider));
+      }
+    });
+
     final usersState = ref.watch(discoveryProvider);
     final swipeState = ref.watch(swipeProvider);
 

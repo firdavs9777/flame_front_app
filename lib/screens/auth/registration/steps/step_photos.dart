@@ -8,6 +8,7 @@ import 'package:flame/services/face_detection_service.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
+import 'package:flame/core/image/upload_limits.dart';
 
 class StepPhotos extends StatefulWidget {
   final RegistrationData data;
@@ -468,9 +469,9 @@ class _StepPhotosState extends State<StepPhotos> {
     try {
       final XFile? pickedFile = await _imagePicker.pickImage(
         source: source,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
+        maxWidth: kProfilePhotoMaxEdge.toDouble(),
+        maxHeight: kProfilePhotoMaxEdge.toDouble(),
+        imageQuality: kUploadQuality,
       );
 
       if (pickedFile == null) return;

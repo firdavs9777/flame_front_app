@@ -54,7 +54,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                 CircleAvatar(
                   radius: _avatarDiameter / 2,
                   backgroundColor: context.fill,
-                  backgroundImage: avatarProvider(
+                  backgroundImage: avatarProviderFor(
                     otherUser.primaryPhoto,
                     diameter: _avatarDiameter,
                     devicePixelRatio: MediaQuery.devicePixelRatioOf(context),

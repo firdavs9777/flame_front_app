@@ -55,7 +55,7 @@ void main() {
     expect(ok, isTrue);
     expect(fake.deletedId, 'p2');
     expect(n.state.value!.photoIds, ['p1', 'p3']);
-    expect(n.state.value!.photos, ['url-p1', 'url-p3']);
+    expect(n.state.value!.photos.map((p) => p.url).toList(), ['url-p1', 'url-p3']);
   });
 
   test('deletePhotoAt returns false for an unknown/empty id', () async {
@@ -81,7 +81,7 @@ void main() {
     expect(ok, isTrue);
     expect(fake.reorderedIds, ['p3', 'p1', 'p2']);
     expect(n.state.value!.photoIds, ['p3', 'p1', 'p2']);
-    expect(n.state.value!.photos, ['url-p3', 'url-p1', 'url-p2']);
+    expect(n.state.value!.photos.map((p) => p.url).toList(), ['url-p3', 'url-p1', 'url-p2']);
   });
 
   test('setMainPhotoAt moves the chosen photo to the front', () async {
@@ -129,7 +129,7 @@ void _moveTests() {
     expect(ok, isTrue);
     expect(fake.reorderedIds, ['p3', 'p1', 'p2'],
         reason: 'a subset would delete the photos it omits');
-    expect(n.state.value!.photos, ['url-p3', 'url-p1', 'url-p2']);
+    expect(n.state.value!.photos.map((p) => p.url).toList(), ['url-p3', 'url-p1', 'url-p2']);
   });
 
   test('moving forward keeps every other photo in its relative order', () async {

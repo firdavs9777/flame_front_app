@@ -98,8 +98,7 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
     final result = await _userService.uploadPhoto(photo, isPrimary: isPrimary);
     if (result.success && result.data != null) {
       state = AsyncValue.data(currentUser.copyWith(
-        photos: [...currentUser.photos, result.data!.url],
-        photoIds: [...currentUser.photoIds, result.data!.id],
+        photos: [...currentUser.photos, result.data!],
       ));
       return true;
     }
@@ -130,9 +129,10 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
     final result = await _userService.deletePhoto(photoId);
     if (!result.success) return false;
 
+    // No parallel id list to keep in step any more: photoIds derives from
+    // photos, so removing the photo removes its id.
     final photos = [...currentUser.photos]..removeAt(index);
-    final ids = [...currentUser.photoIds]..removeAt(index);
-    state = AsyncValue.data(currentUser.copyWith(photos: photos, photoIds: ids));
+    state = AsyncValue.data(currentUser.copyWith(photos: photos));
     return true;
   }
 
@@ -160,8 +160,7 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
 
     final photos = result.data!;
     state = AsyncValue.data(currentUser.copyWith(
-      photos: photos.map((p) => p.url).toList(),
-      photoIds: photos.map((p) => p.id).toList(),
+      photos: photos,
     ));
     return true;
   }
@@ -183,8 +182,7 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
 
     final photos = result.data!;
     state = AsyncValue.data(currentUser.copyWith(
-      photos: photos.map((p) => p.url).toList(),
-      photoIds: photos.map((p) => p.id).toList(),
+      photos: photos,
     ));
     return true;
   }

@@ -23,6 +23,7 @@ import 'package:flame/screens/chat/widgets/chat_snackbar.dart';
 import 'package:flame/screens/chat/widgets/widgets.dart';
 import 'package:flame/services/chat_service.dart' show PinnedMessage;
 import 'package:flame/widgets/report_block_menu.dart';
+import 'package:flame/core/image/photo_variants.dart';
 
 /// One open conversation.
 ///
@@ -64,6 +65,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   String get _conversationId => widget.conversation.id;
   User get _otherUser => widget.conversation.otherUser;
+
+  /// The other user's avatar URL, at thumb size.
+  ///
+  /// ChatMessagesList and TypingIndicator both take a URL string rather than a
+  /// Photo, so the variant choice is made once here instead of at each of them.
+  String get _otherUserThumb {
+    final photo = _otherUser.primaryPhoto;
+    return photo == null ? '' : photoUrlFor(photo, PhotoSize.thumb);
+  }
 
   ThreadPresenceArgs get _presenceArgs => ThreadPresenceArgs(
         conversationId: _conversationId,
@@ -172,14 +182,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               state: thread,
               currentUserId: currentUserId,
               otherUserName: _otherUser.name,
-              otherUserPhoto: _otherUser.primaryPhoto,
+              otherUserPhoto: _otherUserThumb,
               scrollController: _scrollController,
               onRetry: _retry,
               onMessageLongPress: _onMessageLongPress,
             ),
           ),
           if (presence.isOtherTyping)
-            TypingIndicator(userPhotoUrl: _otherUser.primaryPhoto),
+            TypingIndicator(userPhotoUrl: _otherUserThumb),
           ChatInput(
             controller: _messageController,
             isSending: _isSending,

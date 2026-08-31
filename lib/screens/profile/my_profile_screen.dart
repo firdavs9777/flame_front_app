@@ -12,6 +12,10 @@ import 'package:flame/core/interests/interest_catalogue.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/settings/widgets/settings_section.dart';
 import 'package:flame/screens/profile/photo_gallery.dart';
+import 'package:flame/core/image/avatar_provider.dart';
+import 'package:flame/core/image/photo_variants.dart';
+import 'package:flame/models/photo.dart';
+import 'package:flame/core/image/upload_limits.dart';
 
 class MyProfileScreen extends ConsumerStatefulWidget {
   const MyProfileScreen({super.key});
@@ -111,9 +115,12 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                           : () => openPhotoGallery(context, user.photos, 0),
                       child: CircleAvatar(
                         radius: 60,
-                        backgroundImage: user.photos.isNotEmpty
-                            ? user.primaryPhoto.toImageProvider()
-                            : null,
+                        backgroundImage: avatarProviderFor(
+                          user.primaryPhoto,
+                          diameter: 120,
+                          devicePixelRatio:
+                              MediaQuery.devicePixelRatioOf(context),
+                        ),
                         child: user.photos.isEmpty
                             ? const Icon(Icons.person, size: 60)
                             : null,
@@ -410,14 +417,16 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   /// It had no `onTap` at all: tapping your own photo on your own profile did
   /// nothing, while the "+" tile beside it opened the picker. The one gesture
   /// everyone tries was the one gesture that was not wired up.
-  Widget _buildPhotoTile(List<String> photos, int index) {
+  Widget _buildPhotoTile(List<Photo> photos, int index) {
     return GestureDetector(
       key: Key('profile_photo_$index'),
       onTap: () => openPhotoGallery(context, photos, index),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: SmartImage(
-          imageSource: photos[index],
+          imageSource: photoUrlFor(photos[index], PhotoSize.medium),
+          // A 3-across grid, so a tile is roughly a third of the screen.
+          decodeWidth: MediaQuery.sizeOf(context).width / 3,
           fit: BoxFit.cover,
           placeholder: Container(color: context.fill),
           errorWidget: Container(
@@ -463,9 +472,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 Navigator.pop(context);
                 final photo = await picker.pickImage(
                   source: ImageSource.camera,
-                  maxWidth: 1024,
-                  maxHeight: 1024,
-                  imageQuality: 85,
+                  maxWidth: kProfilePhotoMaxEdge.toDouble(),
+                  maxHeight: kProfilePhotoMaxEdge.toDouble(),
+                  imageQuality: kUploadQuality,
                 );
                 if (photo != null) {
                   _uploadPhoto(File(photo.path));
@@ -479,9 +488,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 Navigator.pop(context);
                 final photo = await picker.pickImage(
                   source: ImageSource.gallery,
-                  maxWidth: 1024,
-                  maxHeight: 1024,
-                  imageQuality: 85,
+                  maxWidth: kProfilePhotoMaxEdge.toDouble(),
+                  maxHeight: kProfilePhotoMaxEdge.toDouble(),
+                  imageQuality: kUploadQuality,
                 );
                 if (photo != null) {
                   _uploadPhoto(File(photo.path));

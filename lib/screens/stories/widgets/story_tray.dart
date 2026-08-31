@@ -8,12 +8,24 @@ import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/stories/widgets/story_gradient_ring.dart';
+import 'package:flame/core/image/photo_variants.dart';
+import 'package:flame/models/user.dart';
 
 /// The ring row of stories at the top of the Matches/Chat screen. Own story
 /// first (with a `+` to add), then matched users' stories (coral ring when
 /// unseen, grey when seen).
 class StoryTray extends ConsumerWidget {
   const StoryTray({super.key});
+
+  /// The signed-in user's own avatar for the tray ring.
+  ///
+  /// Falls back to whatever the story feed already knows, which is a plain URL
+  /// and has no variants to choose from.
+  String _ownAvatarUrl(User? me, StoriesFeed feed) {
+    final photo = me?.primaryPhoto;
+    if (photo != null) return photoUrlFor(photo, PhotoSize.thumb);
+    return feed.own?.avatarUrl ?? '';
+  }
 
   void _openViewer(BuildContext context, List<UserStories> users, int index) {
     if (users.isEmpty || index < 0 || index >= users.length) return;
@@ -46,7 +58,7 @@ class StoryTray extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         children: [
           _OwnItem(
-            avatarUrl: me?.primaryPhoto ?? feed.own?.avatarUrl ?? '',
+            avatarUrl: _ownAvatarUrl(me, feed),
             label: context.l10n.storyYourStory,
             hasStories: ownHasStories,
             onTapAvatar: () => ownHasStories

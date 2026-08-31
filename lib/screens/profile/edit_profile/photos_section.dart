@@ -10,6 +10,8 @@ import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/widgets/smart_image.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/screens/profile/photo_gallery.dart';
+import 'package:flame/core/image/photo_variants.dart';
+import 'package:flame/core/image/upload_limits.dart';
 
 class PhotosSection extends ConsumerStatefulWidget {
   final User user;
@@ -77,7 +79,8 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
   /// still a single move-one-to-a-position operation, which is exactly what the
   /// backend's full-permutation route wants.
   Widget _buildDraggableTile(User user, int index) {
-    final url = user.photos[index];
+    final photo = user.photos[index];
+    final url = photoUrlFor(photo, PhotoSize.medium);
     final tile = _buildPhotoTile(url, index);
 
     return DragTarget<int>(
@@ -97,7 +100,12 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
               opacity: 0.85,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: SmartImage(imageSource: url, fit: BoxFit.cover),
+                child: SmartImage(
+                  imageSource: url,
+                  // The drag feedback is a fixed 96pt square.
+                  decodeWidth: 96,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
@@ -145,6 +153,8 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
               borderRadius: BorderRadius.circular(12),
               child: SmartImage(
                 imageSource: photoUrl,
+                // A 3-across grid, so a tile is roughly a third of the screen.
+                decodeWidth: MediaQuery.sizeOf(context).width / 3,
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,
@@ -287,9 +297,9 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
                 Navigator.pop(context);
                 final photo = await picker.pickImage(
                   source: ImageSource.camera,
-                  maxWidth: 1024,
-                  maxHeight: 1024,
-                  imageQuality: 85,
+                  maxWidth: kProfilePhotoMaxEdge.toDouble(),
+                  maxHeight: kProfilePhotoMaxEdge.toDouble(),
+                  imageQuality: kUploadQuality,
                 );
                 if (photo != null) {
                   _uploadPhoto(File(photo.path));
@@ -303,9 +313,9 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
                 Navigator.pop(context);
                 final photo = await picker.pickImage(
                   source: ImageSource.gallery,
-                  maxWidth: 1024,
-                  maxHeight: 1024,
-                  imageQuality: 85,
+                  maxWidth: kProfilePhotoMaxEdge.toDouble(),
+                  maxHeight: kProfilePhotoMaxEdge.toDouble(),
+                  imageQuality: kUploadQuality,
                 );
                 if (photo != null) {
                   _uploadPhoto(File(photo.path));
