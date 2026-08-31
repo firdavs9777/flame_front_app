@@ -85,6 +85,7 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                     },
                     itemBuilder: (context, index) {
                       return SmartImage(
+                        decodeWidth: MediaQuery.sizeOf(context).width,
                         imageSource: photoUrlFor(
                             widget.user.photos[index], PhotoSize.full),
                         fit: BoxFit.cover,

@@ -99,7 +99,12 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
               opacity: 0.85,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: SmartImage(imageSource: url, fit: BoxFit.cover),
+                child: SmartImage(
+                  imageSource: url,
+                  // The drag feedback is a fixed 96pt square.
+                  decodeWidth: 96,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
@@ -147,6 +152,8 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
               borderRadius: BorderRadius.circular(12),
               child: SmartImage(
                 imageSource: photoUrl,
+                // A 3-across grid, so a tile is roughly a third of the screen.
+                decodeWidth: MediaQuery.sizeOf(context).width / 3,
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,

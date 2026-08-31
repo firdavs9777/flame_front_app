@@ -85,6 +85,8 @@ class _ProfileCardState extends State<ProfileCard> {
                         ),
                       )
                     : SmartImage(
+                        // Full-bleed card: the draw width is the screen width.
+                        decodeWidth: MediaQuery.sizeOf(context).width,
                         imageSource: photoUrlFor(
                           widget.user.photos[_currentPhotoIndex.clamp(
                             0,

@@ -140,6 +140,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen>
   Widget _storyImage(String url) {
     if (url.startsWith('http') || url.startsWith('data:')) {
       return SmartImage(
+        decodeWidth: MediaQuery.sizeOf(context).width,
         imageSource: url,
         fit: BoxFit.cover,
         width: double.infinity,

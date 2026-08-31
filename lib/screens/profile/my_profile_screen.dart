@@ -424,6 +424,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
         borderRadius: BorderRadius.circular(12),
         child: SmartImage(
           imageSource: photoUrlFor(photos[index], PhotoSize.medium),
+          // A 3-across grid, so a tile is roughly a third of the screen.
+          decodeWidth: MediaQuery.sizeOf(context).width / 3,
           fit: BoxFit.cover,
           placeholder: Container(color: context.fill),
           errorWidget: Container(

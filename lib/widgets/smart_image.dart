@@ -11,9 +11,19 @@ class SmartImage extends StatelessWidget {
   final Widget? placeholder;
   final Widget? errorWidget;
 
+  /// The width this image will actually be drawn at, in logical pixels.
+  ///
+  /// Required rather than optional, deliberately: an unsized decode holds a
+  /// full-resolution bitmap to fill a thumbnail, and making the slow version
+  /// merely discouraged did not work — every call site outside chat had it.
+  /// See `core/image/avatar_provider.dart`, which made the same call for the
+  /// same reason.
+  final double decodeWidth;
+
   const SmartImage({
     super.key,
     required this.imageSource,
+    required this.decodeWidth,
     this.fit = BoxFit.cover,
     this.width,
     this.height,
@@ -25,13 +35,15 @@ class SmartImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final decodePixels =
+        (decodeWidth * MediaQuery.devicePixelRatioOf(context)).round();
     if (isBase64) {
-      return _buildBase64Image();
+      return _buildBase64Image(decodePixels);
     }
-    return _buildNetworkImage();
+    return _buildNetworkImage(decodePixels);
   }
 
-  Widget _buildBase64Image() {
+  Widget _buildBase64Image(int decodePixels) {
     try {
       // Extract base64 data from data URI
       // Format: data:image/jpeg;base64,/9j/4AAQ...
@@ -43,6 +55,7 @@ class SmartImage extends StatelessWidget {
         fit: fit,
         width: width,
         height: height,
+        cacheWidth: decodePixels,
         errorBuilder: (context, error, stackTrace) {
           return errorWidget ?? _defaultErrorWidget();
         },
@@ -52,12 +65,13 @@ class SmartImage extends StatelessWidget {
     }
   }
 
-  Widget _buildNetworkImage() {
+  Widget _buildNetworkImage(int decodePixels) {
     return CachedNetworkImage(
       imageUrl: imageSource,
       fit: fit,
       width: width,
       height: height,
+      memCacheWidth: decodePixels,
       placeholder: (context, url) => placeholder ?? _defaultPlaceholder(),
       errorWidget: (context, url, error) => errorWidget ?? _defaultErrorWidget(),
     );
