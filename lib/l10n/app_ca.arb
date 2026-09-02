@@ -869,5 +869,7 @@
   "languagesNoneSelected": "Cap seleccionat",
   "languagesRecommended": "Recomanats",
   "profileSpeaks": "Parla",
-  "profileLearning": "Aprenent"
+  "profileLearning": "Aprenent",
+  "profileLanguages": "Idiomes",
+  "profileLanguagesUpdated": "Idiomes actualitzats"
 }

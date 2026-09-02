@@ -753,5 +753,7 @@
   "languagesNoneSelected": "Chưa chọn",
   "languagesRecommended": "Đề xuất",
   "profileSpeaks": "Nói",
-  "profileLearning": "Đang học"
+  "profileLearning": "Đang học",
+  "profileLanguages": "Ngôn ngữ",
+  "profileLanguagesUpdated": "Đã cập nhật ngôn ngữ"
 }

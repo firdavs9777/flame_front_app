@@ -1851,5 +1851,13 @@
   "profileLearning": "Learning",
   "@profileLearning": {
     "description": "Compact label paired with profileSpeaks introducing the languages a person is learning, e.g. \"Learning English\"."
+  },
+  "profileLanguages": "Languages",
+  "@profileLanguages": {
+    "description": "Section title on the edit-profile screen above the spoken and learning language rows."
+  },
+  "profileLanguagesUpdated": "Languages updated",
+  "@profileLanguagesUpdated": {
+    "description": "Confirmation shown after the edit-profile Languages section saves."
   }
 }

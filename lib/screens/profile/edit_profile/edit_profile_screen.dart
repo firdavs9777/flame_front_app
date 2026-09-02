@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flame/screens/profile/edit_profile/section_chrome.dart';
 import 'package:flame/screens/profile/edit_profile/photos_section.dart';
 import 'package:flame/screens/profile/edit_profile/interests_section.dart';
+import 'package:flame/screens/profile/edit_profile/languages_section.dart';
 import 'package:flame/screens/profile/edit_profile/about_section.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/providers.dart';
@@ -23,6 +24,13 @@ typedef InterestsSave = Future<bool> Function({
   required List<String> interests,
 });
 
+/// Saves the two declared language lists, and nothing else — the same
+/// independence guarantee the other two signatures carry.
+typedef LanguagesSave = Future<bool> Function({
+  required List<String> languagesSpoken,
+  required List<String> languagesLearning,
+});
+
 
 /// A form split into independently-saving section cards — Photos, About,
 /// Interests, Preferences — each validating before it calls its save
@@ -37,11 +45,13 @@ typedef InterestsSave = Future<bool> Function({
 class EditProfileScreen extends ConsumerStatefulWidget {
   final AboutSave? saveAbout;
   final InterestsSave? saveInterests;
+  final LanguagesSave? saveLanguages;
 
   const EditProfileScreen({
     super.key,
     this.saveAbout,
     this.saveInterests,
+    this.saveLanguages,
   });
 
   @override
@@ -68,6 +78,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return ref.read(currentUserProvider.notifier).updateProfile(
           lookingFor: lookingFor,
           interests: interests,
+        );
+  }
+
+  Future<bool> _defaultSaveLanguages({
+    required List<String> languagesSpoken,
+    required List<String> languagesLearning,
+  }) {
+    return ref.read(currentUserProvider.notifier).updateProfile(
+          languagesSpoken: languagesSpoken,
+          languagesLearning: languagesLearning,
         );
   }
 
@@ -110,6 +130,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   child: InterestsSection(
                     user: user,
                     onSave: widget.saveInterests ?? _defaultSaveInterests,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SectionCard(
+                  title: context.l10n.profileLanguages,
+                  child: LanguagesSection(
+                    // Keyed on the stored lists so a save that comes back with
+                    // different ones rebuilds the section's local copy rather
+                    // than leaving it describing the previous answer.
+                    key: ValueKey(
+                      '${user.languagesSpoken.join(",")}|'
+                      '${user.languagesLearning.join(",")}',
+                    ),
+                    user: user,
+                    onSave: widget.saveLanguages ?? _defaultSaveLanguages,
                   ),
                 ),
                 const SizedBox(height: 20),

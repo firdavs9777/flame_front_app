@@ -753,5 +753,7 @@
   "languagesNoneSelected": "尚未選擇",
   "languagesRecommended": "推薦",
   "profileSpeaks": "會說",
-  "profileLearning": "學習中"
+  "profileLearning": "學習中",
+  "profileLanguages": "語言",
+  "profileLanguagesUpdated": "語言已更新"
 }

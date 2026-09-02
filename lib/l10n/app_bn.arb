@@ -869,5 +869,7 @@
   "languagesNoneSelected": "কিছু নির্বাচিত হয়নি",
   "languagesRecommended": "প্রস্তাবিত",
   "profileSpeaks": "বলেন",
-  "profileLearning": "শিখছেন"
+  "profileLearning": "শিখছেন",
+  "profileLanguages": "ভাষা",
+  "profileLanguagesUpdated": "ভাষা আপডেট হয়েছে"
 }

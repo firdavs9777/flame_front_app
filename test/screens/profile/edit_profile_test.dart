@@ -8,6 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/models/models.dart';
+import 'package:flame/core/languages/language_fallback.dart';
+import 'package:flame/core/navigation/app_router.dart';
+import 'package:flame/providers/languages_provider.dart';
 import 'package:flame/providers/user_provider.dart';
 import 'package:flame/screens/profile/edit_profile/edit_profile_screen.dart';
 import 'package:flame/services/user_service.dart';
@@ -59,6 +62,8 @@ User _user({
   int age = 28,
   String bio = 'Hello there',
   List<String> interests = const ['Travel', 'Coffee'],
+  List<String> languagesSpoken = const <String>[],
+  List<String> languagesLearning = const <String>[],
   Gender lookingFor = Gender.female,
   int minAge = 21,
   int maxAge = 40,
@@ -72,6 +77,8 @@ User _user({
     'age': age,
     'bio': bio,
     'interests': interests,
+    'languages_spoken': languagesSpoken,
+    'languages_learning': languagesLearning,
     'gender': 'male',
     'looking_for': lookingFor.toApiString(),
     'photos': photos,
@@ -88,6 +95,7 @@ Widget _host(
   User user, {
   AboutSave? saveAbout,
   InterestsSave? saveInterests,
+  LanguagesSave? saveLanguages,
   ThemeData? theme,
   UserService? service,
 }) {
@@ -97,6 +105,10 @@ Widget _host(
         (ref) => CurrentUserNotifier(service ?? _FakeUserService())
           ..setUser(user),
       ),
+      // The Languages section labels codes from the catalogue, and the picker
+      // it pushes reads the same provider. Pinned to the bundled fallback so
+      // no test reaches for the network.
+      languageCatalogProvider.overrideWith((ref) async => kLanguageFallback),
     ],
     child: MaterialApp(
       // Interest chips read their labels from the ARBs now, so the section needs
@@ -105,9 +117,13 @@ Widget _host(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       theme: theme,
+      // The language rows push AppRoutes.languagePicker BY NAME, so the host
+      // needs the real route table rather than a stub.
+      onGenerateRoute: AppRouter.onGenerateRoute,
       home: EditProfileScreen(
         saveAbout: saveAbout,
         saveInterests: saveInterests,
+        saveLanguages: saveLanguages,
       ),
     ),
   );
@@ -628,6 +644,132 @@ void _bioDraftTests() {
       await tester.pumpAndSettle();
 
       expect(saves, 0);
+    });
+  });
+
+  // Registration step 4 was the only place a language could ever be declared,
+  // so every account created before this release was stuck on the neutral
+  // language score with nothing to show on the profile. updateProfile already
+  // took both lists; nothing called it.
+  group('Languages section', () {
+    Future<void> openRow(WidgetTester tester, Key row) async {
+      await tester.ensureVisible(find.byKey(row));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(row));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('shows the languages the user has already declared',
+        (tester) async {
+      await tester.pumpWidget(_host(
+        _user(languagesSpoken: const ['ko'], languagesLearning: const ['es']),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('profile_languages_spoken')),
+          matching: find.text('한국어'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('profile_languages_learning')),
+          matching: find.text('Español'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a user who has declared nothing is told so, not shown blank',
+        (tester) async {
+      await tester.pumpWidget(_host(_user()));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('profile_languages_spoken')),
+          matching: find.text('None selected'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('picking saves both lists and shows the result immediately',
+        (tester) async {
+      List<String>? spoken;
+      List<String>? learning;
+
+      await tester.pumpWidget(_host(
+        _user(languagesSpoken: const ['ko']),
+        saveLanguages: ({
+          required languagesSpoken,
+          required languagesLearning,
+        }) async {
+          spoken = languagesSpoken;
+          learning = languagesLearning;
+          return true;
+        },
+      ));
+      await tester.pumpAndSettle();
+
+      await openRow(tester, const Key('profile_languages_spoken'));
+      await tester.tap(find.text('English').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('language_picker_done')));
+      await tester.pumpAndSettle();
+
+      // Back on the profile, without anything having reloaded.
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('profile_languages_spoken')),
+          matching: find.textContaining('English'),
+        ),
+        findsOneWidget,
+        reason: 'the row must show the new choice without a manual reload',
+      );
+
+      await tester.ensureVisible(find.byKey(const Key('languages_save_button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('languages_save_button')));
+      await tester.pumpAndSettle();
+
+      expect(spoken, ['ko', 'en']);
+      expect(learning, isEmpty,
+          reason: 'the untouched list still travels, so a save cannot clear it '
+              'by omission');
+    });
+
+    testWidgets('the picker it opens caps the selection at three',
+        (tester) async {
+      // The backend validator rejects a fourth code, so the cap belongs in
+      // front of the request rather than in the error handler.
+      await tester.pumpWidget(_host(_user()));
+      await tester.pumpAndSettle();
+
+      await openRow(tester, const Key('profile_languages_learning'));
+
+      expect(find.text('0/3'), findsOneWidget);
+    });
+
+    testWidgets('a failed save says so rather than pretending', (tester) async {
+      await tester.pumpWidget(_host(
+        _user(languagesSpoken: const ['ko']),
+        saveLanguages: ({
+          required languagesSpoken,
+          required languagesLearning,
+        }) async =>
+            false,
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byKey(const Key('languages_save_button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('languages_save_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not save — try again'), findsOneWidget);
     });
   });
 }

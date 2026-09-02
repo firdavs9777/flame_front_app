@@ -869,5 +869,7 @@
   "languagesNoneSelected": "Ei valittuja",
   "languagesRecommended": "Suositellut",
   "profileSpeaks": "Puhuu",
-  "profileLearning": "Opiskelee"
+  "profileLearning": "Opiskelee",
+  "profileLanguages": "Kielet",
+  "profileLanguagesUpdated": "Kielet päivitetty"
 }

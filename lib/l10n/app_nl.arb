@@ -869,5 +869,7 @@
   "languagesNoneSelected": "Niets geselecteerd",
   "languagesRecommended": "Aanbevolen",
   "profileSpeaks": "Spreekt",
-  "profileLearning": "Leert"
+  "profileLearning": "Leert",
+  "profileLanguages": "Talen",
+  "profileLanguagesUpdated": "Talen bijgewerkt"
 }

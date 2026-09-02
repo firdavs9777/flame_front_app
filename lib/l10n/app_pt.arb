@@ -653,5 +653,7 @@
   "languagesNoneSelected": "Nenhum selecionado",
   "languagesRecommended": "Recomendados",
   "profileSpeaks": "Fala",
-  "profileLearning": "Aprende"
+  "profileLearning": "Aprende",
+  "profileLanguages": "Idiomas",
+  "profileLanguagesUpdated": "Idiomas atualizados"
 }

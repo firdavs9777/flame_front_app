@@ -869,5 +869,7 @@
   "languagesNoneSelected": "Ništa nije odabrano",
   "languagesRecommended": "Preporučeno",
   "profileSpeaks": "Govori",
-  "profileLearning": "Uči"
+  "profileLearning": "Uči",
+  "profileLanguages": "Jezici",
+  "profileLanguagesUpdated": "Jezici su ažurirani"
 }

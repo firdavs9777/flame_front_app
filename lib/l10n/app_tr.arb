@@ -621,5 +621,7 @@
   "languagesNoneSelected": "Hiçbiri seçilmedi",
   "languagesRecommended": "Önerilen",
   "profileSpeaks": "Konuşuyor",
-  "profileLearning": "Öğreniyor"
+  "profileLearning": "Öğreniyor",
+  "profileLanguages": "Diller",
+  "profileLanguagesUpdated": "Diller güncellendi"
 }

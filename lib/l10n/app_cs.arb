@@ -869,5 +869,7 @@
   "languagesNoneSelected": "Nic není vybráno",
   "languagesRecommended": "Doporučené",
   "profileSpeaks": "Mluví",
-  "profileLearning": "Učí se"
+  "profileLearning": "Učí se",
+  "profileLanguages": "Jazyky",
+  "profileLanguagesUpdated": "Jazyky aktualizovány"
 }

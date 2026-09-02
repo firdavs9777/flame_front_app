@@ -622,5 +622,7 @@
   "languagesNoneSelected": "Belum ada yang dipilih",
   "languagesRecommended": "Direkomendasikan",
   "profileSpeaks": "Berbicara",
-  "profileLearning": "Belajar"
+  "profileLearning": "Belajar",
+  "profileLanguages": "Bahasa",
+  "profileLanguagesUpdated": "Bahasa diperbarui"
 }

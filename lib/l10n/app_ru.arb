@@ -653,5 +653,7 @@
   "languagesNoneSelected": "Ничего не выбрано",
   "languagesRecommended": "Рекомендуемые",
   "profileSpeaks": "Говорит",
-  "profileLearning": "Изучает"
+  "profileLearning": "Изучает",
+  "profileLanguages": "Языки",
+  "profileLanguagesUpdated": "Языки обновлены"
 }

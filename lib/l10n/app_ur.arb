@@ -869,5 +869,7 @@
   "languagesNoneSelected": "کچھ منتخب نہیں",
   "languagesRecommended": "تجویز کردہ",
   "profileSpeaks": "بولتے ہیں",
-  "profileLearning": "سیکھ رہے ہیں"
+  "profileLearning": "سیکھ رہے ہیں",
+  "profileLanguages": "زبانیں",
+  "profileLanguagesUpdated": "زبانیں اپ ڈیٹ ہو گئیں"
 }

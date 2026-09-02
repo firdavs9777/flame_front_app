@@ -869,5 +869,7 @@
   "languagesNoneSelected": "Intet valgt",
   "languagesRecommended": "Anbefalede",
   "profileSpeaks": "Taler",
-  "profileLearning": "Lærer"
+  "profileLearning": "Lærer",
+  "profileLanguages": "Sprog",
+  "profileLanguagesUpdated": "Sprog opdateret"
 }

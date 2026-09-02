@@ -753,5 +753,7 @@
   "languagesNoneSelected": "कोई नहीं चुना गया",
   "languagesRecommended": "अनुशंसित",
   "profileSpeaks": "बोलते हैं",
-  "profileLearning": "सीख रहे हैं"
+  "profileLearning": "सीख रहे हैं",
+  "profileLanguages": "भाषाएं",
+  "profileLanguagesUpdated": "भाषाएं अपडेट हो गईं"
 }

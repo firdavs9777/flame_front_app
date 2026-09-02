@@ -653,5 +653,7 @@
   "languagesNoneSelected": "Aucune sélection",
   "languagesRecommended": "Recommandées",
   "profileSpeaks": "Parle",
-  "profileLearning": "Apprend"
+  "profileLearning": "Apprend",
+  "profileLanguages": "Langues",
+  "profileLanguagesUpdated": "Langues mises à jour"
 }

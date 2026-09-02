@@ -753,5 +753,7 @@
   "languagesNoneSelected": "ยังไม่ได้เลือก",
   "languagesRecommended": "แนะนำ",
   "profileSpeaks": "พูด",
-  "profileLearning": "กำลังเรียน"
+  "profileLearning": "กำลังเรียน",
+  "profileLanguages": "ภาษา",
+  "profileLanguagesUpdated": "อัปเดตภาษาแล้ว"
 }

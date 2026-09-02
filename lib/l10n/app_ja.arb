@@ -620,5 +620,7 @@
   "languagesNoneSelected": "未選択",
   "languagesRecommended": "おすすめ",
   "profileSpeaks": "話せる",
-  "profileLearning": "学習中"
+  "profileLearning": "学習中",
+  "profileLanguages": "言語",
+  "profileLanguagesUpdated": "言語を更新しました"
 }
