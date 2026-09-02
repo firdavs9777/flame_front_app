@@ -218,6 +218,7 @@ class _SocialSignInButtonsState extends ConsumerState<SocialSignInButtons> {
         .socialLogin(
           appleIdToken: result.appleIdToken,
           appleAuthorizationCode: result.appleAuthorizationCode,
+          appleFullName: result.appleFullName,
         ),
     () => context.l10n.loginAppleFailed,
   );

@@ -241,6 +241,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String? googleIdToken,
     String? appleIdToken,
     String? appleAuthorizationCode,
+    String? appleFullName,
     String? facebookAccessToken,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
@@ -253,6 +254,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       result = await _authService.appleSignIn(
         idToken: appleIdToken,
         authorizationCode: appleAuthorizationCode,
+        fullName: appleFullName,
       );
     } else if (facebookAccessToken != null) {
       result = await _authService.facebookSignIn(

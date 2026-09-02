@@ -13,6 +13,18 @@ class SocialAuthResult {
   final String? appleIdToken;
   final String? appleAuthorizationCode;
 
+  /// The name Apple supplied, available on the FIRST authorization only.
+  ///
+  /// Apple returns givenName/familyName exactly once — the first time this
+  /// Apple ID authorizes this app — and never again, not in the ID token and
+  /// not on later sign-ins. If it is not captured and persisted at that
+  /// moment it is gone for good, and the only way back is for the user to
+  /// revoke the app under Settings -> Apple ID -> Sign in with Apple.
+  ///
+  /// That is why this is forwarded to the server on every Apple sign-in
+  /// rather than requested later: there IS no later.
+  final String? appleFullName;
+
   // Facebook
   final String? facebookAccessToken;
 
@@ -22,6 +34,7 @@ class SocialAuthResult {
     this.idToken,
     this.appleIdToken,
     this.appleAuthorizationCode,
+    this.appleFullName,
     this.facebookAccessToken,
   });
 
@@ -31,8 +44,10 @@ class SocialAuthResult {
   factory SocialAuthResult.apple({
     required String idToken,
     required String authorizationCode,
+    String? fullName,
   }) => SocialAuthResult._(
     success: true,
+    appleFullName: fullName,
     appleIdToken: idToken,
     appleAuthorizationCode: authorizationCode,
   );
@@ -94,6 +109,7 @@ class SocialAuthService {
       return SocialAuthResult.apple(
         idToken: idToken,
         authorizationCode: authCode,
+        fullName: _appleName(credential.givenName, credential.familyName),
       );
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) {
@@ -103,6 +119,20 @@ class SocialAuthService {
     } catch (e) {
       return SocialAuthResult.failure(e.toString());
     }
+  }
+
+  /// Joins whichever name parts Apple returned.
+  ///
+  /// Either part can be null even on a first authorization — the user can edit
+  /// what they share on Apple's sheet, and some Apple IDs simply have no family
+  /// name. Returns null rather than an empty string so the server can tell
+  /// "not supplied" from "supplied as blank".
+  static String? _appleName(String? given, String? family) {
+    final parts = [given, family]
+        .map((p) => p?.trim() ?? '')
+        .where((p) => p.isNotEmpty)
+        .toList();
+    return parts.isEmpty ? null : parts.join(' ');
   }
 
   static Future<SocialAuthResult> signInWithFacebook() async {

@@ -265,10 +265,16 @@ class AuthService {
     required String idToken,
     required String authorizationCode,
     String? deviceToken,
+    String? fullName,
   }) async {
     final body = <String, dynamic>{
       'id_token': idToken,
       'authorization_code': authorizationCode,
+      // Apple returns the name on the FIRST authorization only, and never in
+      // the ID token — so the server cannot derive it and this is the one
+      // chance to record it. Omitted rather than sent null on later sign-ins,
+      // where the server must keep the name it already stored.
+      if (fullName != null && fullName.isNotEmpty) 'full_name': fullName,
     };
     if (deviceToken != null) {
       body['device_token'] = deviceToken;
