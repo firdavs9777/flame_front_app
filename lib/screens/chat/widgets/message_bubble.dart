@@ -6,6 +6,7 @@ import 'package:flame/models/models.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/screens/chat/widgets/voice_message_player.dart';
 import 'package:flame/providers/translation_provider.dart';
+import 'package:flame/screens/chat/state/auto_translate_scheduler.dart';
 import 'package:flame/core/i18n/locale_provider.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/theme/app_tokens.dart';
@@ -534,23 +535,48 @@ class _TranslateSection extends ConsumerStatefulWidget {
 }
 
 class _TranslateSectionState extends ConsumerState<_TranslateSection> {
+  AutoTranslateScheduler? _scheduler;
+
   @override
   void initState() {
     super.initState();
     if (!widget.defaultOn) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final entry = ref.read(translationProvider)[widget.message.id];
-      // idle only: a cached entry — done, loading, or error — means either
-      // this ran once already or the user has already acted on it.
-      if (entry != null) return;
-      final target = ref.read(localeProvider)?.languageCode ?? 'en';
-      ref.read(translationProvider.notifier).toggle(
-            messageId: widget.message.id,
-            text: widget.message.content,
-            targetLang: target,
-          );
-    });
+
+    // Delayed, and capped, because `/translate` is a metered, rate-limited
+    // endpoint. Opening a thread jumps the scroll position to the bottom,
+    // which forces a non-reversed ListView to build (and promptly unmount)
+    // every bubble from the top just to compute total extent — without the
+    // delay, every one of those transient bubbles would fire a request. The
+    // delay lets `cancel()` in dispose() catch them first; the gate caps
+    // whatever is left mounted once the burst settles. See
+    // AutoTranslateScheduler and AutoTranslateGate.
+    _scheduler = AutoTranslateScheduler()
+      ..start(
+        gate: ref.read(autoTranslateGateProvider),
+        fire: () async {
+          if (!mounted) return;
+          final entry = ref.read(translationProvider)[widget.message.id];
+          // idle only: a cached entry — done, loading, or error — means
+          // either this ran once already or the user has already acted on
+          // it (including while this attempt sat queued behind the cap).
+          if (entry != null) return;
+          final target = ref.read(localeProvider)?.languageCode ?? 'en';
+          await ref.read(translationProvider.notifier).toggle(
+                messageId: widget.message.id,
+                text: widget.message.content,
+                targetLang: target,
+              );
+        },
+      );
+  }
+
+  @override
+  void dispose() {
+    // Unconditional: a bubble that mounted only transiently during the
+    // opening `jumpTo` layout pass disposes well inside the delay, so this
+    // is what keeps it from ever reaching the gate, let alone the network.
+    _scheduler?.cancel();
+    super.dispose();
   }
 
   @override
