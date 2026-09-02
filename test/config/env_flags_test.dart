@@ -45,18 +45,29 @@ void main() {
       expect(EnvConfig.localConfig.notificationsEnabled, isTrue);
     });
 
-    test('keeps notifications OFF on iOS, which cannot receive one', () {
-      // No iOS app in Firebase, no GoogleService-Info.plist, no APNs key. The
-      // build flag is on; the platform is what withholds it. Offering settings
-      // for deliveries that cannot happen is worse than offering nothing.
+    test('offers notifications on iOS too, now that APNs is wired', () {
+      // GoogleService-Info.plist is in the Runner target and the APNs key is
+      // uploaded to Firebase, so an iPhone can obtain a token and receive.
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
       addTearDown(() => debugDefaultTargetPlatformOverride = null);
 
-      expect(EnvConfig.prodConfig.notificationsEnabled, isFalse);
-      expect(EnvConfig.localConfig.notificationsEnabled, isFalse);
+      expect(EnvConfig.prodConfig.notificationsEnabled, isTrue);
+      expect(EnvConfig.localConfig.notificationsEnabled, isTrue);
+    });
 
-      // The build half stays true, so flipping iOS on later is one deletion in
-      // env.dart rather than a hunt for which flag was turned off and why.
+    test('keeps notifications OFF where a push cannot arrive at all', () {
+      // The macos/ and windows/ scaffolding Flutter generates still builds.
+      // Neither ships and neither can receive a push, so the settings screen
+      // must not appear there — offering settings for deliveries that cannot
+      // happen is worse than offering nothing.
+      for (final platform in [TargetPlatform.macOS, TargetPlatform.windows]) {
+        debugDefaultTargetPlatformOverride = platform;
+        expect(EnvConfig.prodConfig.notificationsEnabled, isFalse,
+            reason: '$platform must not offer notification settings');
+      }
+      debugDefaultTargetPlatformOverride = null;
+
+      // The build half stays true — only the platform withholds it.
       expect(EnvConfig.prodConfig.pushConfigured, isTrue);
     });
 

@@ -60,37 +60,42 @@ class EnvConfig {
 
   /// Whether this BUILD is wired for push, before asking what it is running on.
   ///
-  /// ON now: firebase_messaging is a dependency, android/app/google-services.json
-  /// exists, PushService registers a device token, and the server has
-  /// FLAME_FIREBASE_PROJECT_ID set (verified — pushService.isConfigured()
-  /// returns true on the droplet).
+  /// ON: firebase_messaging is a dependency, both platforms have their Firebase
+  /// config (android/app/google-services.json and, in the Runner target,
+  /// ios/Runner/GoogleService-Info.plist), PushService registers a device
+  /// token, and the server has FLAME_FIREBASE_PROJECT_ID set (verified —
+  /// pushService.isConfigured() returns true on the droplet).
   ///
   /// Prefer [notificationsEnabled] everywhere. This is only half the answer.
   final bool pushConfigured;
 
   /// Whether to offer notification settings at all.
   ///
-  /// [pushConfigured] AND a platform that can actually receive a push — which
-  /// today means Android only. iOS has no Firebase app registered, no
-  /// GoogleService-Info.plist and no APNs key, so an iPhone can neither
-  /// initialize Firebase nor obtain a token.
+  /// [pushConfigured] AND a platform that can actually receive a push.
   ///
-  /// The rule this preserves: a control that promises something the app cannot
-  /// do is worse than no control. Rather than hiding the screen by turning the
-  /// build flag off — which would also disable the working Android half — the
-  /// platform is folded in here, so one flag governs the settings row, the
-  /// route, and whether PushService does anything at all. They cannot drift.
+  /// Both shipping platforms now qualify: Android has google-services.json,
+  /// and iOS has GoogleService-Info.plist in the Runner target plus an APNs
+  /// key uploaded to Firebase.
   ///
-  /// Delete the platform clause once iOS is registered and its APNs key is
-  /// uploaded; nothing else needs to change.
+  /// The clause stays, narrowed to mobile, because this repo still carries the
+  /// macos/ and windows/ scaffolding Flutter generates. Neither ships, but
+  /// neither can receive a push either, and `Firebase.initializeApp()` would
+  /// fail there — so without this a desktop build would offer a notification
+  /// settings screen for deliveries that cannot happen. That is the rule this
+  /// field exists to enforce: a control promising what the app cannot do is
+  /// worse than no control.
+  ///
+  /// One accessor governs the settings row, the route, and whether PushService
+  /// does anything at all, so the three cannot drift apart.
   bool get notificationsEnabled => pushConfigured && _pushCapablePlatform;
 
   /// Uses [defaultTargetPlatform] rather than `dart:io`'s `Platform.isAndroid`
-  /// so a test can exercise both sides via debugDefaultTargetPlatformOverride.
+  /// so a test can exercise every side via debugDefaultTargetPlatformOverride.
   /// `Platform.isAndroid` reads the host in a `flutter test` run, which would
   /// make this permanently false and untestable.
   static bool get _pushCapablePlatform =>
-      defaultTargetPlatform == TargetPlatform.android;
+      defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
 
   /// Whether to offer AI-drafted profile bios.
   ///

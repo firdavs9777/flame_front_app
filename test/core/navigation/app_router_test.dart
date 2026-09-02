@@ -96,24 +96,26 @@ void main() {
       }
     }
 
-    testWidgets('notification settings open on Android, where push works',
-        (tester) async {
-      // flutter_test reports Android by default, but say so explicitly: this
-      // test is about the platform, so it should not depend on that default.
-      await onPlatform(TargetPlatform.android, () async {
-        await pumpNotificationSettings(tester);
+    for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+      testWidgets('notification settings open on $platform, where push works',
+          (tester) async {
+        // flutter_test reports Android by default, so both are set explicitly:
+        // the platform is the variable under test, not an ambient default.
+        await onPlatform(platform, () async {
+          await pumpNotificationSettings(tester);
 
-        expect(find.byType(NotificationSettingsScreen), findsOneWidget);
-        expect(find.byType(RouteNotFoundScreen), findsNothing);
+          expect(find.byType(NotificationSettingsScreen), findsOneWidget);
+          expect(find.byType(RouteNotFoundScreen), findsNothing);
+        });
       });
-    });
+    }
 
-    testWidgets('they resolve to not-found on iOS, which cannot receive one',
+    testWidgets('they resolve to not-found where push cannot arrive',
         (tester) async {
-      // The Settings row is hidden there, but hiding an entry point does not
-      // close a screen — a deep link, a restored stack, or a notification
+      // The Settings row is hidden on desktop, but hiding an entry point does
+      // not close a screen — a deep link, a restored stack, or a notification
       // payload can still name the route.
-      await onPlatform(TargetPlatform.iOS, () async {
+      await onPlatform(TargetPlatform.macOS, () async {
         await pumpNotificationSettings(tester);
 
         expect(find.byType(RouteNotFoundScreen), findsOneWidget);
