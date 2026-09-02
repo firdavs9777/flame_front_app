@@ -28,6 +28,16 @@ class User {
   /// `formatDistanceAway` from core/format/distance_display.dart.
   final double? distance;
   final List<String> interests;
+
+  /// Languages this person speaks, as ISO 639-1 codes.
+  ///
+  /// Empty means UNKNOWN, never "speaks nothing" — every account created
+  /// before this feature has an empty list, and the ranker scores unknown
+  /// neutrally rather than last.
+  final List<String> languagesSpoken;
+
+  /// Languages this person is learning, as ISO 639-1 codes.
+  final List<String> languagesLearning;
   final Gender gender;
   final Gender lookingFor;
   final int minAgePreference;
@@ -82,6 +92,8 @@ class User {
     required this.location,
     this.distance,
     required this.interests,
+    this.languagesSpoken = const [],
+    this.languagesLearning = const [],
     required this.gender,
     required this.lookingFor,
     this.minAgePreference = 18,
@@ -162,6 +174,8 @@ class User {
       // for the deploy.
       distance: _parseDistance(json['distance']),
       interests: List<String>.from(json['interests'] ?? []),
+      languagesSpoken: List<String>.from(json['languages_spoken'] ?? []),
+      languagesLearning: List<String>.from(json['languages_learning'] ?? []),
       gender: _parseGender(json['gender']),
       lookingFor: _parseGender(json['looking_for'] ?? json['lookingFor']),
       minAgePreference: preferences['min_age'] ?? preferences['minAge'] ?? 18,
@@ -250,6 +264,8 @@ class User {
     String? location,
     double? distance,
     List<String>? interests,
+    List<String>? languagesSpoken,
+    List<String>? languagesLearning,
     Gender? gender,
     Gender? lookingFor,
     int? minAgePreference,
@@ -281,6 +297,8 @@ class User {
       location: location ?? this.location,
       distance: distance ?? this.distance,
       interests: interests ?? this.interests,
+      languagesSpoken: languagesSpoken ?? this.languagesSpoken,
+      languagesLearning: languagesLearning ?? this.languagesLearning,
       gender: gender ?? this.gender,
       lookingFor: lookingFor ?? this.lookingFor,
       minAgePreference: minAgePreference ?? this.minAgePreference,

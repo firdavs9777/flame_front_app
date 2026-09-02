@@ -12,6 +12,8 @@ Map<String, dynamic> buildUpdateProfileBody({
   String? name,
   String? bio,
   List<String>? interests,
+  List<String>? languagesSpoken,
+  List<String>? languagesLearning,
   Gender? lookingFor,
   Gender? gender,
   int? age,
@@ -22,6 +24,8 @@ Map<String, dynamic> buildUpdateProfileBody({
   if (name != null) body['name'] = name;
   if (bio != null) body['bio'] = bio;
   if (interests != null) body['interests'] = interests;
+  if (languagesSpoken != null) body['languagesSpoken'] = languagesSpoken;
+  if (languagesLearning != null) body['languagesLearning'] = languagesLearning;
   if (lookingFor != null) {
     body['lookingFor'] = lookingFor.toApiString();
     body['looking_for'] = lookingFor.toApiString();
@@ -70,6 +74,8 @@ class UserService {
     String? name,
     String? bio,
     List<String>? interests,
+    List<String>? languagesSpoken,
+    List<String>? languagesLearning,
     Gender? lookingFor,
     Gender? gender,
     int? age,
@@ -82,6 +88,8 @@ class UserService {
       termsAccepted: termsAccepted,
       profileComplete: profileComplete,
       interests: interests,
+      languagesSpoken: languagesSpoken,
+      languagesLearning: languagesLearning,
       lookingFor: lookingFor,
       gender: gender,
       age: age,

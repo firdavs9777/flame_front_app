@@ -39,6 +39,8 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
     int? age,
     String? bio,
     List<String>? interests,
+    List<String>? languagesSpoken,
+    List<String>? languagesLearning,
     Gender? lookingFor,
   }) async {
     final currentUser = state.valueOrNull;
@@ -49,6 +51,8 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
       age: age,
       bio: bio,
       interests: interests,
+      languagesSpoken: languagesSpoken,
+      languagesLearning: languagesLearning,
       lookingFor: lookingFor,
     );
 
