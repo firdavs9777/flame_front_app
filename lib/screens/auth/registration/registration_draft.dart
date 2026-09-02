@@ -27,6 +27,7 @@ class RegistrationDraft {
       'interests': data.interests,
       'languagesSpoken': data.languagesSpoken,
       'languagesLearning': data.languagesLearning,
+      'languagesSeeded': data.languagesSeeded,
       'latitude': data.latitude,
       'longitude': data.longitude,
       'photoFilePaths': data.photoFiles.map((f) => f.path).toList(),
@@ -54,6 +55,9 @@ class RegistrationDraft {
       ..languagesLearning = ((json['languagesLearning'] as List?) ?? const [])
           .map((e) => e.toString())
           .toList()
+      // Absent in drafts written before the flag existed, which is correct:
+      // those were never offered the seed, so they still should be.
+      ..languagesSeeded = (json['languagesSeeded'] as bool?) ?? false
       ..latitude = (json['latitude'] as num?)?.toDouble()
       ..longitude = (json['longitude'] as num?)?.toDouble();
 

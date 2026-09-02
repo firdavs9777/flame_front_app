@@ -30,7 +30,6 @@ class StepBioInterests extends ConsumerStatefulWidget {
 class _StepBioInterestsState extends ConsumerState<StepBioInterests> {
   final _bioController = TextEditingController();
   final List<String> _selectedInterests = [];
-  bool _seededLanguages = false;
 
   /// The shared catalogue, not a local copy.
   ///
@@ -242,15 +241,20 @@ class _StepBioInterestsState extends ConsumerState<StepBioInterests> {
     );
   }
 
-  /// Pre-selects the device's language, once.
+  /// Pre-selects the device's language, once per DRAFT.
   ///
   /// A Korean phone opens this step with 한국어 already chosen. That populates
   /// the app's premise for essentially every new user at zero friction — and
   /// deliberately without adding a second blocking requirement to the step
   /// whose first one produced the "Skip for now was unresponsive" rejection.
+  ///
+  /// The latch is on the draft rather than on this State: the PageView behind
+  /// StepWizard keeps no state, so a State-level latch was reset every time
+  /// the user walked forward and came back, re-seeding a list they had
+  /// deliberately emptied.
   void _seedFromLocale(BuildContext context) {
-    if (_seededLanguages) return;
-    _seededLanguages = true;
+    if (widget.data.languagesSeeded) return;
+    widget.data.languagesSeeded = true;
     if (widget.data.languagesSpoken.isNotEmpty) return;
 
     final code = Localizations.localeOf(context).languageCode.toLowerCase();

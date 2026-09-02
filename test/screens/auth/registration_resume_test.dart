@@ -155,6 +155,90 @@ void main() {
     });
   });
 
+  group('locale seeding happens once per DRAFT, not once per State', () {
+    // StepWizard's PageView keeps no state, so step 4's State is destroyed the
+    // moment the user advances to step 5. A latch living on that State was
+    // therefore reset on the way back, and a user who had deliberately emptied
+    // "Languages you speak" got the device locale silently re-added and then
+    // persisted. The latch has to outlive the widget, so it lives on the draft
+    // beside the languages themselves.
+    Widget host(RegistrationData data, {required Locale locale, Key? key}) {
+      return ProviderScope(
+        overrides: [
+          languageCatalogProvider.overrideWith((ref) async => kLanguageFallback),
+        ],
+        child: MaterialApp(
+          locale: locale,
+          supportedLocales: kSupportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: Scaffold(
+            body: StepBioInterests(key: key, data: data, onNext: () {}),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('a genuinely fresh draft still seeds from the device locale',
+        (tester) async {
+      final data = RegistrationData();
+
+      await tester.pumpWidget(host(data, locale: const Locale('ko')));
+      await tester.pumpAndSettle();
+
+      expect(data.languagesSpoken, ['ko']);
+      expect(data.languagesSeeded, isTrue);
+    });
+
+    testWidgets('a cleared list stays cleared when the step is rebuilt',
+        (tester) async {
+      final data = RegistrationData();
+
+      await tester.pumpWidget(
+        host(data, locale: const Locale('ko'), key: const ValueKey(1)),
+      );
+      await tester.pumpAndSettle();
+      expect(data.languagesSpoken, ['ko'], reason: 'seeded on the first build');
+
+      // The user empties the row and walks on to step 5.
+      data.languagesSpoken = [];
+
+      // Coming back builds a brand new State — a different key is exactly what
+      // the PageView does to this widget.
+      await tester.pumpWidget(
+        host(data, locale: const Locale('ko'), key: const ValueKey(2)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(data.languagesSpoken, isEmpty,
+          reason: 'deliberately saying "I speak nothing" must survive');
+    });
+
+    test('the seeded flag survives a draft round trip', () {
+      const draft = RegistrationDraft();
+      final data = RegistrationData()
+        ..languagesSeeded = true
+        ..languagesSpoken = [];
+
+      final restored = draft.fromJson(draft.toJson(data, 4));
+
+      expect(restored.languagesSeeded, isTrue);
+      expect(restored.languagesSpoken, isEmpty);
+    });
+
+    test('a draft written before this release has not been seeded', () {
+      const draft = RegistrationDraft();
+      final restored = draft.fromJson({'email': 'old@draft.com'});
+
+      expect(restored.languagesSeeded, isFalse,
+          reason: 'an older draft never got the chance, so it still should');
+    });
+  });
+
   group('resumeStepFor', () {
     test('a draft with no password restores to step 0, whatever it saved', () {
       // The password is deliberately never persisted. Landing the user past

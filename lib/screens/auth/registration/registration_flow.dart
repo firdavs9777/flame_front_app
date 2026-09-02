@@ -33,6 +33,16 @@ class RegistrationData {
   List<String> languagesSpoken = [];
   List<String> languagesLearning = [];
 
+  /// Whether the locale seed has already been offered for this draft.
+  ///
+  /// It lives here, not in step 4's State, because StepWizard's PageView keeps
+  /// no state: advancing to step 5 destroys step 4's State and coming back
+  /// builds a new one. A latch on the State therefore re-armed itself, and a
+  /// user who had deliberately emptied "Languages you speak" got the device
+  /// locale silently re-added on the way back — and then persisted. Seeding is
+  /// a once-per-draft event, so it is recorded where the draft is.
+  bool languagesSeeded = false;
+
   List<String> photos = []; // URLs after upload
   List<File> photoFiles = []; // Local files before upload
   double? latitude;
@@ -115,6 +125,7 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
         ..interests = data.interests
         ..languagesSpoken = data.languagesSpoken
         ..languagesLearning = data.languagesLearning
+        ..languagesSeeded = data.languagesSeeded
         ..photoFiles = data.photoFiles
         ..latitude = data.latitude
         ..longitude = data.longitude;
