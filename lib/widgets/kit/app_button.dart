@@ -114,7 +114,7 @@ class AppButton extends StatelessWidget {
         ),
         elevation: 0,
       ),
-      child: _buildContent(AppColors.white, AppColors.gray500),
+      child: _buildContent(AppColors.white, AppColors.gray500, isEnabled),
     );
   }
 
@@ -132,7 +132,7 @@ class AppButton extends StatelessWidget {
         ),
         elevation: 0,
       ),
-      child: _buildContent(AppColors.primary, AppColors.gray500),
+      child: _buildContent(AppColors.primary, AppColors.gray500, isEnabled),
     );
   }
 
@@ -150,7 +150,7 @@ class AppButton extends StatelessWidget {
           borderRadius: AppRadius.borderMD,
         ),
       ),
-      child: _buildContent(AppColors.primary, AppColors.gray500),
+      child: _buildContent(AppColors.primary, AppColors.gray500, isEnabled),
     );
   }
 
@@ -159,12 +159,15 @@ class AppButton extends StatelessWidget {
       onPressed: isEnabled ? onPressed : null,
       style: TextButton.styleFrom(
         foregroundColor: AppColors.primary,
+        // The only variant that was missing this. Without it Flutter's own
+        // theming leaves a disabled TextButton in the foreground colour too.
+        disabledForegroundColor: AppColors.gray500,
         padding: _getPadding(),
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.borderMD,
         ),
       ),
-      child: _buildContent(AppColors.primary, AppColors.gray500),
+      child: _buildContent(AppColors.primary, AppColors.gray500, isEnabled),
     );
   }
 
@@ -182,11 +185,27 @@ class AppButton extends StatelessWidget {
         ),
         elevation: 0,
       ),
-      child: _buildContent(AppColors.white, AppColors.gray500),
+      child: _buildContent(AppColors.white, AppColors.gray500, isEnabled),
     );
   }
 
-  Widget _buildContent(Color activeColor, Color disabledColor) {
+  /// [isEnabled] rather than the `isDisabled` FIELD, and the distinction is
+  /// the whole point.
+  ///
+  /// A button can be disabled two ways: `isDisabled: true`, or the far more
+  /// common `onPressed: null`. Line 35 accounts for both when deciding whether
+  /// the button responds — but this method used to colour its label from the
+  /// field alone, so a button disabled by a null callback rendered in full
+  /// active colour while being inert.
+  ///
+  /// On primary and danger that was survivable: their BACKGROUND still greyed
+  /// out via disabledBackgroundColor, so it looked disabled anyway. Ghost has
+  /// no background. Its label colour is the only signal there is, so a
+  /// disabled ghost button was indistinguishable from a live one.
+  ///
+  /// App Review hit exactly that and reported "The Skip for now button was
+  /// unresponsive to taps" — a red, live-looking control that did nothing.
+  Widget _buildContent(Color activeColor, Color disabledColor, bool isEnabled) {
     if (isLoading) {
       return SizedBox(
         width: _getIconSize(),
@@ -198,7 +217,7 @@ class AppButton extends StatelessWidget {
       );
     }
 
-    final color = isDisabled ? disabledColor : activeColor;
+    final color = isEnabled ? activeColor : disabledColor;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
