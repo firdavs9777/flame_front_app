@@ -862,5 +862,9 @@
   "profileLocationUpdate": "Opdater placering",
   "profileLocationUpdated": "Placering opdateret",
   "profileLocationFailed": "Kunne ikke finde din placering",
-  "profileLocationUnknown": "Placering ikke angivet"
+  "profileLocationUnknown": "Placering ikke angivet",
+  "languagesSpokenLabel": "Sprog du taler",
+  "languagesLearningLabel": "Sprog du lærer",
+  "languagesPickerTitle": "Vælg sprog",
+  "languagesNoneSelected": "Intet valgt"
 }

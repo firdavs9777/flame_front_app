@@ -746,5 +746,9 @@
   "profileLocationUpdate": "Cập nhật vị trí",
   "profileLocationUpdated": "Đã cập nhật vị trí",
   "profileLocationFailed": "Không lấy được vị trí của bạn",
-  "profileLocationUnknown": "Chưa đặt vị trí"
+  "profileLocationUnknown": "Chưa đặt vị trí",
+  "languagesSpokenLabel": "Ngôn ngữ bạn nói",
+  "languagesLearningLabel": "Ngôn ngữ bạn đang học",
+  "languagesPickerTitle": "Chọn ngôn ngữ",
+  "languagesNoneSelected": "Chưa chọn"
 }

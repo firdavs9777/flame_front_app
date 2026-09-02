@@ -862,5 +862,9 @@
   "profileLocationUpdate": "Aktualizovat polohu",
   "profileLocationUpdated": "Poloha aktualizována",
   "profileLocationFailed": "Nepodařilo se zjistit polohu",
-  "profileLocationUnknown": "Poloha není nastavena"
+  "profileLocationUnknown": "Poloha není nastavena",
+  "languagesSpokenLabel": "Jazyky, kterými mluvíte",
+  "languagesLearningLabel": "Jazyky, které se učíte",
+  "languagesPickerTitle": "Vyberte jazyky",
+  "languagesNoneSelected": "Nic není vybráno"
 }

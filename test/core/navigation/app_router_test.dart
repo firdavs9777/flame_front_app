@@ -203,6 +203,12 @@ Object? _argumentsFor(String name) {
       return const MediaViewerArgs(url: 'https://x/y.jpg', heroTag: 'h1');
     case AppRoutes.storyViewer:
       return const StoryViewerArgs(users: [], initialUserIndex: 0);
+    case AppRoutes.languagePicker:
+      return LanguagePickerArgs(
+        initialSelection: const [],
+        maxSelection: 3,
+        onDone: (_) {},
+      );
     default:
       return null;
   }

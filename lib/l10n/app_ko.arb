@@ -613,5 +613,9 @@
   "profileLocationUpdate": "위치 업데이트",
   "profileLocationUpdated": "위치가 업데이트되었습니다",
   "profileLocationFailed": "위치를 가져올 수 없습니다",
-  "profileLocationUnknown": "위치가 설정되지 않음"
+  "profileLocationUnknown": "위치가 설정되지 않음",
+  "languagesSpokenLabel": "구사하는 언어",
+  "languagesLearningLabel": "배우고 있는 언어",
+  "languagesPickerTitle": "언어 선택",
+  "languagesNoneSelected": "선택 안 됨"
 }

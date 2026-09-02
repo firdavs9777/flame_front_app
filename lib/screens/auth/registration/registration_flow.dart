@@ -27,6 +27,12 @@ class RegistrationData {
   Gender lookingFor = Gender.other;
   String bio = '';
   List<String> interests = [];
+
+  /// ISO 639-1 codes, max 3 each. Spoken is seeded from the device locale the
+  /// first time step 4 builds.
+  List<String> languagesSpoken = [];
+  List<String> languagesLearning = [];
+
   List<String> photos = []; // URLs after upload
   List<File> photoFiles = []; // Local files before upload
   double? latitude;
@@ -238,6 +244,8 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
             latitude: _data.latitude!,
             longitude: _data.longitude!,
             termsAccepted: _data.termsAccepted,
+            languagesSpoken: _data.languagesSpoken,
+            languagesLearning: _data.languagesLearning,
           );
       if (!mounted) return;
       setState(() => _isUploading = false);

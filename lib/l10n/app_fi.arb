@@ -862,5 +862,9 @@
   "profileLocationUpdate": "Päivitä sijainti",
   "profileLocationUpdated": "Sijainti päivitetty",
   "profileLocationFailed": "Sijaintiasi ei saatu",
-  "profileLocationUnknown": "Sijaintia ei ole asetettu"
+  "profileLocationUnknown": "Sijaintia ei ole asetettu",
+  "languagesSpokenLabel": "Kielet, joita puhut",
+  "languagesLearningLabel": "Kielet, joita opiskelet",
+  "languagesPickerTitle": "Valitse kielet",
+  "languagesNoneSelected": "Ei valittuja"
 }

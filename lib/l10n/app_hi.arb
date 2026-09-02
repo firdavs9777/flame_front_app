@@ -746,5 +746,9 @@
   "profileLocationUpdate": "स्थान अपडेट करें",
   "profileLocationUpdated": "स्थान अपडेट हो गया",
   "profileLocationFailed": "आपका स्थान नहीं मिल सका",
-  "profileLocationUnknown": "स्थान सेट नहीं है"
+  "profileLocationUnknown": "स्थान सेट नहीं है",
+  "languagesSpokenLabel": "आप जो भाषाएं बोलते हैं",
+  "languagesLearningLabel": "आप जो भाषाएं सीख रहे हैं",
+  "languagesPickerTitle": "भाषाएं चुनें",
+  "languagesNoneSelected": "कोई नहीं चुना गया"
 }

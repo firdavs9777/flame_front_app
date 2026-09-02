@@ -746,5 +746,9 @@
   "profileLocationUpdate": "تحديث الموقع",
   "profileLocationUpdated": "تم تحديث الموقع",
   "profileLocationFailed": "تعذّر تحديد موقعك",
-  "profileLocationUnknown": "لم يتم تعيين الموقع"
+  "profileLocationUnknown": "لم يتم تعيين الموقع",
+  "languagesSpokenLabel": "اللغات التي تتحدثها",
+  "languagesLearningLabel": "اللغات التي تتعلمها",
+  "languagesPickerTitle": "اختر اللغات",
+  "languagesNoneSelected": "لم يتم اختيار شيء"
 }

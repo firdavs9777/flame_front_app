@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/theme/app_theme.dart';
+import 'package:flame/core/navigation/app_routes.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
 import 'package:flame/widgets/kit/kit.dart';
 import 'package:flame/core/interests/interest_catalogue.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/core/languages/language_fallback.dart';
+import 'package:flame/core/languages/language_label.dart';
+import 'package:flame/providers/languages_provider.dart';
 import 'package:flame/screens/auth/widgets/auth_snackbar.dart';
 import 'package:flame/widgets/bio_suggestions.dart';
 
-class StepBioInterests extends StatefulWidget {
+class StepBioInterests extends ConsumerStatefulWidget {
   final RegistrationData data;
   final VoidCallback onNext;
 
@@ -19,12 +24,13 @@ class StepBioInterests extends StatefulWidget {
   });
 
   @override
-  State<StepBioInterests> createState() => _StepBioInterestsState();
+  ConsumerState<StepBioInterests> createState() => _StepBioInterestsState();
 }
 
-class _StepBioInterestsState extends State<StepBioInterests> {
+class _StepBioInterestsState extends ConsumerState<StepBioInterests> {
   final _bioController = TextEditingController();
   final List<String> _selectedInterests = [];
+  bool _seededLanguages = false;
 
   /// The shared catalogue, not a local copy.
   ///
@@ -48,6 +54,8 @@ class _StepBioInterestsState extends State<StepBioInterests> {
 
   @override
   Widget build(BuildContext context) {
+    _seedFromLocale(context);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
@@ -149,6 +157,23 @@ class _StepBioInterestsState extends State<StepBioInterests> {
                 .animate()
                 .fadeIn(delay: 200.ms, duration: 400.ms),
 
+            const SizedBox(height: 24),
+
+            // Languages — what the user speaks and what they're learning.
+            // The premise of the whole app, declared right where interests are.
+            _languageRow(
+              label: context.l10n.languagesSpokenLabel,
+              codes: widget.data.languagesSpoken,
+              key: const Key('register_languages_spoken'),
+              onChanged: (picked) => widget.data.languagesSpoken = picked,
+            ),
+            _languageRow(
+              label: context.l10n.languagesLearningLabel,
+              codes: widget.data.languagesLearning,
+              key: const Key('register_languages_learning'),
+              onChanged: (picked) => widget.data.languagesLearning = picked,
+            ),
+
             const SizedBox(height: 32),
 
             // Continue Button
@@ -214,6 +239,57 @@ class _StepBioInterestsState extends State<StepBioInterests> {
           ),
         );
       }).toList(),
+    );
+  }
+
+  /// Pre-selects the device's language, once.
+  ///
+  /// A Korean phone opens this step with 한국어 already chosen. That populates
+  /// the app's premise for essentially every new user at zero friction — and
+  /// deliberately without adding a second blocking requirement to the step
+  /// whose first one produced the "Skip for now was unresponsive" rejection.
+  void _seedFromLocale(BuildContext context) {
+    if (_seededLanguages) return;
+    _seededLanguages = true;
+    if (widget.data.languagesSpoken.isNotEmpty) return;
+
+    final code = Localizations.localeOf(context).languageCode.toLowerCase();
+    final catalog =
+        ref.read(languageCatalogProvider).valueOrNull ?? kLanguageFallback;
+    if (catalog.any((l) => l.code == code)) {
+      widget.data.languagesSpoken = [code];
+    }
+  }
+
+  Widget _languageRow({
+    required String label,
+    required List<String> codes,
+    required Key key,
+    required void Function(List<String>) onChanged,
+  }) {
+    final catalog =
+        ref.watch(languageCatalogProvider).valueOrNull ?? kLanguageFallback;
+    final summary = codes.isEmpty
+        ? context.l10n.languagesNoneSelected
+        : codes.map((c) => languageLabel(c, catalog)).join(', ');
+
+    return ListTile(
+      key: key,
+      contentPadding: EdgeInsets.zero,
+      title: Text(label),
+      subtitle: Text(summary),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => Navigator.of(context).pushNamed(
+        AppRoutes.languagePicker,
+        arguments: LanguagePickerArgs(
+          initialSelection: codes,
+          maxSelection: 3,
+          onDone: (picked) {
+            Navigator.of(context).pop();
+            setState(() => onChanged(picked));
+          },
+        ),
+      ),
     );
   }
 

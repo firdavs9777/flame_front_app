@@ -862,5 +862,9 @@
   "profileLocationUpdate": "Locatie bijwerken",
   "profileLocationUpdated": "Locatie bijgewerkt",
   "profileLocationFailed": "Kan je locatie niet ophalen",
-  "profileLocationUnknown": "Locatie niet ingesteld"
+  "profileLocationUnknown": "Locatie niet ingesteld",
+  "languagesSpokenLabel": "Talen die je spreekt",
+  "languagesLearningLabel": "Talen die je leert",
+  "languagesPickerTitle": "Selecteer talen",
+  "languagesNoneSelected": "Niets geselecteerd"
 }

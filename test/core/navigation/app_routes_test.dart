@@ -20,7 +20,7 @@ void main() {
           reason: 'duplicate route name');
       expect(AppRoutes.all, contains(AppRoutes.chat));
       expect(AppRoutes.all, contains(AppRoutes.discoverFilters));
-      expect(AppRoutes.all.length, 15);
+      expect(AppRoutes.all.length, 16);
     });
 
     test('keeps the one pre-existing route string unchanged', () {

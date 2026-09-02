@@ -614,5 +614,9 @@
   "profileLocationUpdate": "Konumu güncelle",
   "profileLocationUpdated": "Konum güncellendi",
   "profileLocationFailed": "Konumunuz alınamadı",
-  "profileLocationUnknown": "Konum ayarlanmadı"
+  "profileLocationUnknown": "Konum ayarlanmadı",
+  "languagesSpokenLabel": "Konuştuğunuz diller",
+  "languagesLearningLabel": "Öğrendiğiniz diller",
+  "languagesPickerTitle": "Dilleri seçin",
+  "languagesNoneSelected": "Hiçbiri seçilmedi"
 }

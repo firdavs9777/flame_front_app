@@ -862,5 +862,9 @@
   "profileLocationUpdate": "مقام اپ ڈیٹ کریں",
   "profileLocationUpdated": "مقام اپ ڈیٹ ہو گیا",
   "profileLocationFailed": "آپ کا مقام حاصل نہیں ہو سکا",
-  "profileLocationUnknown": "مقام مقرر نہیں"
+  "profileLocationUnknown": "مقام مقرر نہیں",
+  "languagesSpokenLabel": "وہ زبانیں جو آپ بولتے ہیں",
+  "languagesLearningLabel": "وہ زبانیں جو آپ سیکھ رہے ہیں",
+  "languagesPickerTitle": "زبانیں منتخب کریں",
+  "languagesNoneSelected": "کچھ منتخب نہیں"
 }

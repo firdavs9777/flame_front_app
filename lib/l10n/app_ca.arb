@@ -862,5 +862,9 @@
   "profileLocationUpdate": "Actualitza la ubicació",
   "profileLocationUpdated": "Ubicació actualitzada",
   "profileLocationFailed": "No s'ha pogut obtenir la teva ubicació",
-  "profileLocationUnknown": "Ubicació no definida"
+  "profileLocationUnknown": "Ubicació no definida",
+  "languagesSpokenLabel": "Idiomes que parles",
+  "languagesLearningLabel": "Idiomes que estàs aprenent",
+  "languagesPickerTitle": "Selecciona idiomes",
+  "languagesNoneSelected": "Cap seleccionat"
 }

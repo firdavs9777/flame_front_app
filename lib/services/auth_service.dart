@@ -67,6 +67,8 @@ class AuthService {
     required double latitude,
     required double longitude,
     bool termsAccepted = false,
+    List<String>? languagesSpoken,
+    List<String>? languagesLearning,
   }) async {
     final response = await _apiClient.post(
       '/auth/register',
@@ -86,6 +88,8 @@ class AuthService {
         'photos': photos,
         'latitude': latitude,
         'longitude': longitude,
+        if (languagesSpoken != null) 'languagesSpoken': languagesSpoken,
+        if (languagesLearning != null) 'languagesLearning': languagesLearning,
       },
     );
 

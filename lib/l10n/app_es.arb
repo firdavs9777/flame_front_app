@@ -648,5 +648,9 @@
   "profileLocationUpdate": "Actualizar ubicación",
   "profileLocationUpdated": "Ubicación actualizada",
   "profileLocationFailed": "No se pudo obtener tu ubicación",
-  "profileLocationUnknown": "Ubicación no establecida"
+  "profileLocationUnknown": "Ubicación no establecida",
+  "languagesSpokenLabel": "Idiomas que hablas",
+  "languagesLearningLabel": "Idiomas que estás aprendiendo",
+  "languagesPickerTitle": "Selecciona idiomas",
+  "languagesNoneSelected": "Ninguno seleccionado"
 }

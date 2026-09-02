@@ -646,5 +646,9 @@
   "profileLocationUpdate": "Actualiser la position",
   "profileLocationUpdated": "Position mise à jour",
   "profileLocationFailed": "Impossible d'obtenir votre position",
-  "profileLocationUnknown": "Position non définie"
+  "profileLocationUnknown": "Position non définie",
+  "languagesSpokenLabel": "Langues que vous parlez",
+  "languagesLearningLabel": "Langues que vous apprenez",
+  "languagesPickerTitle": "Sélectionner des langues",
+  "languagesNoneSelected": "Aucune sélection"
 }

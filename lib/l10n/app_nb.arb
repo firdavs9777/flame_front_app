@@ -862,5 +862,9 @@
   "profileLocationUpdate": "Oppdater posisjon",
   "profileLocationUpdated": "Posisjon oppdatert",
   "profileLocationFailed": "Fant ikke posisjonen din",
-  "profileLocationUnknown": "Posisjon er ikke angitt"
+  "profileLocationUnknown": "Posisjon er ikke angitt",
+  "languagesSpokenLabel": "Språk du snakker",
+  "languagesLearningLabel": "Språk du lærer",
+  "languagesPickerTitle": "Velg språk",
+  "languagesNoneSelected": "Ingen valgt"
 }

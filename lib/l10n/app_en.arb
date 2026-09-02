@@ -1823,5 +1823,21 @@
   "profileLocationUnknown": "Location not set",
   "@profileLocationUnknown": {
     "description": "Placeholder on the profile when no city is known yet."
+  },
+  "languagesSpokenLabel": "Languages you speak",
+  "@languagesSpokenLabel": {
+    "description": "Row label on the registration interests step opening the language picker for spoken languages."
+  },
+  "languagesLearningLabel": "Languages you're learning",
+  "@languagesLearningLabel": {
+    "description": "Row label on the registration interests step opening the language picker for languages being learned."
+  },
+  "languagesPickerTitle": "Select languages",
+  "@languagesPickerTitle": {
+    "description": "App bar title on the language picker screen."
+  },
+  "languagesNoneSelected": "None selected",
+  "@languagesNoneSelected": {
+    "description": "Row subtitle when no languages have been picked yet."
   }
 }

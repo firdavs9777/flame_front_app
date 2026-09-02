@@ -12,6 +12,7 @@ import 'package:flame/screens/chat/archived_conversations_screen.dart';
 import 'package:flame/screens/chat/chat_search_screen.dart';
 import 'package:flame/screens/chat/media_viewer_screen.dart';
 import 'package:flame/screens/discover/discover_filters_screen.dart';
+import 'package:flame/screens/languages/language_picker_screen.dart';
 import 'package:flame/screens/profile/edit_profile/edit_profile_screen.dart';
 import 'package:flame/screens/profile/profile_detail_screen.dart';
 import 'package:flame/screens/settings/blocked_users_screen.dart';
@@ -148,6 +149,17 @@ abstract final class AppRouter {
 
       case AppRoutes.forgotPassword:
         return _page(settings, const ForgotPasswordScreen());
+
+      case AppRoutes.languagePicker:
+        return _typed<LanguagePickerArgs>(
+          settings,
+          args,
+          (a) => LanguagePickerScreen(
+            initialSelection: a.initialSelection,
+            maxSelection: a.maxSelection,
+            onDone: a.onDone,
+          ),
+        );
 
       default:
         return _page(settings, const RouteNotFoundScreen());

@@ -646,5 +646,9 @@
   "profileLocationUpdate": "Обновить местоположение",
   "profileLocationUpdated": "Местоположение обновлено",
   "profileLocationFailed": "Не удалось определить местоположение",
-  "profileLocationUnknown": "Местоположение не задано"
+  "profileLocationUnknown": "Местоположение не задано",
+  "languagesSpokenLabel": "Языки, на которых вы говорите",
+  "languagesLearningLabel": "Языки, которые вы изучаете",
+  "languagesPickerTitle": "Выберите языки",
+  "languagesNoneSelected": "Ничего не выбрано"
 }

@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/l10n/gen/app_localizations.dart';
 import 'package:flame/screens/auth/registration/registration_flow.dart';
 import 'package:flame/screens/auth/registration/steps/step_bio_interests.dart';
 
 Widget _host(RegistrationData data, VoidCallback onNext) {
-  return MaterialApp(
-    // Interest chips read their labels from the ARBs now, so the step needs
-    // localizations to build at all.
-    locale: const Locale('en'),
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
-    supportedLocales: AppLocalizations.supportedLocales,
-    home: Scaffold(
-      body: StepBioInterests(data: data, onNext: onNext),
+  // ProviderScope: the step now reads languageCatalogProvider for the two
+  // language rows below the interests grid.
+  return ProviderScope(
+    child: MaterialApp(
+      // Interest chips read their labels from the ARBs now, so the step needs
+      // localizations to build at all.
+      locale: const Locale('en'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: StepBioInterests(data: data, onNext: onNext),
+      ),
     ),
   );
 }

@@ -201,6 +201,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required double latitude,
     required double longitude,
     bool termsAccepted = false,
+    List<String>? languagesSpoken,
+    List<String>? languagesLearning,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
 
@@ -217,6 +219,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       photos: photos,
       latitude: latitude,
       longitude: longitude,
+      languagesSpoken: languagesSpoken,
+      languagesLearning: languagesLearning,
     );
 
     if (result.success && result.user != null) {

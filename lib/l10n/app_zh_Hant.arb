@@ -746,5 +746,9 @@
   "profileLocationUpdate": "更新位置",
   "profileLocationUpdated": "位置已更新",
   "profileLocationFailed": "無法取得你的位置",
-  "profileLocationUnknown": "尚未設定位置"
+  "profileLocationUnknown": "尚未設定位置",
+  "languagesSpokenLabel": "你會說的語言",
+  "languagesLearningLabel": "你正在學習的語言",
+  "languagesPickerTitle": "選擇語言",
+  "languagesNoneSelected": "尚未選擇"
 }

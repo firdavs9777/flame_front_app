@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show ValueChanged;
+
 import 'package:flame/models/conversation.dart';
 import 'package:flame/models/story.dart';
 import 'package:flame/models/user.dart';
@@ -34,6 +36,8 @@ abstract final class AppRoutes {
   static const login = '/auth/login';
   static const forgotPassword = '/auth/forgot-password';
 
+  static const languagePicker = '/languages/picker';
+
   /// Enumerated so the router's test can assert that every name resolves.
   /// A name added here without a matching case in [AppRouter] fails that test —
   /// which is the point: the alternative is discovering it from a dead tap.
@@ -53,6 +57,7 @@ abstract final class AppRoutes {
     createStory,
     login,
     forgotPassword,
+    languagePicker,
   ];
 }
 
@@ -108,4 +113,20 @@ class StoryViewerArgs {
 
   final List<UserStories> users;
   final int initialUserIndex;
+}
+
+/// Carries a closure rather than only data: unlike a deep link, this route is
+/// never reached by name from outside the app, only pushed by whichever
+/// screen owns the list being edited (currently registration step 4) and
+/// wants its own callback run when the picker is done.
+class LanguagePickerArgs {
+  const LanguagePickerArgs({
+    required this.initialSelection,
+    required this.maxSelection,
+    required this.onDone,
+  });
+
+  final List<String> initialSelection;
+  final int maxSelection;
+  final ValueChanged<List<String>> onDone;
 }

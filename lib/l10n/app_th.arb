@@ -746,5 +746,9 @@
   "profileLocationUpdate": "อัปเดตตำแหน่ง",
   "profileLocationUpdated": "อัปเดตตำแหน่งแล้ว",
   "profileLocationFailed": "ไม่สามารถระบุตำแหน่งของคุณได้",
-  "profileLocationUnknown": "ยังไม่ได้ตั้งค่าตำแหน่ง"
+  "profileLocationUnknown": "ยังไม่ได้ตั้งค่าตำแหน่ง",
+  "languagesSpokenLabel": "ภาษาที่คุณพูด",
+  "languagesLearningLabel": "ภาษาที่คุณกำลังเรียนรู้",
+  "languagesPickerTitle": "เลือกภาษา",
+  "languagesNoneSelected": "ยังไม่ได้เลือก"
 }

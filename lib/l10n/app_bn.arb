@@ -862,5 +862,9 @@
   "profileLocationUpdate": "অবস্থান আপডেট করুন",
   "profileLocationUpdated": "অবস্থান আপডেট হয়েছে",
   "profileLocationFailed": "আপনার অবস্থান পাওয়া যায়নি",
-  "profileLocationUnknown": "অবস্থান নির্ধারিত নয়"
+  "profileLocationUnknown": "অবস্থান নির্ধারিত নয়",
+  "languagesSpokenLabel": "আপনি যেসব ভাষায় কথা বলেন",
+  "languagesLearningLabel": "আপনি যেসব ভাষা শিখছেন",
+  "languagesPickerTitle": "ভাষা নির্বাচন করুন",
+  "languagesNoneSelected": "কিছু নির্বাচিত হয়নি"
 }

@@ -862,5 +862,9 @@
   "profileLocationUpdate": "Ažuriraj lokaciju",
   "profileLocationUpdated": "Lokacija ažurirana",
   "profileLocationFailed": "Nije moguće dohvatiti tvoju lokaciju",
-  "profileLocationUnknown": "Lokacija nije postavljena"
+  "profileLocationUnknown": "Lokacija nije postavljena",
+  "languagesSpokenLabel": "Jezici kojima govorite",
+  "languagesLearningLabel": "Jezici koje učite",
+  "languagesPickerTitle": "Odaberite jezike",
+  "languagesNoneSelected": "Ništa nije odabrano"
 }
