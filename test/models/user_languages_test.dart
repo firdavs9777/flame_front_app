@@ -47,4 +47,38 @@ void main() {
     expect(copy.languagesSpoken, ['ko'], reason: 'untouched fields survive');
     expect(copy.languagesLearning, ['ja']);
   });
+
+  test('parses the camelCase spelling the /auth/* responses emit', () {
+    // authService.toPublic emits camelCase while /users/me and /discover
+    // emit snake_case. Reading only one side left the in-memory user with
+    // empty lists straight after login, which silently disabled chat
+    // auto-translation until something refetched /users/me.
+    final user = User.fromJson(_json({
+      'languagesSpoken': ['ko', 'en'],
+      'languagesLearning': ['es'],
+    }));
+
+    expect(user.languagesSpoken, ['ko', 'en']);
+    expect(user.languagesLearning, ['es']);
+  });
+
+  test('snake_case wins when a payload carries both spellings', () {
+    final user = User.fromJson(_json({
+      'languages_spoken': ['ko'],
+      'languagesSpoken': ['ja'],
+      'languages_learning': ['es'],
+      'languagesLearning': ['fr'],
+    }));
+
+    expect(user.languagesSpoken, ['ko']);
+    expect(user.languagesLearning, ['es']);
+  });
+
+  test('a payload carrying neither spelling reads as empty', () {
+    final user = User.fromJson(_json({'name': 'Alex'}));
+
+    expect(user.languagesSpoken, isEmpty);
+    expect(user.languagesLearning, isEmpty);
+  });
+
 }

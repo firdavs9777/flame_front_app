@@ -174,8 +174,15 @@ class User {
       // for the deploy.
       distance: _parseDistance(json['distance']),
       interests: List<String>.from(json['interests'] ?? []),
-      languagesSpoken: List<String>.from(json['languages_spoken'] ?? []),
-      languagesLearning: List<String>.from(json['languages_learning'] ?? []),
+      // Both spellings, like every neighbouring dual-convention field.
+      // /users/me and /discover emit snake_case but authService.toPublic —
+      // behind every /auth/* response — emits camelCase, so reading only
+      // snake_case left the user empty-languaged right after login and chat
+      // auto-translation defaulted off until a later /users/me refetch.
+      languagesSpoken: List<String>.from(
+          json['languages_spoken'] ?? json['languagesSpoken'] ?? []),
+      languagesLearning: List<String>.from(
+          json['languages_learning'] ?? json['languagesLearning'] ?? []),
       gender: _parseGender(json['gender']),
       lookingFor: _parseGender(json['looking_for'] ?? json['lookingFor']),
       minAgePreference: preferences['min_age'] ?? preferences['minAge'] ?? 18,
