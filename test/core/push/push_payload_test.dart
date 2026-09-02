@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flame/core/navigation/app_routes.dart';
@@ -88,11 +90,56 @@ void main() {
         AppRoutes.profileDetail,
         AppRoutes.mediaViewer,
         AppRoutes.storyViewer,
+        AppRoutes.languagePicker,
       ]) {
         final payload =
             PushPayload.fromData({'type': 'promotion', 'route': route});
         expect(payload.destination, isNull,
             reason: '$route needs arguments a campaign cannot supply');
+      }
+    });
+
+    // Source-level, deliberately. The list above is a snapshot; this is the
+    // invariant. AppRoutes.languagePicker was added to AppRoutes.all and given
+    // a _typed<LanguagePickerArgs> case but never added to the set of routes a
+    // payload may not name, so a campaign pointing at /languages/picker passed
+    // the whitelist, pushed with null arguments and dumped the user on
+    // RouteNotFoundScreen. Any future typed route added the same way fails
+    // here instead of in the field.
+    test('no route the router builds from typed arguments is campaign-reachable',
+        () {
+      final routeValues = <String, String>{};
+      final routesSource =
+          File('lib/core/navigation/app_routes.dart').readAsStringSync();
+      for (final m
+          in RegExp(r"static const (\w+) = '([^']+)';").allMatches(routesSource)) {
+        routeValues[m.group(1)!] = m.group(2)!;
+      }
+
+      final routerSource =
+          File('lib/core/navigation/app_router.dart').readAsStringSync();
+      final typedRoutes = <String>[];
+      for (final m in RegExp(r'case AppRoutes\.(\w+):\s*\n\s*return _typed<')
+          .allMatches(routerSource)) {
+        final name = m.group(1)!;
+        final value = routeValues[name];
+        expect(value, isNotNull,
+            reason: 'AppRoutes.$name has a router case but no constant');
+        typedRoutes.add(value!);
+      }
+
+      expect(typedRoutes.length, greaterThanOrEqualTo(5),
+          reason: 'the router no longer looks the way this test reads it — '
+              'fix the parse rather than deleting the invariant');
+
+      for (final route in typedRoutes) {
+        expect(
+          PushPayload.fromData({'type': 'promotion', 'route': route})
+              .destination,
+          isNull,
+          reason: '$route is built from typed arguments a push payload cannot '
+              'carry, so a campaign naming it lands on RouteNotFoundScreen',
+        );
       }
     });
 

@@ -120,6 +120,10 @@ const _needsArguments = <String>{
   AppRoutes.profileDetail,
   AppRoutes.mediaViewer,
   AppRoutes.storyViewer,
+  // Its arguments carry a closure, so nothing outside the app can ever supply
+  // them. Omitted when the route was added, which let a campaign naming
+  // /languages/picker pass the whitelist and push with null arguments.
+  AppRoutes.languagePicker,
 };
 
 /// A route name and its arguments, ready for `Navigator.pushNamed`.
