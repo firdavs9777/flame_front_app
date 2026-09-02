@@ -1702,15 +1702,30 @@ Then `flutter gen-l10n` and `flutter test test/l10n/` → PASS.
 ```dart
 // test/widgets/languages_line_test.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:flame/core/languages/language.dart';
 import 'package:flame/l10n/gen/app_localizations.dart';
+import 'package:flame/providers/languages_provider.dart';
 import 'package:flame/widgets/languages_line.dart';
 
-Widget _host(Widget child) => MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(body: child),
+/// LanguagesLine is a ConsumerWidget reading the catalogue, so it needs a
+/// ProviderScope. The catalogue is overridden rather than fetched — these
+/// tests are about the line, not the network.
+Widget _host(Widget child) => ProviderScope(
+      overrides: [
+        languageCatalogProvider.overrideWith((ref) async => const [
+              Language(code: 'ko', name: 'Korean', nativeName: '한국어'),
+              Language(code: 'en', name: 'English', nativeName: 'English'),
+              Language(code: 'ja', name: 'Japanese', nativeName: '日本語'),
+            ]),
+      ],
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: child),
+      ),
     );
 
 void main() {
@@ -1771,11 +1786,12 @@ Expected: FAIL — `languages_line.dart` does not exist.
 ```dart
 // lib/widgets/languages_line.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flame/core/i18n/build_context_ext.dart';
-import 'package:flame/core/languages/language.dart';
 import 'package:flame/core/languages/language_fallback.dart';
 import 'package:flame/core/languages/language_label.dart';
+import 'package:flame/providers/languages_provider.dart';
 
 /// "Speaks 한국어 · Learning English".
 ///
