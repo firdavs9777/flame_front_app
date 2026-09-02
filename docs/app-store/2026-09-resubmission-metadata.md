@@ -180,6 +180,15 @@ curl -s -X POST https://api.banatalk.com/flamebackend/v1/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"appreview1@banatalk.com","password":"$FLAME_REVIEW_PW"}'
 # Take the access token from the response and use it below as $TOKEN.
+#
+# CASING MATTERS HERE, and getting it wrong LOOKS like success.
+# This PATCH takes camelCase (`languagesSpoken`), because its zod schema in
+# flame/routes/users.js:23 declares it that way. That schema is deliberately
+# NOT .strict(), so an unknown key is silently stripped: send
+# `languages_spoken` and you get 200 OK with nothing changed. Always run the
+# verify step below rather than trusting the 200.
+# (The READ paths are the other way round -- /users/me and /discover emit
+# snake_case -- which is exactly why the client parses both spellings.)
 
 # 2. Set languages — this is what makes Task 7's UI (deck card, chat,
 #    profile) render anything at all for the reviewer.
