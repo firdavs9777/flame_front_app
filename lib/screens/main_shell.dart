@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/config/env.dart';
+import 'package:flame/providers/location_provider.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/providers/realtime_provider.dart';
 import 'package:flame/services/api_client.dart';
@@ -80,6 +81,13 @@ class _MainShellState extends ConsumerState<MainShell>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state != AppLifecycleState.resumed) return;
+
+    // Where someone is when they come back is not where they were when they
+    // left. Throttled and self-deciding, so calling it on every resume costs
+    // nothing when they have not moved -- and it is what stops the deck being
+    // filtered from a city the user left hours ago.
+    ref.read(locationRefresherProvider).refresh();
+
     if (!EnvConfig.current.chatEnabled) return;
     _syncRealtime(ref.read(authProvider).status);
   }

@@ -101,7 +101,7 @@ Future<void> pumpSheet(
         : LocationResult.successAt(1, 2),
     push: (_, __) async => true,
   );
-  await refresher.refreshOnce();
+  await refresher.refresh();
 
   await tester.pumpWidget(ProviderScope(
     overrides: [

@@ -46,10 +46,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_initialized) {
         _initialized = true;
-        // Not awaited, and deliberately started before the deck loads: location
-        // is enrichment, so the deck must never wait on it. refreshOnce no-ops
-        // after the first call in a session.
-        ref.read(locationRefresherProvider).refreshOnce();
+        // Not awaited, and deliberately started before the deck loads:
+        // location is enrichment, so the deck must never wait on it. refresh()
+        // throttles itself — it decides whether a fix is actually due.
+        ref.read(locationRefresherProvider).refresh();
         ref.read(discoveryProvider.notifier).load(refresh: true);
       }
     });
