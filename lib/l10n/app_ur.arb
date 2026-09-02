@@ -851,5 +851,12 @@
     "welcomeSubheadline",
     "welcomeTermsNotice",
     "wizardStepCounter"
-  ]
+  ],
+  "notifBlockedTitle": "اطلاعات بند ہیں",
+  "notifBlockedBody": "جب تک آپ ڈیوائس کی ترتیبات میں اجازت نہیں دیتے، Flame آپ کو اطلاعات نہیں بھیج سکتا۔",
+  "notifOpenSettings": "ترتیبات کھولیں",
+  "notifPromotionsPush": "پیشکشیں",
+  "notifPromotionsPushSubtitle": "اس ڈیوائس پر خبریں اور پیشکشیں",
+  "notifRemindersPush": "یاد دہانیاں",
+  "notifRemindersPushSubtitle": "کافی عرصے کی غیر حاضری پر مجھے یاد دلائیں"
 }

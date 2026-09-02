@@ -851,5 +851,12 @@
     "welcomeSubheadline",
     "welcomeTermsNotice",
     "wizardStepCounter"
-  ]
+  ],
+  "notifBlockedTitle": "Oznámení jsou vypnutá",
+  "notifBlockedBody": "Flame vám nemůže posílat oznámení, dokud je nepovolíte v nastavení zařízení.",
+  "notifOpenSettings": "Otevřít nastavení",
+  "notifPromotionsPush": "Akce",
+  "notifPromotionsPushSubtitle": "Novinky a nabídky v tomto zařízení",
+  "notifRemindersPush": "Připomenutí",
+  "notifRemindersPushSubtitle": "Upozorni mě, když se dlouho neozvu"
 }

@@ -735,5 +735,12 @@
     "welcomeSignIn",
     "welcomeSubheadline",
     "welcomeTermsNotice"
-  ]
+  ],
+  "notifBlockedTitle": "通知已關閉",
+  "notifBlockedBody": "在裝置設定中允許之前，Flame 無法向你發送通知。",
+  "notifOpenSettings": "開啟設定",
+  "notifPromotionsPush": "推廣",
+  "notifPromotionsPushSubtitle": "在此裝置上接收資訊與優惠",
+  "notifRemindersPush": "提醒",
+  "notifRemindersPushSubtitle": "長時間未使用時提醒我"
 }

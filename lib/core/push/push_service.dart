@@ -54,6 +54,22 @@ class PushService {
   /// whether there is a session to re-register under.
   bool _registered = false;
 
+  /// The last token the backend accepted, so an unchanged one is not re-sent.
+  ///
+  /// Purely a saved round trip — the backend upserts by device id, so a
+  /// duplicate POST would be harmless, just wasted. Cleared on deregistration
+  /// so signing back in genuinely re-registers.
+  String? _lastRegisteredToken;
+
+  /// A tap that arrived before there was a navigator to honour it.
+  ///
+  /// This is the cold-start case and it is the common one: [attachHandlers]
+  /// reads [FirebaseMessaging.getInitialMessage] during startup, BEFORE
+  /// runApp, because the message is delivered exactly once and reading it
+  /// after the first frame is too late. At that moment the navigator key has
+  /// no state, so the tap cannot be acted on yet — only remembered.
+  PushPayload? _pendingTap;
+
   FirebaseMessaging get _fcm => _messaging ?? FirebaseMessaging.instance;
 
   /// The value the backend's zod enum accepts for this device.
@@ -172,6 +188,8 @@ class PushService {
       debugPrint('PushService: token removal failed — $error');
     } finally {
       _registered = false;
+      _lastRegisteredToken = null;
+      discardPendingTap();
     }
   }
 
@@ -200,6 +218,10 @@ class PushService {
   }
 
   Future<void> _register(String token) async {
+    // Same token, already accepted — nothing has changed for the backend to
+    // learn. Skips one POST per launch for the overwhelmingly common case.
+    if (_registered && token == _lastRegisteredToken) return;
+
     final deviceId = await DeviceId.get();
     final result = await _deviceService.registerToken(
       token: token,
@@ -208,14 +230,41 @@ class PushService {
     );
 
     _registered = result.success;
+    _lastRegisteredToken = result.success ? token : null;
     if (!result.success) {
       debugPrint('PushService: token rejected — ${result.error}');
     }
   }
 
   void _onTap(RemoteMessage message) {
-    _navigator.go(PushPayload.fromData(message.data));
+    final payload = PushPayload.fromData(message.data);
+    // Hold anything the navigator could not take yet. Dropping it here is what
+    // made a notification that launched the app open nothing.
+    if (!_navigator.go(payload)) _pendingTap = payload;
   }
+
+  /// Replays a tap that arrived before the navigator existed.
+  ///
+  /// Call once the app is mounted AND authenticated. Returns whether it
+  /// navigated, which is false in the ordinary case of there being nothing
+  /// pending.
+  bool flushPendingTap() {
+    final pending = _pendingTap;
+    _pendingTap = null;
+    if (pending == null) return false;
+    return _navigator.go(pending);
+  }
+
+  /// Forgets a pending tap without acting on it.
+  ///
+  /// Called on sign-out, and before a different account signs in. The
+  /// notification was addressed to whoever was signed in when it arrived;
+  /// replaying it for someone else would show one person another person's
+  /// conversation. A missed notification is a far smaller harm.
+  void discardPendingTap() => _pendingTap = null;
+
+  @visibleForTesting
+  bool get hasPendingTap => _pendingTap != null;
 
   /// Foreground messages are received but deliberately not displayed — see the
   /// class doc. Kept as a named seam so the decision is visible rather than

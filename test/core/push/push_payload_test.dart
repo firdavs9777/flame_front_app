@@ -58,6 +58,59 @@ void main() {
     });
   });
 
+  group('campaigns', () {
+    test('a promotion routes to the route it names', () {
+      final payload = PushPayload.fromData({
+        'type': 'promotion',
+        'route': AppRoutes.discoverFilters,
+      });
+
+      expect(payload.type, PushType.promotion);
+      expect(payload.destination?.routeName, AppRoutes.discoverFilters);
+    });
+
+    test('a promotion naming an unknown route opens the app instead', () {
+      // A campaign authored against a route a later release removed. It must
+      // under-deliver, never strand the user on a not-found screen.
+      final payload = PushPayload.fromData({
+        'type': 'promotion',
+        'route': '/screen/that/was/deleted',
+      });
+
+      expect(payload.destination, isNull);
+    });
+
+    test('a promotion cannot name a route that needs typed arguments', () {
+      // AppRoutes.chat is reachable, but only with ChatRouteArgs. A payload
+      // carries none, so honouring it would render RouteNotFoundScreen.
+      for (final route in [
+        AppRoutes.chat,
+        AppRoutes.profileDetail,
+        AppRoutes.mediaViewer,
+        AppRoutes.storyViewer,
+      ]) {
+        final payload =
+            PushPayload.fromData({'type': 'promotion', 'route': route});
+        expect(payload.destination, isNull,
+            reason: '$route needs arguments a campaign cannot supply');
+      }
+    });
+
+    test('a promotion with no route at all opens the app', () {
+      expect(
+        PushPayload.fromData({'type': 'promotion', 'route': ''}).destination,
+        isNull,
+      );
+    });
+
+    test('a re-engagement push routes nowhere by design', () {
+      final payload = PushPayload.fromData({'type': 'reengagement'});
+
+      expect(payload.type, PushType.reengagement);
+      expect(payload.destination, isNull);
+    });
+  });
+
   group('destination', () {
     test('a chat message opens its conversation by id', () {
       final payload = PushPayload.fromData({

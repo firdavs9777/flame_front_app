@@ -28,6 +28,8 @@ class NotificationSettingsService {
     bool? matches,
     bool? promotions,
     bool? reengagement,
+    bool? promotionsPush,
+    bool? reengagementPush,
   }) async {
     final body = NotificationSettings.toPutBody(
       enabled: enabled,
@@ -35,6 +37,8 @@ class NotificationSettingsService {
       matches: matches,
       promotions: promotions,
       reengagement: reengagement,
+      promotionsPush: promotionsPush,
+      reengagementPush: reengagementPush,
     );
 
     final response = await _apiClient.put(

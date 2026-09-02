@@ -5,7 +5,7 @@ import 'package:flame/core/navigation/app_routes.dart';
 /// The names mirror the `type` the backend sends verbatim
 /// (`flame/services/pushService.js`), so a new server-side type shows up here
 /// as [PushType.unknown] rather than as a crash.
-enum PushType { chatMessage, newMatch, unknown }
+enum PushType { chatMessage, newMatch, promotion, reengagement, unknown }
 
 /// A push notification's `data` map, parsed into something typed.
 ///
@@ -25,11 +25,20 @@ class PushPayload {
     required this.type,
     this.conversationId,
     this.matchId,
+    this.route,
   });
 
   final PushType type;
   final String? conversationId;
   final String? matchId;
+
+  /// Where a campaign wants to land, as an [AppRoutes] name.
+  ///
+  /// Author-supplied, so it is never trusted: [destination] only honours a
+  /// value that is actually in [AppRoutes.all]. A campaign written against a
+  /// route that a later release renames or removes must open the app, not
+  /// strand the user on a not-found screen they did not ask for.
+  final String? route;
 
   /// Parses an FCM `data` map. Never throws: a malformed or unrecognised
   /// payload becomes [PushType.unknown] with no ids, which resolves to no
@@ -41,6 +50,7 @@ class PushPayload {
       type: _typeFrom(data['type']),
       conversationId: _idFrom(data['conversationId']),
       matchId: _idFrom(data['matchId']),
+      route: _idFrom(data['route']),
     );
   }
 
@@ -50,6 +60,10 @@ class PushPayload {
         return PushType.chatMessage;
       case 'new_match':
         return PushType.newMatch;
+      case 'promotion':
+        return PushType.promotion;
+      case 'reengagement':
+        return PushType.reengagement;
       default:
         return PushType.unknown;
     }
@@ -77,11 +91,36 @@ class PushPayload {
         final id = conversationId;
         if (id == null) return null;
         return PushDestination(AppRoutes.chat, ChatRouteArgs.id(id));
+      case PushType.promotion:
+        // Only a route the router actually knows. An unknown one opens the
+        // app, which is a campaign that under-delivers rather than a dead end.
+        final target = route;
+        if (target == null || !AppRoutes.all.contains(target)) return null;
+        // Routes needing typed arguments cannot be reached from a payload that
+        // carries none -- they would land on RouteNotFoundScreen. Only
+        // argument-free destinations are honoured.
+        if (_needsArguments.contains(target)) return null;
+        return PushDestination(target, null);
+
+      case PushType.reengagement:
+        // Nothing specific: the point is to open Flame at all.
+        return null;
+
       case PushType.unknown:
         return null;
     }
   }
 }
+
+/// Routes whose screens require typed arguments, so a campaign cannot name
+/// them. Kept beside the parser rather than in AppRoutes because this is a
+/// fact about what a PAYLOAD can express, not about the route table.
+const _needsArguments = <String>{
+  AppRoutes.chat,
+  AppRoutes.profileDetail,
+  AppRoutes.mediaViewer,
+  AppRoutes.storyViewer,
+};
 
 /// A route name and its arguments, ready for `Navigator.pushNamed`.
 ///

@@ -851,5 +851,12 @@
     "welcomeSubheadline",
     "welcomeTermsNotice",
     "wizardStepCounter"
-  ]
+  ],
+  "notifBlockedTitle": "বিজ্ঞপ্তি বন্ধ আছে",
+  "notifBlockedBody": "আপনি ডিভাইস সেটিংসে অনুমতি না দেওয়া পর্যন্ত Flame আপনাকে বিজ্ঞপ্তি পাঠাতে পারবে না।",
+  "notifOpenSettings": "সেটিংস খুলুন",
+  "notifPromotionsPush": "প্রচার",
+  "notifPromotionsPushSubtitle": "এই ডিভাইসে খবর ও অফার",
+  "notifRemindersPush": "অনুস্মারক",
+  "notifRemindersPushSubtitle": "অনেক দিন দূরে থাকলে আমাকে মনে করিয়ে দিন"
 }

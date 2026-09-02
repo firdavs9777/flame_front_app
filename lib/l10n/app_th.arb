@@ -735,5 +735,12 @@
     "welcomeSignIn",
     "welcomeSubheadline",
     "welcomeTermsNotice"
-  ]
+  ],
+  "notifBlockedTitle": "การแจ้งเตือนถูกปิดอยู่",
+  "notifBlockedBody": "Flame ส่งการแจ้งเตือนถึงคุณไม่ได้จนกว่าคุณจะอนุญาตในการตั้งค่าอุปกรณ์",
+  "notifOpenSettings": "เปิดการตั้งค่า",
+  "notifPromotionsPush": "โปรโมชัน",
+  "notifPromotionsPushSubtitle": "ข่าวสารและข้อเสนอบนอุปกรณ์นี้",
+  "notifRemindersPush": "การเตือน",
+  "notifRemindersPushSubtitle": "เตือนฉันเมื่อห่างหายไปนาน"
 }

@@ -15,6 +15,8 @@ class _FakeNotificationSettingsService extends NotificationSettingsService {
   bool? lastMatches;
   bool? lastPromotions;
   bool? lastReengagement;
+  bool? lastPromotionsPush;
+  bool? lastReengagementPush;
   bool getSucceeds = true;
   bool updateSucceeds = true;
   NotificationSettings settings = const NotificationSettings(
@@ -39,6 +41,8 @@ class _FakeNotificationSettingsService extends NotificationSettingsService {
     bool? matches,
     bool? promotions,
     bool? reengagement,
+    bool? promotionsPush,
+    bool? reengagementPush,
   }) async {
     updateCalled = true;
     lastEnabled = enabled;
@@ -46,6 +50,8 @@ class _FakeNotificationSettingsService extends NotificationSettingsService {
     lastMatches = matches;
     lastPromotions = promotions;
     lastReengagement = reengagement;
+    lastPromotionsPush = promotionsPush;
+    lastReengagementPush = reengagementPush;
     if (!updateSucceeds) {
       return ServiceResult.failure('Failed to update notification settings');
     }
@@ -55,6 +61,8 @@ class _FakeNotificationSettingsService extends NotificationSettingsService {
       matches: matches,
       promotions: promotions,
       reengagement: reengagement,
+      promotionsPush: promotionsPush,
+      reengagementPush: reengagementPush,
     );
     return ServiceResult.success(settings);
   }
@@ -76,6 +84,14 @@ Widget _wrap(_FakeNotificationSettingsService fake) {
 }
 
 /// Finds the SwitchListTile whose title reads [title].
+/// Looks a tile up by key.
+///
+/// "Promotions" and "Reminders" each appear twice — once under Push, once
+/// under Email — so a title is no longer a unique handle.
+SwitchListTile _tile(WidgetTester tester, String key) {
+  return tester.widget<SwitchListTile>(find.byKey(Key(key)));
+}
+
 SwitchListTile _tileByTitle(WidgetTester tester, String title) {
   return tester.widgetList<SwitchListTile>(find.byType(SwitchListTile)).firstWhere(
         (t) => (t.title as Text).data == title,
@@ -97,7 +113,7 @@ void main() {
     // Five now: the two email channels joined the three push ones. Asserting the
     // exact count rather than "at least three" is what caught this when the
     // screen grew, which is the point of counting at all.
-    expect(find.byType(SwitchListTile), findsNWidgets(5));
+    expect(find.byType(SwitchListTile), findsNWidgets(7));
     expect(_tileByTitle(tester, 'All notifications').value, true);
     expect(_tileByTitle(tester, 'Chat messages').value, false);
     expect(_tileByTitle(tester, 'New matches').value, true);
@@ -169,9 +185,9 @@ void main() {
     // Five switches now: three push, two email. Grouped under headings, because
     // "All notifications" governing the push three but not the email two is only
     // legible if the two groups are visibly separate.
-    expect(find.byType(SwitchListTile), findsNWidgets(5));
-    expect(_tileByTitle(tester, 'Promotions').value, false);
-    expect(_tileByTitle(tester, 'Reminders').value, true);
+    expect(find.byType(SwitchListTile), findsNWidgets(7));
+    expect(_tile(tester, 'notif_promotions_email').value, false);
+    expect(_tile(tester, 'notif_reminders_email').value, true);
     expect(find.text('Push notifications'), findsOneWidget);
     expect(find.text('Email'), findsOneWidget);
   });
@@ -196,8 +212,8 @@ void main() {
     // ...and email is a DIFFERENT CHANNEL. A push toggle silently switching off
     // someone's email would be wrong, and it is the kind of thing that looks
     // right in a screenshot.
-    expect(_tileByTitle(tester, 'Promotions').onChanged, isNotNull);
-    expect(_tileByTitle(tester, 'Reminders').onChanged, isNotNull);
+    expect(_tile(tester, 'notif_promotions_email').onChanged, isNotNull);
+    expect(_tile(tester, 'notif_reminders_email').onChanged, isNotNull);
   });
 
   testWidgets('promotions can be switched ON', (tester) async {
@@ -207,7 +223,9 @@ void main() {
 
     // The whole reason this switch has to exist: promotions defaults to false,
     // so without a way to turn it on the campaign job correctly mails nobody.
-    await tester.tap(find.byWidget(_tileByTitle(tester, 'Promotions')));
+    await tester.ensureVisible(find.byKey(const Key('notif_promotions_email')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byWidget(_tile(tester, 'notif_promotions_email')));
     await tester.pumpAndSettle();
 
     expect(fake.lastPromotions, true);
@@ -219,7 +237,9 @@ void main() {
     await tester.pumpWidget(_wrap(fake));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byWidget(_tileByTitle(tester, 'Reminders')));
+    await tester.ensureVisible(find.byKey(const Key('notif_reminders_email')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byWidget(_tile(tester, 'notif_reminders_email')));
     await tester.pumpAndSettle();
 
     expect(fake.lastReengagement, false);
@@ -231,10 +251,12 @@ void main() {
     await tester.pumpWidget(_wrap(fake));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byWidget(_tileByTitle(tester, 'Promotions')));
+    await tester.ensureVisible(find.byKey(const Key('notif_promotions_email')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byWidget(_tile(tester, 'notif_promotions_email')));
     await tester.pumpAndSettle();
 
-    expect(_tileByTitle(tester, 'Promotions').value, false,
+    expect(_tile(tester, 'notif_promotions_email').value, false,
         reason: 'an optimistic flip must revert when the server refuses');
     expect(find.text("Could not update notification settings"), findsOneWidget);
   });

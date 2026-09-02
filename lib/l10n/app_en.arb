@@ -1779,5 +1779,33 @@
   "deckUndoPremiumOnly": "Undo is a premium feature",
   "@deckUndoPremiumOnly": {
     "description": "Undo pressed by a non-premium account"
+  },
+  "notifBlockedTitle": "Notifications are turned off",
+  "@notifBlockedTitle": {
+    "description": "Banner shown when the operating system will not display notifications for the app."
+  },
+  "notifBlockedBody": "Flame cannot send you notifications until you allow them in your device settings.",
+  "@notifBlockedBody": {
+    "description": "Explains why the push switches below do nothing."
+  },
+  "notifOpenSettings": "Open settings",
+  "@notifOpenSettings": {
+    "description": "Button that opens the operating system settings page for the app."
+  },
+  "notifPromotionsPush": "Promotions",
+  "@notifPromotionsPush": {
+    "description": "Push switch for marketing notifications."
+  },
+  "notifPromotionsPushSubtitle": "News and offers on this device",
+  "@notifPromotionsPushSubtitle": {
+    "description": "Subtitle distinguishing promotional push from promotional email."
+  },
+  "notifRemindersPush": "Reminders",
+  "@notifRemindersPush": {
+    "description": "Push switch for re-engagement notifications."
+  },
+  "notifRemindersPushSubtitle": "Nudge me when I have been away for a while",
+  "@notifRemindersPushSubtitle": {
+    "description": "Subtitle distinguishing reminder push from reminder email."
   }
 }

@@ -63,6 +63,19 @@ class NotificationSettingsNotifier
         () => _service.updateSettings(reengagement: value),
       );
 
+  // Push, not email — and separate from setPromotions on purpose. See the
+  // model doc: consenting to marketing email is not consenting to a marketing
+  // notification, so the two flags never move together.
+  Future<bool> setPromotionsPush(bool value) => _update(
+        (s) => s.copyWith(promotionsPush: value),
+        () => _service.updateSettings(promotionsPush: value),
+      );
+
+  Future<bool> setReengagementPush(bool value) => _update(
+        (s) => s.copyWith(reengagementPush: value),
+        () => _service.updateSettings(reengagementPush: value),
+      );
+
   /// Optimistically applies [optimistic] to the current state, calls
   /// [request], and reconciles with the returned settings on success.
   /// Reverts to the previous state on failure.

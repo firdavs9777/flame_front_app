@@ -851,5 +851,12 @@
     "welcomeSubheadline",
     "welcomeTermsNotice",
     "wizardStepCounter"
-  ]
+  ],
+  "notifBlockedTitle": "Meldingen staan uit",
+  "notifBlockedBody": "Flame kan je geen meldingen sturen totdat je ze toestaat in je apparaatinstellingen.",
+  "notifOpenSettings": "Instellingen openen",
+  "notifPromotionsPush": "Aanbiedingen",
+  "notifPromotionsPushSubtitle": "Nieuws en aanbiedingen op dit apparaat",
+  "notifRemindersPush": "Herinneringen",
+  "notifRemindersPushSubtitle": "Stuur me een seintje als ik er even niet was"
 }

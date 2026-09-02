@@ -604,5 +604,12 @@
     "stickerHearts",
     "stickerSmileys",
     "termsReviewTitle"
-  ]
+  ],
+  "notifBlockedTitle": "Notifikasi dimatikan",
+  "notifBlockedBody": "Flame tidak dapat mengirimi Anda notifikasi sampai Anda mengizinkannya di pengaturan perangkat.",
+  "notifOpenSettings": "Buka pengaturan",
+  "notifPromotionsPush": "Promosi",
+  "notifPromotionsPushSubtitle": "Berita dan penawaran di perangkat ini",
+  "notifRemindersPush": "Pengingat",
+  "notifRemindersPushSubtitle": "Ingatkan saya saat sudah lama tidak aktif"
 }

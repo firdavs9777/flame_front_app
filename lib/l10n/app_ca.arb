@@ -851,5 +851,12 @@
     "welcomeSubheadline",
     "welcomeTermsNotice",
     "wizardStepCounter"
-  ]
+  ],
+  "notifBlockedTitle": "Les notificacions estan desactivades",
+  "notifBlockedBody": "Flame no et pot enviar notificacions fins que les permetis a la configuració del dispositiu.",
+  "notifOpenSettings": "Obre la configuració",
+  "notifPromotionsPush": "Promocions",
+  "notifPromotionsPushSubtitle": "Novetats i ofertes en aquest dispositiu",
+  "notifRemindersPush": "Recordatoris",
+  "notifRemindersPushSubtitle": "Avisa'm quan faci temps que no hi entro"
 }

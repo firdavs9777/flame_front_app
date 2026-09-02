@@ -851,5 +851,12 @@
     "welcomeSubheadline",
     "welcomeTermsNotice",
     "wizardStepCounter"
-  ]
+  ],
+  "notifBlockedTitle": "Notifikationer er slået fra",
+  "notifBlockedBody": "Flame kan ikke sende dig notifikationer, før du tillader dem i enhedens indstillinger.",
+  "notifOpenSettings": "Åbn indstillinger",
+  "notifPromotionsPush": "Tilbud",
+  "notifPromotionsPushSubtitle": "Nyheder og tilbud på denne enhed",
+  "notifRemindersPush": "Påmindelser",
+  "notifRemindersPushSubtitle": "Giv mig et puf, når jeg har været væk et stykke tid"
 }

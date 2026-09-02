@@ -735,5 +735,12 @@
     "welcomeSignIn",
     "welcomeSubheadline",
     "welcomeTermsNotice"
-  ]
+  ],
+  "notifBlockedTitle": "Thông báo đang tắt",
+  "notifBlockedBody": "Flame không thể gửi thông báo cho bạn cho đến khi bạn cho phép trong cài đặt thiết bị.",
+  "notifOpenSettings": "Mở cài đặt",
+  "notifPromotionsPush": "Khuyến mãi",
+  "notifPromotionsPushSubtitle": "Tin tức và ưu đãi trên thiết bị này",
+  "notifRemindersPush": "Nhắc nhở",
+  "notifRemindersPushSubtitle": "Nhắc tôi khi đã vắng mặt một thời gian"
 }

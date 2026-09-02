@@ -735,5 +735,12 @@
     "welcomeSignIn",
     "welcomeSubheadline",
     "welcomeTermsNotice"
-  ]
+  ],
+  "notifBlockedTitle": "الإشعارات مغلقة",
+  "notifBlockedBody": "لا يمكن لـ Flame إرسال إشعارات إليك حتى تسمح بها في إعدادات جهازك.",
+  "notifOpenSettings": "فتح الإعدادات",
+  "notifPromotionsPush": "العروض",
+  "notifPromotionsPushSubtitle": "الأخبار والعروض على هذا الجهاز",
+  "notifRemindersPush": "التذكيرات",
+  "notifRemindersPushSubtitle": "نبّهني عندما أغيب لفترة"
 }

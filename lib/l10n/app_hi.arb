@@ -735,5 +735,12 @@
     "welcomeSignIn",
     "welcomeSubheadline",
     "welcomeTermsNotice"
-  ]
+  ],
+  "notifBlockedTitle": "सूचनाएं बंद हैं",
+  "notifBlockedBody": "जब तक आप डिवाइस सेटिंग में अनुमति नहीं देते, Flame आपको सूचनाएं नहीं भेज सकता।",
+  "notifOpenSettings": "सेटिंग खोलें",
+  "notifPromotionsPush": "प्रचार",
+  "notifPromotionsPushSubtitle": "इस डिवाइस पर खबरें और ऑफ़र",
+  "notifRemindersPush": "रिमाइंडर",
+  "notifRemindersPushSubtitle": "लंबे समय तक दूर रहने पर मुझे याद दिलाएं"
 }

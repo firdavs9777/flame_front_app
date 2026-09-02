@@ -602,5 +602,12 @@
     "stickerHearts",
     "stickerSmileys",
     "termsReviewTitle"
-  ]
+  ],
+  "notifBlockedTitle": "通知がオフになっています",
+  "notifBlockedBody": "デバイスの設定で通知を許可するまで、Flame から通知を送ることはできません。",
+  "notifOpenSettings": "設定を開く",
+  "notifPromotionsPush": "お知らせ",
+  "notifPromotionsPushSubtitle": "この端末でのお知らせとお得な情報",
+  "notifRemindersPush": "リマインダー",
+  "notifRemindersPushSubtitle": "しばらく利用がないときに知らせる"
 }

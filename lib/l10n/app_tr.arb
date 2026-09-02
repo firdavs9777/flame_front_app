@@ -603,5 +603,12 @@
     "stickerHearts",
     "stickerSmileys",
     "termsReviewTitle"
-  ]
+  ],
+  "notifBlockedTitle": "Bildirimler kapalı",
+  "notifBlockedBody": "Cihaz ayarlarından izin vermeden Flame size bildirim gönderemez.",
+  "notifOpenSettings": "Ayarları aç",
+  "notifPromotionsPush": "Kampanyalar",
+  "notifPromotionsPushSubtitle": "Bu cihazda haberler ve fırsatlar",
+  "notifRemindersPush": "Hatırlatıcılar",
+  "notifRemindersPushSubtitle": "Bir süredir uğramadığımda bana haber ver"
 }

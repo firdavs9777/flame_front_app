@@ -851,5 +851,12 @@
     "welcomeSubheadline",
     "welcomeTermsNotice",
     "wizardStepCounter"
-  ]
+  ],
+  "notifBlockedTitle": "Ilmoitukset ovat pois käytöstä",
+  "notifBlockedBody": "Flame ei voi lähettää sinulle ilmoituksia, ennen kuin sallit ne laitteen asetuksissa.",
+  "notifOpenSettings": "Avaa asetukset",
+  "notifPromotionsPush": "Tarjoukset",
+  "notifPromotionsPushSubtitle": "Uutiset ja tarjoukset tällä laitteella",
+  "notifRemindersPush": "Muistutukset",
+  "notifRemindersPushSubtitle": "Muistuta minua, kun olen ollut pitkään poissa"
 }

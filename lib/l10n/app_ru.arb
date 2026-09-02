@@ -635,5 +635,12 @@
     "welcomeSignIn",
     "welcomeSubheadline",
     "welcomeTermsNotice"
-  ]
+  ],
+  "notifBlockedTitle": "Уведомления отключены",
+  "notifBlockedBody": "Flame не сможет отправлять вам уведомления, пока вы не разрешите их в настройках устройства.",
+  "notifOpenSettings": "Открыть настройки",
+  "notifPromotionsPush": "Акции",
+  "notifPromotionsPushSubtitle": "Новости и предложения на этом устройстве",
+  "notifRemindersPush": "Напоминания",
+  "notifRemindersPushSubtitle": "Напоминать, если меня долго не было"
 }

@@ -851,5 +851,12 @@
     "welcomeSubheadline",
     "welcomeTermsNotice",
     "wizardStepCounter"
-  ]
+  ],
+  "notifBlockedTitle": "Varsler er slått av",
+  "notifBlockedBody": "Flame kan ikke sende deg varsler før du tillater dem i enhetsinnstillingene.",
+  "notifOpenSettings": "Åpne innstillinger",
+  "notifPromotionsPush": "Tilbud",
+  "notifPromotionsPushSubtitle": "Nyheter og tilbud på denne enheten",
+  "notifRemindersPush": "Påminnelser",
+  "notifRemindersPushSubtitle": "Gi meg et dytt når jeg har vært borte en stund"
 }

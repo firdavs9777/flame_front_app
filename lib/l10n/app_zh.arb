@@ -602,5 +602,12 @@
     "stickerHearts",
     "stickerSmileys",
     "termsReviewTitle"
-  ]
+  ],
+  "notifBlockedTitle": "通知已关闭",
+  "notifBlockedBody": "在设备设置中允许之前，Flame 无法向你发送通知。",
+  "notifOpenSettings": "打开设置",
+  "notifPromotionsPush": "推广",
+  "notifPromotionsPushSubtitle": "在此设备上接收资讯和优惠",
+  "notifRemindersPush": "提醒",
+  "notifRemindersPushSubtitle": "长时间未使用时提醒我"
 }

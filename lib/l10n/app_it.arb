@@ -733,5 +733,12 @@
     "welcomeSignIn",
     "welcomeSubheadline",
     "welcomeTermsNotice"
-  ]
+  ],
+  "notifBlockedTitle": "Le notifiche sono disattivate",
+  "notifBlockedBody": "Flame non può inviarti notifiche finché non le consenti nelle impostazioni del dispositivo.",
+  "notifOpenSettings": "Apri impostazioni",
+  "notifPromotionsPush": "Promozioni",
+  "notifPromotionsPushSubtitle": "Novità e offerte su questo dispositivo",
+  "notifRemindersPush": "Promemoria",
+  "notifRemindersPushSubtitle": "Ricordamelo quando manco da un po'"
 }

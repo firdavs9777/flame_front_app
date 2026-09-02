@@ -635,5 +635,12 @@
     "welcomeSignIn",
     "welcomeSubheadline",
     "welcomeTermsNotice"
-  ]
+  ],
+  "notifBlockedTitle": "As notificações estão desativadas",
+  "notifBlockedBody": "O Flame não pode enviar notificações até que você as permita nas configurações do dispositivo.",
+  "notifOpenSettings": "Abrir configurações",
+  "notifPromotionsPush": "Promoções",
+  "notifPromotionsPushSubtitle": "Novidades e ofertas neste dispositivo",
+  "notifRemindersPush": "Lembretes",
+  "notifRemindersPushSubtitle": "Me avise quando eu ficar um tempo sem entrar"
 }

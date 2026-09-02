@@ -635,5 +635,12 @@
     "welcomeSignIn",
     "welcomeSubheadline",
     "welcomeTermsNotice"
-  ]
+  ],
+  "notifBlockedTitle": "Les notifications sont désactivées",
+  "notifBlockedBody": "Flame ne peut pas vous envoyer de notifications tant que vous ne les autorisez pas dans les réglages de votre appareil.",
+  "notifOpenSettings": "Ouvrir les réglages",
+  "notifPromotionsPush": "Promotions",
+  "notifPromotionsPushSubtitle": "Actualités et offres sur cet appareil",
+  "notifRemindersPush": "Rappels",
+  "notifRemindersPushSubtitle": "Me relancer après une longue absence"
 }

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flame/core/navigation/app_router.dart';
 import 'package:flame/core/push/push_navigator.dart';
+import 'package:flame/core/push/push_permission.dart';
 import 'package:flame/core/push/push_service.dart';
 
 /// The app's single [PushService].
@@ -13,3 +14,9 @@ final pushServiceProvider = Provider<PushService>((ref) {
   ref.onDispose(service.dispose);
   return service;
 });
+
+/// Reads the OS notification permission. Overridden in tests to supply a
+/// status without a platform channel.
+final pushPermissionProvider = Provider<PushPermission>(
+  (ref) => const PushPermission(),
+);

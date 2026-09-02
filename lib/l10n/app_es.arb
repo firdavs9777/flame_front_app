@@ -637,5 +637,12 @@
     "welcomeSignIn",
     "welcomeSubheadline",
     "welcomeTermsNotice"
-  ]
+  ],
+  "notifBlockedTitle": "Las notificaciones están desactivadas",
+  "notifBlockedBody": "Flame no puede enviarte notificaciones hasta que las permitas en los ajustes de tu dispositivo.",
+  "notifOpenSettings": "Abrir ajustes",
+  "notifPromotionsPush": "Promociones",
+  "notifPromotionsPushSubtitle": "Novedades y ofertas en este dispositivo",
+  "notifRemindersPush": "Recordatorios",
+  "notifRemindersPushSubtitle": "Avísame cuando lleve tiempo sin entrar"
 }

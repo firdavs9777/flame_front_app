@@ -78,9 +78,24 @@ class FlameApp extends ConsumerWidget {
     // returning user who never signs in again still needs a live token, and
     // FCM rotates them.
     ref.listen<AuthState>(authProvider, (previous, next) {
+      final push = ref.read(pushServiceProvider);
+
+      if (next.status != AuthStatus.authenticated) {
+        // Signing out abandons any tap that arrived for the session ending
+        // here. Replaying it for whoever signs in next would show one person
+        // another person's conversation.
+        push.discardPendingTap();
+        return;
+      }
       if (previous?.status == AuthStatus.authenticated) return;
-      if (next.status != AuthStatus.authenticated) return;
-      ref.read(pushServiceProvider).registerDevice();
+
+      push.registerDevice();
+
+      // A notification that LAUNCHED the app was read before runApp, when
+      // there was no navigator to receive it. This is the first moment there
+      // is one — after the frame, so MaterialApp has mounted.
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => push.flushPendingTap());
     });
 
     ref.listen<AuthState>(authProvider, (previous, next) {

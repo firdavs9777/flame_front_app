@@ -36,6 +36,8 @@ class _FakeNotificationSettingsService extends NotificationSettingsService {
     bool? matches,
     bool? promotions,
     bool? reengagement,
+    bool? promotionsPush,
+    bool? reengagementPush,
   }) async {
     updateCalled = true;
     lastEnabled = enabled;

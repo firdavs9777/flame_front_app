@@ -851,5 +851,12 @@
     "welcomeSubheadline",
     "welcomeTermsNotice",
     "wizardStepCounter"
-  ]
+  ],
+  "notifBlockedTitle": "Obavijesti su isključene",
+  "notifBlockedBody": "Flame ti ne može slati obavijesti dok ih ne dopustiš u postavkama uređaja.",
+  "notifOpenSettings": "Otvori postavke",
+  "notifPromotionsPush": "Promocije",
+  "notifPromotionsPushSubtitle": "Novosti i ponude na ovom uređaju",
+  "notifRemindersPush": "Podsjetnici",
+  "notifRemindersPushSubtitle": "Podsjeti me kad me dugo nema"
 }
