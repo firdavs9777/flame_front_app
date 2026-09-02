@@ -97,15 +97,32 @@ this shortlists, and the catalogue is generated from it. Retyping 한국어 and
 العربية from memory is how a display name acquires a typo nobody on the team
 can see.
 
-The data is copied, not fetched. `GET /languages` exists on the BananaTalk side
-and would be a single source of truth, but this is static data: calling it at
-runtime would add a network failure mode to the registration screen App Review
-just rejected, and couple flame to a route `CLAUDE.md` says to stay clear of.
+**Amended 2026-09-03 — the catalogue IS fetched.** This paragraph originally
+read "The data is copied, not fetched". `languages_provider.dart` fetches
+`GET /languages`, persists the result, and falls back through the previous
+session's cache to a small bundled list, so the network failure mode the
+paragraph feared cannot leave the registration screen with an empty picker.
+See the plan's Correction 2. Amended here because a spec of record that
+disagrees with the build is worse than no spec.
 
-**No flag emoji**, despite the BananaTalk picker using them. Flags mark
-countries, not languages — 🇺🇸 for English erases every other English-speaking
-country, and Swahili, Arabic and Tagalog have no defensible single flag. On an
-app about meeting people from elsewhere, that is a poor first impression.
+**Amended 2026-09-03 — flags SHIP.** This section originally read "No flag
+emoji", and the app deliberately does the opposite: `LanguageFlags` maps codes
+to flags and the picker and profile badge render them. Recording the reversal
+here rather than leaving the spec to disagree with the build.
+
+The original objection stood on a stale copy of BananaTalk's map, the one in
+Downloads, which mapped English to 🇺🇸. **The real map uses 🇬🇧 for `en`**,
+carries regional variants so `en-us` and `en-gb` stay distinct, documents its
+contested calls in comments (Levantine Arabic → 🇱🇧 as the "recognized media
+standard for a dialect spanning LB/SY/JO/PS"), and falls back to **🌐** rather
+than guessing. That is about as carefully as flags-for-languages can be done,
+and mirroring the sibling product is worth more than the abstract objection —
+so the map is mirrored rather than reinvented, and 🌐 covers every code with no
+defensible flag. See the plan's Correction 1.
+
+The concern the original paragraph raised is answered by 🌐, not dismissed: no
+language gets a flag that erases its other speakers, because the map declines
+to pick one.
 
 ### Declared inside registration step 4, pre-seeded from the device locale
 
@@ -216,6 +233,13 @@ must therefore be legible on screen without a single match existing:
 
 - **Deck card** — `speaks 한국어 · learning English`, visually distinguished when
   it complements the viewer.
+  **NOT YET IMPLEMENTED (2026-09-03).** The card shows the two lines; the
+  visual distinction does not exist — no complementarity comparison is
+  performed anywhere in `lib/`, so nothing on the card can react to it.
+  Recorded here rather than dropped. Deliberately not built during the
+  pre-submission fix round: a new visual treatment landing unreviewed hours
+  before a resubmission is a larger risk than the gap it closes, and the
+  ranking that the highlight would advertise is already live server-side.
 - **Chat** — when two people's spoken languages do not overlap, translation is
   **on by default** and says so, rather than hiding behind a long-press.
 - **Profile** — a languages row, on both own-profile and detail.
