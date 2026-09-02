@@ -81,4 +81,18 @@ void main() {
     expect(user.languagesLearning, isEmpty);
   });
 
+
+  test('toJson -> fromJson round trip keeps both lists', () {
+    // The cache writes users through toJson. Omitting the lists there meant
+    // the first read back from disk dropped them.
+    final user = User.fromJson(_json({
+      'languages_spoken': ['ko', 'en'],
+      'languages_learning': ['es'],
+    }));
+
+    final restored = User.fromJson(user.toJson());
+
+    expect(restored.languagesSpoken, ['ko', 'en']);
+    expect(restored.languagesLearning, ['es']);
+  });
 }

@@ -242,6 +242,11 @@ class User {
       'photos': photos,
       'location': location,
       'interests': interests,
+      // Written back in snake_case so a cache round trip through
+      // toJson -> fromJson is lossless. Omitting them meant the first read
+      // back from disk dropped the languages this product is built on.
+      'languages_spoken': languagesSpoken,
+      'languages_learning': languagesLearning,
       'gender': _genderToString(gender),
       'looking_for': _genderToString(lookingFor),
       'preferences': {
