@@ -618,5 +618,7 @@
   "languagesLearningLabel": "学習中の言語",
   "languagesPickerTitle": "言語を選択",
   "languagesNoneSelected": "未選択",
-  "languagesRecommended": "おすすめ"
+  "languagesRecommended": "おすすめ",
+  "profileSpeaks": "話せる",
+  "profileLearning": "学習中"
 }

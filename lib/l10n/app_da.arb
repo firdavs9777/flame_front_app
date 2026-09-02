@@ -867,5 +867,7 @@
   "languagesLearningLabel": "Sprog du lærer",
   "languagesPickerTitle": "Vælg sprog",
   "languagesNoneSelected": "Intet valgt",
-  "languagesRecommended": "Anbefalede"
+  "languagesRecommended": "Anbefalede",
+  "profileSpeaks": "Taler",
+  "profileLearning": "Lærer"
 }

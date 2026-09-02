@@ -6,6 +6,8 @@ import 'package:flame/core/format/distance_display.dart';
 import 'package:flame/core/i18n/build_context_ext.dart';
 import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/core/image/photo_variants.dart';
+import 'package:flame/widgets/language_flag_badge.dart';
+import 'package:flame/widgets/languages_line.dart';
 
 class ProfileCard extends StatefulWidget {
   final User user;
@@ -137,6 +139,18 @@ class _ProfileCardState extends State<ProfileCard> {
                   ),
                 ),
 
+              // Language flag badge — the premise, legible without reading.
+              // Top-left mirrors the online indicator's top-right so neither
+              // collides with the name/distance/bio block anchored at the
+              // bottom of the card.
+              LanguageFlagBadge(
+                code: widget.user.languagesSpoken.isEmpty
+                    ? null
+                    : widget.user.languagesSpoken.first,
+                offset: 20,
+                alignment: Alignment.topLeft,
+              ),
+
               // Online indicator
               if (widget.user.isOnline)
                 Positioned(
@@ -238,6 +252,22 @@ class _ProfileCardState extends State<ProfileCard> {
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                    // The premise, made visible, right beside the distance
+                    // label it sits under. LanguagesLine renders nothing of
+                    // its own accord when nothing is declared, so the
+                    // conditional here only owns the spacing around it.
+                    if (widget.user.languagesSpoken.isNotEmpty ||
+                        widget.user.languagesLearning.isNotEmpty) ...[
+                      LanguagesLine(
+                        spoken: widget.user.languagesSpoken,
+                        learning: widget.user.languagesLearning,
+                        style: TextStyle(
+                          color: context.onOverlay.withValues(alpha: 0.7),
+                          fontSize: 14,
+                        ),
                       ),
                       const SizedBox(height: 10),
                     ],

@@ -650,5 +650,7 @@
   "languagesLearningLabel": "Sprachen, die du lernst",
   "languagesPickerTitle": "Sprachen auswählen",
   "languagesNoneSelected": "Nichts ausgewählt",
-  "languagesRecommended": "Empfohlen"
+  "languagesRecommended": "Empfohlen",
+  "profileSpeaks": "Spricht",
+  "profileLearning": "Lernt"
 }

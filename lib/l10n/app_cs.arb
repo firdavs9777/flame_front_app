@@ -867,5 +867,7 @@
   "languagesLearningLabel": "Jazyky, které se učíte",
   "languagesPickerTitle": "Vyberte jazyky",
   "languagesNoneSelected": "Nic není vybráno",
-  "languagesRecommended": "Doporučené"
+  "languagesRecommended": "Doporučené",
+  "profileSpeaks": "Mluví",
+  "profileLearning": "Učí se"
 }

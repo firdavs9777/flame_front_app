@@ -25,6 +25,7 @@ class ChatMessagesList extends StatelessWidget {
     required this.scrollController,
     required this.onRetry,
     required this.onMessageLongPress,
+    this.translateDefaultOn = false,
   });
 
   final MessageThreadState state;
@@ -32,6 +33,12 @@ class ChatMessagesList extends StatelessWidget {
   final String otherUserName;
   final String otherUserPhoto;
   final ScrollController scrollController;
+
+  /// True when the viewer and the other person have both declared spoken
+  /// languages and share none — a known mismatch, computed once by the
+  /// screen and applied uniformly to every incoming bubble in the thread.
+  /// See `shouldDefaultTranslationOn`.
+  final bool translateDefaultOn;
 
   /// Retries whichever load failed — the initial one, or the older page.
   final VoidCallback onRetry;
@@ -106,6 +113,7 @@ class ChatMessagesList extends StatelessWidget {
               isFirstInGroup: isFirstInGroup,
               isLastInGroup: isLastInGroup,
               onLongPress: () => onMessageLongPress(message),
+              translateDefaultOn: translateDefaultOn,
             ),
         };
       },

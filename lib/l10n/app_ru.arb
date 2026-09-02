@@ -651,5 +651,7 @@
   "languagesLearningLabel": "Языки, которые вы изучаете",
   "languagesPickerTitle": "Выберите языки",
   "languagesNoneSelected": "Ничего не выбрано",
-  "languagesRecommended": "Рекомендуемые"
+  "languagesRecommended": "Рекомендуемые",
+  "profileSpeaks": "Говорит",
+  "profileLearning": "Изучает"
 }

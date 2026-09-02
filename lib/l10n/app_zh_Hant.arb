@@ -751,5 +751,7 @@
   "languagesLearningLabel": "你正在學習的語言",
   "languagesPickerTitle": "選擇語言",
   "languagesNoneSelected": "尚未選擇",
-  "languagesRecommended": "推薦"
+  "languagesRecommended": "推薦",
+  "profileSpeaks": "會說",
+  "profileLearning": "學習中"
 }

@@ -751,5 +751,7 @@
   "languagesLearningLabel": "اللغات التي تتعلمها",
   "languagesPickerTitle": "اختر اللغات",
   "languagesNoneSelected": "لم يتم اختيار شيء",
-  "languagesRecommended": "موصى بها"
+  "languagesRecommended": "موصى بها",
+  "profileSpeaks": "يتحدث",
+  "profileLearning": "يتعلم"
 }

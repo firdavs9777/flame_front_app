@@ -618,5 +618,7 @@
   "languagesLearningLabel": "你正在学习的语言",
   "languagesPickerTitle": "选择语言",
   "languagesNoneSelected": "未选择",
-  "languagesRecommended": "推荐"
+  "languagesRecommended": "推荐",
+  "profileSpeaks": "会说",
+  "profileLearning": "学习中"
 }

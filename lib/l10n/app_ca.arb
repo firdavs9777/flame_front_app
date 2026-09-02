@@ -867,5 +867,7 @@
   "languagesLearningLabel": "Idiomes que estàs aprenent",
   "languagesPickerTitle": "Selecciona idiomes",
   "languagesNoneSelected": "Cap seleccionat",
-  "languagesRecommended": "Recomanats"
+  "languagesRecommended": "Recomanats",
+  "profileSpeaks": "Parla",
+  "profileLearning": "Aprenent"
 }

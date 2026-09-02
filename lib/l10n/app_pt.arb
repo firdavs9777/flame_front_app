@@ -651,5 +651,7 @@
   "languagesLearningLabel": "Idiomas que você está aprendendo",
   "languagesPickerTitle": "Selecionar idiomas",
   "languagesNoneSelected": "Nenhum selecionado",
-  "languagesRecommended": "Recomendados"
+  "languagesRecommended": "Recomendados",
+  "profileSpeaks": "Fala",
+  "profileLearning": "Aprende"
 }

@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/providers/swipe_provider.dart';
 import 'package:flame/screens/settings/widgets/settings_snackbar.dart';
 import 'package:flame/core/image/photo_variants.dart';
+import 'package:flame/widgets/languages_line.dart';
 
 class ProfileDetailScreen extends ConsumerStatefulWidget {
   final User user;
@@ -224,6 +225,23 @@ class _ProfileDetailScreenState extends ConsumerState<ProfileDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  // Languages — the premise, made visible. Placed beside
+                  // Interests rather than up with the name: it belongs to the
+                  // same "who is this person" block bio and interests answer,
+                  // not to the identity line above the fold.
+                  if (widget.user.languagesSpoken.isNotEmpty ||
+                      widget.user.languagesLearning.isNotEmpty) ...[
+                    LanguagesLine(
+                      spoken: widget.user.languagesSpoken,
+                      learning: widget.user.languagesLearning,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: context.secondaryText,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
 
                   // Interests
                   Text(

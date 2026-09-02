@@ -751,5 +751,7 @@
   "languagesLearningLabel": "ภาษาที่คุณกำลังเรียนรู้",
   "languagesPickerTitle": "เลือกภาษา",
   "languagesNoneSelected": "ยังไม่ได้เลือก",
-  "languagesRecommended": "แนะนำ"
+  "languagesRecommended": "แนะนำ",
+  "profileSpeaks": "พูด",
+  "profileLearning": "กำลังเรียน"
 }

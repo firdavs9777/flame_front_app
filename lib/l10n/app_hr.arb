@@ -867,5 +867,7 @@
   "languagesLearningLabel": "Jezici koje učite",
   "languagesPickerTitle": "Odaberite jezike",
   "languagesNoneSelected": "Ništa nije odabrano",
-  "languagesRecommended": "Preporučeno"
+  "languagesRecommended": "Preporučeno",
+  "profileSpeaks": "Govori",
+  "profileLearning": "Uči"
 }

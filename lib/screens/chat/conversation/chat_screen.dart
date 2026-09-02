@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flame/core/i18n/build_context_ext.dart';
+import 'package:flame/core/languages/translation_default.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/providers/realtime_provider.dart';
@@ -154,7 +155,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final thread = ref.watch(messageThreadProvider(_conversationId));
     final presence = ref.watch(threadPresenceProvider(_presenceArgs));
-    final currentUserId = ref.watch(currentUserProvider).valueOrNull?.id ?? '';
+    final currentUser = ref.watch(currentUserProvider).valueOrNull;
+    final currentUserId = currentUser?.id ?? '';
+
+    // A known mismatch only — unknown must never force translation on. See
+    // shouldDefaultTranslationOn.
+    final translateDefaultOn = shouldDefaultTranslationOn(
+      viewerSpoken: currentUser?.languagesSpoken ?? const [],
+      partnerSpoken: _otherUser.languagesSpoken,
+    );
 
     // No reconciliation here. The thread has one owner, so there is nothing to
     // merge and nothing to scan.
@@ -186,6 +195,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               scrollController: _scrollController,
               onRetry: _retry,
               onMessageLongPress: _onMessageLongPress,
+              translateDefaultOn: translateDefaultOn,
             ),
           ),
           if (presence.isOtherTyping)

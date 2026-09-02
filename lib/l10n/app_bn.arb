@@ -867,5 +867,7 @@
   "languagesLearningLabel": "আপনি যেসব ভাষা শিখছেন",
   "languagesPickerTitle": "ভাষা নির্বাচন করুন",
   "languagesNoneSelected": "কিছু নির্বাচিত হয়নি",
-  "languagesRecommended": "প্রস্তাবিত"
+  "languagesRecommended": "প্রস্তাবিত",
+  "profileSpeaks": "বলেন",
+  "profileLearning": "শিখছেন"
 }

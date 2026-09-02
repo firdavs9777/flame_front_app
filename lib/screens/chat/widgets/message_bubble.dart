@@ -44,6 +44,15 @@ class MessageBubble extends StatelessWidget {
   /// all within a few minutes of each other by definition.
   final bool isLastInGroup;
 
+  /// Whether this thread has a KNOWN language mismatch — both people have
+  /// declared spoken languages and share none — computed once for the whole
+  /// conversation via `shouldDefaultTranslationOn` and passed down uniformly.
+  ///
+  /// Defaults false so every other call site (and every existing test) keeps
+  /// today's opt-in behaviour. Only an incoming text bubble acts on it — it
+  /// makes translation begin automatically instead of waiting for a tap.
+  final bool translateDefaultOn;
+
   const MessageBubble({
     super.key,
     required this.message,
@@ -53,6 +62,7 @@ class MessageBubble extends StatelessWidget {
     this.onReply,
     this.isFirstInGroup = true,
     this.isLastInGroup = true,
+    this.translateDefaultOn = false,
   });
 
   @override
@@ -268,7 +278,7 @@ class MessageBubble extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         text,
-        _TranslateSection(message: message),
+        _TranslateSection(message: message, defaultOn: translateDefaultOn),
       ],
     );
   }
@@ -504,13 +514,48 @@ class MessageBubble extends StatelessWidget {
 
 /// Tap-to-translate affordance shown under incoming text messages. Reads the
 /// per-message [translationProvider] cache and the app's target language.
-class _TranslateSection extends ConsumerWidget {
-  const _TranslateSection({required this.message});
+///
+/// Stateful only so [defaultOn] can kick off a translation once, in
+/// `initState`, rather than on every rebuild — `toggle` flips visibility on a
+/// second call, so calling it from `build` would fight the user's own tap.
+class _TranslateSection extends ConsumerStatefulWidget {
+  const _TranslateSection({required this.message, this.defaultOn = false});
 
   final Message message;
 
+  /// True when this thread has a known language mismatch. Translation begins
+  /// automatically instead of waiting for a tap — but only once, and only if
+  /// nothing has touched this message's cache entry yet, so a user who taps
+  /// "Hide translation" stays hidden even if this widget rebuilds.
+  final bool defaultOn;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_TranslateSection> createState() => _TranslateSectionState();
+}
+
+class _TranslateSectionState extends ConsumerState<_TranslateSection> {
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.defaultOn) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final entry = ref.read(translationProvider)[widget.message.id];
+      // idle only: a cached entry — done, loading, or error — means either
+      // this ran once already or the user has already acted on it.
+      if (entry != null) return;
+      final target = ref.read(localeProvider)?.languageCode ?? 'en';
+      ref.read(translationProvider.notifier).toggle(
+            messageId: widget.message.id,
+            text: widget.message.content,
+            targetLang: target,
+          );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final message = widget.message;
     final entry = ref.watch(translationProvider)[message.id];
     final target = ref.watch(localeProvider)?.languageCode ?? 'en';
     final status = entry?.status ?? TranslationStatus.idle;

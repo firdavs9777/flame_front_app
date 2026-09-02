@@ -867,5 +867,7 @@
   "languagesLearningLabel": "Kielet, joita opiskelet",
   "languagesPickerTitle": "Valitse kielet",
   "languagesNoneSelected": "Ei valittuja",
-  "languagesRecommended": "Suositellut"
+  "languagesRecommended": "Suositellut",
+  "profileSpeaks": "Puhuu",
+  "profileLearning": "Opiskelee"
 }

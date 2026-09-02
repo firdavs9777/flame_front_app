@@ -751,5 +751,7 @@
   "languagesLearningLabel": "Ngôn ngữ bạn đang học",
   "languagesPickerTitle": "Chọn ngôn ngữ",
   "languagesNoneSelected": "Chưa chọn",
-  "languagesRecommended": "Đề xuất"
+  "languagesRecommended": "Đề xuất",
+  "profileSpeaks": "Nói",
+  "profileLearning": "Đang học"
 }

@@ -620,5 +620,7 @@
   "languagesLearningLabel": "Bahasa yang sedang Anda pelajari",
   "languagesPickerTitle": "Pilih bahasa",
   "languagesNoneSelected": "Belum ada yang dipilih",
-  "languagesRecommended": "Direkomendasikan"
+  "languagesRecommended": "Direkomendasikan",
+  "profileSpeaks": "Berbicara",
+  "profileLearning": "Belajar"
 }

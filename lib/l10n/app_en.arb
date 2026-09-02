@@ -1843,5 +1843,13 @@
   "languagesRecommended": "Recommended",
   "@languagesRecommended": {
     "description": "Header above the shortlist of common languages at the top of the language picker."
+  },
+  "profileSpeaks": "Speaks",
+  "@profileSpeaks": {
+    "description": "Compact label on the deck card, profile and profile-detail screens introducing the languages a person speaks. Concatenated with a comma-joined language list, e.g. \"Speaks Korean, Japanese\"."
+  },
+  "profileLearning": "Learning",
+  "@profileLearning": {
+    "description": "Compact label paired with profileSpeaks introducing the languages a person is learning, e.g. \"Learning English\"."
   }
 }

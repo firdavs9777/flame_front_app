@@ -17,6 +17,7 @@ import 'package:flame/core/image/avatar_provider.dart';
 import 'package:flame/core/image/photo_variants.dart';
 import 'package:flame/models/photo.dart';
 import 'package:flame/core/image/upload_limits.dart';
+import 'package:flame/widgets/languages_line.dart';
 
 class MyProfileScreen extends ConsumerStatefulWidget {
   const MyProfileScreen({super.key});
@@ -231,6 +232,16 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     ),
                   ],
                 ),
+                if (user.languagesSpoken.isNotEmpty ||
+                    user.languagesLearning.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  LanguagesLine(
+                    spoken: user.languagesSpoken,
+                    learning: user.languagesLearning,
+                    style:
+                        TextStyle(fontSize: 14, color: context.secondaryText),
+                  ),
+                ],
                 if (user.isPremiumActive) ...[
                   const SizedBox(height: 10),
                   Container(
