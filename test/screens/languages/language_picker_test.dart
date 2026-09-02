@@ -127,4 +127,128 @@ void main() {
 
     expect(find.text('English'), findsWidgets);
   });
+
+  group('a blank name never crashes the picker', () {
+    // GET /languages serves 127+ rows and some carry `"name": ""`. Those
+    // parse fine, so no catalogue fallback rescues them -- the row simply
+    // threw a RangeError on name[0] while building the A-Z section header,
+    // red-screening the exact screen App Review rejected.
+    test('the section letter falls back past a blank name', () {
+      expect(
+        sectionLetterFor(const Language(code: 'aa', name: '', nativeName: '')),
+        'A',
+      );
+      expect(
+        sectionLetterFor(
+          const Language(code: 'bb', name: '   ', nativeName: '   '),
+        ),
+        'B',
+      );
+      expect(sectionLetterFor(Language.fromJson({'code': 'cc'})), 'C');
+    });
+
+    test('a language with nothing indexable lands in a catch-all section', () {
+      expect(
+        sectionLetterFor(const Language(code: '', name: '', nativeName: '')),
+        '#',
+      );
+    });
+
+    testWidgets('blank-named rows render rather than throwing', (tester) async {
+      final catalog = [
+        Language.fromJson({'code': 'aa', 'name': ''}),
+        Language.fromJson({'code': 'bb', 'name': '   '}),
+        Language.fromJson({'code': 'cc'}),
+        // Not parsed at all -- the picker must survive this too.
+        const Language(code: 'dd', name: '', nativeName: ''),
+      ];
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          languageCatalogProvider.overrideWith((ref) async => catalog),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: LanguagePickerScreen(
+            initialSelection: const [], maxSelection: 3, onDone: (_) {},
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('aa'), findsOneWidget);
+      expect(find.text('dd'), findsNothing,
+          reason: 'an unparsed blank row has no label to show, but must not '
+              'take the screen down with it');
+    });
+  });
+
+  group('the A-Z index scrolls to a measured offset', () {
+    // The index used to jump to `position-in-rest * 56`, which ignored the
+    // Recommended header, its rows, the divider under it, and one header per
+    // letter section. Tapping M landed hundreds of pixels short.
+    final recommended = [
+      const Language(code: 'en', name: 'English', nativeName: 'English'),
+      const Language(code: 'ko', name: 'Korean', nativeName: '한국어'),
+    ];
+    final rest = [
+      const Language(code: 'ay', name: 'Aymara', nativeName: 'Aymara'),
+      const Language(code: 'bg', name: 'Bulgarian', nativeName: 'Български'),
+      const Language(code: 'mt', name: 'Maltese', nativeName: 'Malti'),
+      const Language(code: 'mr', name: 'Marathi', nativeName: 'मराठी'),
+      const Language(code: 'zu', name: 'Zulu', nativeName: 'isiZulu'),
+    ];
+
+    test('the offset for a letter is the sum of everything above its header',
+        () {
+      final layout =
+          LanguagePickerLayout(recommended: recommended, rest: rest);
+
+      final headerIndex = layout.slots.indexWhere((s) => s.letter == 'M');
+      expect(headerIndex, greaterThan(0));
+
+      final expected = layout.slots
+          .take(headerIndex)
+          .fold<double>(0, (sum, slot) => sum + slot.height);
+
+      expect(layout.offsetForLetter('M'), expected);
+    });
+
+    test('the first section starts below the whole Recommended block', () {
+      final layout =
+          LanguagePickerLayout(recommended: recommended, rest: rest);
+
+      final naive = rest.indexWhere((l) => l.name.startsWith('A')) * 56.0;
+      expect(layout.offsetForLetter('A'), greaterThan(naive),
+          reason: 'the Recommended header, its rows and the divider all sit '
+              'above the first letter section');
+    });
+
+    test('a letter no language starts is not scrollable to', () {
+      final layout =
+          LanguagePickerLayout(recommended: recommended, rest: rest);
+
+      expect(layout.hasLetter('Q'), isFalse);
+      expect(layout.offsetForLetter('Q'), isNull);
+      expect(layout.hasLetter('M'), isTrue);
+    });
+
+    test('with no Recommended block the offsets shift up by exactly that block',
+        () {
+      final withRec =
+          LanguagePickerLayout(recommended: recommended, rest: rest);
+      final without =
+          LanguagePickerLayout(recommended: const [], rest: rest);
+
+      final headerIndex = withRec.slots.indexWhere((s) => s.letter == 'A');
+      final block = withRec.slots
+          .take(headerIndex)
+          .fold<double>(0, (sum, slot) => sum + slot.height);
+
+      expect(without.offsetForLetter('M'),
+          withRec.offsetForLetter('M')! - block);
+    });
+  });
 }

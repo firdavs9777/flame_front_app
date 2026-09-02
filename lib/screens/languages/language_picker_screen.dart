@@ -36,7 +36,128 @@ const List<String> _kAlphabet = [
   'Z',
 ];
 
+/// Heights, in logical pixels, of the things this list is built from. The
+/// A-Z index sums these to find where a section actually begins, so they are
+/// the layout contract rather than decoration: a one-line and a two-line
+/// Material ListTile, the divider under Recommended (`Divider(height: 24)`),
+/// and the two header paddings plus their line boxes.
 const double _kRowHeight = 56.0;
+const double _kRowWithSubtitleHeight = 72.0;
+const double _kSectionHeaderHeight = 32.0;
+const double _kRecommendedHeaderHeight = 30.0;
+const double _kDividerHeight = 24.0;
+
+/// The A-Z section a language belongs under.
+///
+/// Never indexes a string it has not checked first. `name` is blank on rows
+/// the backend really serves, and blank on any [Language] built directly
+/// rather than parsed -- and a single `RangeError` here takes the whole
+/// picker down with a red screen.
+@visibleForTesting
+String sectionLetterFor(Language lang) {
+  for (final candidate in [lang.name, lang.nativeName, lang.code]) {
+    final trimmed = candidate.trim();
+    if (trimmed.isNotEmpty) return trimmed[0].toUpperCase();
+  }
+  return '#';
+}
+
+/// What one entry of the picker's list is.
+enum LanguagePickerSlotKind { recommendedHeader, row, divider, sectionHeader }
+
+/// One entry in the picker's flat list, with the height it will occupy.
+@immutable
+class LanguagePickerSlot {
+  const LanguagePickerSlot({
+    required this.kind,
+    required this.height,
+    this.language,
+    this.letter,
+  });
+
+  final LanguagePickerSlotKind kind;
+  final double height;
+
+  /// Set on [LanguagePickerSlotKind.row].
+  final Language? language;
+
+  /// Set on [LanguagePickerSlotKind.sectionHeader] -- what the A-Z index
+  /// scrolls to.
+  final String? letter;
+}
+
+/// The picker's list expressed as data before it is expressed as widgets.
+///
+/// The A-Z index used to scroll to `position-in-the-alphabetical-list * 56`,
+/// which ignored the Recommended header, its rows, the divider under it, and
+/// one header per letter section -- so tapping "M" landed hundreds of pixels
+/// short and the error compounded down the alphabet. Laying the list out as
+/// slots first means the index sums what is genuinely above a section instead
+/// of assuming everything above it is a row.
+@visibleForTesting
+class LanguagePickerLayout {
+  LanguagePickerLayout({
+    required List<Language> recommended,
+    required List<Language> rest,
+  }) : slots = _slotsFor(recommended, rest);
+
+  final List<LanguagePickerSlot> slots;
+
+  static List<LanguagePickerSlot> _slotsFor(
+    List<Language> recommended,
+    List<Language> rest,
+  ) {
+    final out = <LanguagePickerSlot>[];
+    if (recommended.isNotEmpty) {
+      out.add(const LanguagePickerSlot(
+        kind: LanguagePickerSlotKind.recommendedHeader,
+        height: _kRecommendedHeaderHeight,
+      ));
+      out.addAll(recommended.map(_rowSlot));
+      out.add(const LanguagePickerSlot(
+        kind: LanguagePickerSlotKind.divider,
+        height: _kDividerHeight,
+      ));
+    }
+
+    String? section;
+    for (final lang in rest) {
+      final letter = sectionLetterFor(lang);
+      if (letter != section) {
+        section = letter;
+        out.add(LanguagePickerSlot(
+          kind: LanguagePickerSlotKind.sectionHeader,
+          height: _kSectionHeaderHeight,
+          letter: letter,
+        ));
+      }
+      out.add(_rowSlot(lang));
+    }
+    return out;
+  }
+
+  static LanguagePickerSlot _rowSlot(Language lang) => LanguagePickerSlot(
+        kind: LanguagePickerSlotKind.row,
+        height: lang.name == lang.nativeName
+            ? _kRowHeight
+            : _kRowWithSubtitleHeight,
+        language: lang,
+      );
+
+  /// Whether any language is filed under [letter].
+  bool hasLetter(String letter) => slots.any((s) => s.letter == letter);
+
+  /// Where [letter]'s section header starts, or null if there is no such
+  /// section.
+  double? offsetForLetter(String letter) {
+    var offset = 0.0;
+    for (final slot in slots) {
+      if (slot.letter == letter) return offset;
+      offset += slot.height;
+    }
+    return null;
+  }
+}
 
 /// A picker for `languagesSpoken` / `languagesLearning`, not a chip grid.
 ///
@@ -150,6 +271,7 @@ class _LanguagePickerScreenState extends ConsumerState<LanguagePickerScreen> {
           : catalog,
     );
 
+    final layout = LanguagePickerLayout(recommended: recommended, rest: rest);
     final showIndex = showRecommended && rest.length > 20;
 
     return Scaffold(
@@ -210,28 +332,11 @@ class _LanguagePickerScreenState extends ConsumerState<LanguagePickerScreen> {
                       ListView(
                         controller: _scrollController,
                         children: [
-                          if (recommended.isNotEmpty) ...[
-                            // Matches BananaTalk's reference header style:
-                            // a plain bold label, not an icon standing in
-                            // for one.
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                              child: Text(
-                                context.l10n.languagesRecommended,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[800],
-                                ),
-                              ),
-                            ),
-                            ...recommended.map((l) => _row(l)),
-                            const Divider(height: 24),
-                          ],
-                          ..._alphabeticalChildren(rest),
+                          for (final slot in layout.slots)
+                            _slotWidget(context, slot),
                         ],
                       ),
-                      if (showIndex) _alphabetIndex(rest),
+                      if (showIndex) _alphabetIndex(layout),
                     ],
                   ),
           ),
@@ -240,31 +345,39 @@ class _LanguagePickerScreenState extends ConsumerState<LanguagePickerScreen> {
     );
   }
 
-  List<Widget> _alphabeticalChildren(List<Language> rest) {
-    final children = <Widget>[];
-    for (var i = 0; i < rest.length; i++) {
-      final lang = rest[i];
-      final showDivider =
-          i == 0 ||
-          rest[i - 1].name[0].toUpperCase() != lang.name[0].toUpperCase();
-      if (showDivider) {
-        children.add(
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Text(
-              lang.name[0].toUpperCase(),
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[500],
-              ),
+  Widget _slotWidget(BuildContext context, LanguagePickerSlot slot) {
+    switch (slot.kind) {
+      case LanguagePickerSlotKind.recommendedHeader:
+        // Matches BananaTalk's reference header style: a plain bold label,
+        // not an icon standing in for one.
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Text(
+            context.l10n.languagesRecommended,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
             ),
           ),
         );
-      }
-      children.add(_row(lang));
+      case LanguagePickerSlotKind.divider:
+        return const Divider(height: _kDividerHeight);
+      case LanguagePickerSlotKind.sectionHeader:
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text(
+            slot.letter!,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[500],
+            ),
+          ),
+        );
+      case LanguagePickerSlotKind.row:
+        return _row(slot.language!);
     }
-    return children;
   }
 
   Widget _row(Language lang) {
@@ -297,7 +410,7 @@ class _LanguagePickerScreenState extends ConsumerState<LanguagePickerScreen> {
     );
   }
 
-  Widget _alphabetIndex(List<Language> rest) {
+  Widget _alphabetIndex(LanguagePickerLayout layout) {
     return Positioned(
       right: 0,
       top: 0,
@@ -310,11 +423,9 @@ class _LanguagePickerScreenState extends ConsumerState<LanguagePickerScreen> {
           itemCount: _kAlphabet.length,
           itemBuilder: (context, index) {
             final letter = _kAlphabet[index];
-            final hasLanguage = rest.any(
-              (l) => l.name.toUpperCase().startsWith(letter),
-            );
+            final hasLanguage = layout.hasLetter(letter);
             return GestureDetector(
-              onTap: hasLanguage ? () => _scrollToLetter(rest, letter) : null,
+              onTap: hasLanguage ? () => _scrollToLetter(layout, letter) : null,
               child: SizedBox(
                 height: 18,
                 child: Center(
@@ -337,13 +448,11 @@ class _LanguagePickerScreenState extends ConsumerState<LanguagePickerScreen> {
     );
   }
 
-  void _scrollToLetter(List<Language> rest, String letter) {
-    final index = rest.indexWhere(
-      (l) => l.name.toUpperCase().startsWith(letter),
-    );
-    if (index == -1) return;
+  void _scrollToLetter(LanguagePickerLayout layout, String letter) {
+    final offset = layout.offsetForLetter(letter);
+    if (offset == null || !_scrollController.hasClients) return;
     _scrollController.animateTo(
-      index * _kRowHeight,
+      offset.clamp(0.0, _scrollController.position.maxScrollExtent),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
