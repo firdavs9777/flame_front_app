@@ -91,6 +91,22 @@ The token stored stays an ISO 639-1 code and is never translated, for exactly
 the reason the interest catalogue gives about its own tokens: translating a
 stored value breaks every record and every match at once.
 
+**The endonyms are not written by hand.** BananaTalk's `_data/languages.json`
+already carries a `nativeName` column for 182 languages, correct for every code
+this shortlists, and the catalogue is generated from it. Retyping 한국어 and
+العربية from memory is how a display name acquires a typo nobody on the team
+can see.
+
+The data is copied, not fetched. `GET /languages` exists on the BananaTalk side
+and would be a single source of truth, but this is static data: calling it at
+runtime would add a network failure mode to the registration screen App Review
+just rejected, and couple flame to a route `CLAUDE.md` says to stay clear of.
+
+**No flag emoji**, despite the BananaTalk picker using them. Flags mark
+countries, not languages — 🇺🇸 for English erases every other English-speaking
+country, and Swahili, Arabic and Tagalog have no defensible single flag. On an
+app about meeting people from elsewhere, that is a poor first impression.
+
 ### Declared inside registration step 4, pre-seeded from the device locale
 
 Registration stays at **five steps**. Apple rejected this exact flow four days
