@@ -28,6 +28,8 @@
   "matchLikedEachOther": "{name} y tú se gustaron",
   "chatNoMessagesBody": "¡Haz match con alguien para empezar a chatear!",
   "profileBioHint": "Cuéntanos algo sobre ti…",
+  "notifOpenSettings": "Abrir configuración",
+  "notifBlockedBody": "Flame no puede enviarte notificaciones hasta que las permitas en la configuración de tu dispositivo.",
   "@@x-machine-translated": [
     "chatAttachVideo",
     "chatNoMessagesBody",
@@ -38,7 +40,9 @@
     "loginEmailRequired",
     "matchLikedEachOther",
     "navSettings",
+    "notifBlockedBody",
     "notifLoadFailed",
+    "notifOpenSettings",
     "profileBioHint",
     "registerAddPhotoSheetTitle",
     "registerBioSubtitle",

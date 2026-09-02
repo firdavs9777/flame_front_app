@@ -38,6 +38,8 @@
   "chatSendSticker": "Envoyer un autocollant",
   "matchKeepSwiping": "Continuer à balayer",
   "chatAttachVideo": "Vidéo",
+  "notifOpenSettings": "Ouvrir les paramètres",
+  "notifBlockedBody": "Flame ne peut pas vous envoyer de notifications tant que vous ne les autorisez pas dans les paramètres de votre appareil.",
   "@@x-machine-translated": [
     "chatAttachVideo",
     "chatSendSticker",
@@ -58,7 +60,9 @@
     "matchKeepSwiping",
     "navChat",
     "navSettings",
+    "notifBlockedBody",
     "notifLoadFailed",
+    "notifOpenSettings",
     "notifPromotionsSubtitle",
     "notifRemindersSubtitle",
     "notifSectionEmail",
