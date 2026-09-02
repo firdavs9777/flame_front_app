@@ -25,6 +25,8 @@ class RegistrationDraft {
       'lookingFor': data.lookingFor.name,
       'bio': data.bio,
       'interests': data.interests,
+      'languagesSpoken': data.languagesSpoken,
+      'languagesLearning': data.languagesLearning,
       'latitude': data.latitude,
       'longitude': data.longitude,
       'photoFilePaths': data.photoFiles.map((f) => f.path).toList(),
@@ -44,6 +46,12 @@ class RegistrationDraft {
       ..lookingFor = _genderFrom(json['lookingFor'] as String?)
       ..bio = (json['bio'] as String?) ?? ''
       ..interests = ((json['interests'] as List?) ?? const [])
+          .map((e) => e.toString())
+          .toList()
+      ..languagesSpoken = ((json['languagesSpoken'] as List?) ?? const [])
+          .map((e) => e.toString())
+          .toList()
+      ..languagesLearning = ((json['languagesLearning'] as List?) ?? const [])
           .map((e) => e.toString())
           .toList()
       ..latitude = (json['latitude'] as num?)?.toDouble()

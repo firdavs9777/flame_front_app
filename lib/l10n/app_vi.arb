@@ -750,5 +750,6 @@
   "languagesSpokenLabel": "Ngôn ngữ bạn nói",
   "languagesLearningLabel": "Ngôn ngữ bạn đang học",
   "languagesPickerTitle": "Chọn ngôn ngữ",
-  "languagesNoneSelected": "Chưa chọn"
+  "languagesNoneSelected": "Chưa chọn",
+  "languagesRecommended": "Đề xuất"
 }

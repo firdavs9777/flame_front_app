@@ -866,5 +866,6 @@
   "languagesSpokenLabel": "Kielet, joita puhut",
   "languagesLearningLabel": "Kielet, joita opiskelet",
   "languagesPickerTitle": "Valitse kielet",
-  "languagesNoneSelected": "Ei valittuja"
+  "languagesNoneSelected": "Ei valittuja",
+  "languagesRecommended": "Suositellut"
 }

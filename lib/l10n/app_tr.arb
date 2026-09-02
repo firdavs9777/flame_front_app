@@ -618,5 +618,6 @@
   "languagesSpokenLabel": "Konuştuğunuz diller",
   "languagesLearningLabel": "Öğrendiğiniz diller",
   "languagesPickerTitle": "Dilleri seçin",
-  "languagesNoneSelected": "Hiçbiri seçilmedi"
+  "languagesNoneSelected": "Hiçbiri seçilmedi",
+  "languagesRecommended": "Önerilen"
 }

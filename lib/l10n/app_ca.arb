@@ -866,5 +866,6 @@
   "languagesSpokenLabel": "Idiomes que parles",
   "languagesLearningLabel": "Idiomes que estàs aprenent",
   "languagesPickerTitle": "Selecciona idiomes",
-  "languagesNoneSelected": "Cap seleccionat"
+  "languagesNoneSelected": "Cap seleccionat",
+  "languagesRecommended": "Recomanats"
 }

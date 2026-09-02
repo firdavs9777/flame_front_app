@@ -866,5 +866,6 @@
   "languagesSpokenLabel": "Jazyky, kterými mluvíte",
   "languagesLearningLabel": "Jazyky, které se učíte",
   "languagesPickerTitle": "Vyberte jazyky",
-  "languagesNoneSelected": "Nic není vybráno"
+  "languagesNoneSelected": "Nic není vybráno",
+  "languagesRecommended": "Doporučené"
 }

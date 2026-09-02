@@ -652,5 +652,6 @@
   "languagesSpokenLabel": "Idiomas que hablas",
   "languagesLearningLabel": "Idiomas que estás aprendiendo",
   "languagesPickerTitle": "Selecciona idiomas",
-  "languagesNoneSelected": "Ninguno seleccionado"
+  "languagesNoneSelected": "Ninguno seleccionado",
+  "languagesRecommended": "Recomendados"
 }

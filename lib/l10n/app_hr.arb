@@ -866,5 +866,6 @@
   "languagesSpokenLabel": "Jezici kojima govorite",
   "languagesLearningLabel": "Jezici koje učite",
   "languagesPickerTitle": "Odaberite jezike",
-  "languagesNoneSelected": "Ništa nije odabrano"
+  "languagesNoneSelected": "Ništa nije odabrano",
+  "languagesRecommended": "Preporučeno"
 }

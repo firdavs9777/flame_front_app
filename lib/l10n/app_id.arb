@@ -619,5 +619,6 @@
   "languagesSpokenLabel": "Bahasa yang Anda kuasai",
   "languagesLearningLabel": "Bahasa yang sedang Anda pelajari",
   "languagesPickerTitle": "Pilih bahasa",
-  "languagesNoneSelected": "Belum ada yang dipilih"
+  "languagesNoneSelected": "Belum ada yang dipilih",
+  "languagesRecommended": "Direkomendasikan"
 }

@@ -8,8 +8,32 @@ import 'package:flame/providers/languages_provider.dart';
 import 'package:flame/theme/app_theme.dart';
 
 const List<String> _kAlphabet = [
-  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'O',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'U',
+  'V',
+  'W',
+  'X',
+  'Y',
+  'Z',
 ];
 
 const double _kRowHeight = 56.0;
@@ -175,8 +199,11 @@ class _LanguagePickerScreenState extends ConsumerState<LanguagePickerScreen> {
           Expanded(
             child: recommended.isEmpty && rest.isEmpty
                 ? Center(
-                    child: Icon(Icons.search_off,
-                        size: 64, color: Colors.grey[300]),
+                    child: Icon(
+                      Icons.search_off,
+                      size: 64,
+                      color: Colors.grey[300],
+                    ),
                   )
                 : Stack(
                     children: [
@@ -184,14 +211,19 @@ class _LanguagePickerScreenState extends ConsumerState<LanguagePickerScreen> {
                         controller: _scrollController,
                         children: [
                           if (recommended.isNotEmpty) ...[
-                            // Deliberately no section label here: this task
-                            // adds exactly four new l10n keys, none of them
-                            // a "Recommended" heading. The star marks the
-                            // shortlist instead of naming it.
-                            const Padding(
-                              padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
-                              child: Icon(Icons.star_rounded,
-                                  size: 18, color: Colors.amber),
+                            // Matches BananaTalk's reference header style:
+                            // a plain bold label, not an icon standing in
+                            // for one.
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                              child: Text(
+                                context.l10n.languagesRecommended,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[800],
+                                ),
+                              ),
                             ),
                             ...recommended.map((l) => _row(l)),
                             const Divider(height: 24),
@@ -212,20 +244,23 @@ class _LanguagePickerScreenState extends ConsumerState<LanguagePickerScreen> {
     final children = <Widget>[];
     for (var i = 0; i < rest.length; i++) {
       final lang = rest[i];
-      final showDivider = i == 0 ||
+      final showDivider =
+          i == 0 ||
           rest[i - 1].name[0].toUpperCase() != lang.name[0].toUpperCase();
       if (showDivider) {
-        children.add(Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Text(
-            lang.name[0].toUpperCase(),
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[500],
+        children.add(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Text(
+              lang.name[0].toUpperCase(),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[500],
+              ),
             ),
           ),
-        ));
+        );
       }
       children.add(_row(lang));
     }
@@ -275,8 +310,9 @@ class _LanguagePickerScreenState extends ConsumerState<LanguagePickerScreen> {
           itemCount: _kAlphabet.length,
           itemBuilder: (context, index) {
             final letter = _kAlphabet[index];
-            final hasLanguage =
-                rest.any((l) => l.name.toUpperCase().startsWith(letter));
+            final hasLanguage = rest.any(
+              (l) => l.name.toUpperCase().startsWith(letter),
+            );
             return GestureDetector(
               onTap: hasLanguage ? () => _scrollToLetter(rest, letter) : null,
               child: SizedBox(
@@ -302,8 +338,9 @@ class _LanguagePickerScreenState extends ConsumerState<LanguagePickerScreen> {
   }
 
   void _scrollToLetter(List<Language> rest, String letter) {
-    final index =
-        rest.indexWhere((l) => l.name.toUpperCase().startsWith(letter));
+    final index = rest.indexWhere(
+      (l) => l.name.toUpperCase().startsWith(letter),
+    );
     if (index == -1) return;
     _scrollController.animateTo(
       index * _kRowHeight,

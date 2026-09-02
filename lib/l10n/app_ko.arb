@@ -617,5 +617,6 @@
   "languagesSpokenLabel": "구사하는 언어",
   "languagesLearningLabel": "배우고 있는 언어",
   "languagesPickerTitle": "언어 선택",
-  "languagesNoneSelected": "선택 안 됨"
+  "languagesNoneSelected": "선택 안 됨",
+  "languagesRecommended": "추천"
 }

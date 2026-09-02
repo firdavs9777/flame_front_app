@@ -748,5 +748,6 @@
   "languagesSpokenLabel": "Lingue che parli",
   "languagesLearningLabel": "Lingue che stai imparando",
   "languagesPickerTitle": "Seleziona le lingue",
-  "languagesNoneSelected": "Nessuna selezionata"
+  "languagesNoneSelected": "Nessuna selezionata",
+  "languagesRecommended": "Consigliate"
 }

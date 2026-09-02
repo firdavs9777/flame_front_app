@@ -113,6 +113,8 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
         ..lookingFor = data.lookingFor
         ..bio = data.bio
         ..interests = data.interests
+        ..languagesSpoken = data.languagesSpoken
+        ..languagesLearning = data.languagesLearning
         ..photoFiles = data.photoFiles
         ..latitude = data.latitude
         ..longitude = data.longitude;

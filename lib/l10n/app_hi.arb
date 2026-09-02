@@ -750,5 +750,6 @@
   "languagesSpokenLabel": "आप जो भाषाएं बोलते हैं",
   "languagesLearningLabel": "आप जो भाषाएं सीख रहे हैं",
   "languagesPickerTitle": "भाषाएं चुनें",
-  "languagesNoneSelected": "कोई नहीं चुना गया"
+  "languagesNoneSelected": "कोई नहीं चुना गया",
+  "languagesRecommended": "अनुशंसित"
 }

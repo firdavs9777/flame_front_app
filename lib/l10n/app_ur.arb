@@ -866,5 +866,6 @@
   "languagesSpokenLabel": "وہ زبانیں جو آپ بولتے ہیں",
   "languagesLearningLabel": "وہ زبانیں جو آپ سیکھ رہے ہیں",
   "languagesPickerTitle": "زبانیں منتخب کریں",
-  "languagesNoneSelected": "کچھ منتخب نہیں"
+  "languagesNoneSelected": "کچھ منتخب نہیں",
+  "languagesRecommended": "تجویز کردہ"
 }

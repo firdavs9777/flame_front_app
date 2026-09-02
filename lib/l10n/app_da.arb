@@ -866,5 +866,6 @@
   "languagesSpokenLabel": "Sprog du taler",
   "languagesLearningLabel": "Sprog du lærer",
   "languagesPickerTitle": "Vælg sprog",
-  "languagesNoneSelected": "Intet valgt"
+  "languagesNoneSelected": "Intet valgt",
+  "languagesRecommended": "Anbefalede"
 }

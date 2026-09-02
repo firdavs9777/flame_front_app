@@ -866,5 +866,6 @@
   "languagesSpokenLabel": "Talen die je spreekt",
   "languagesLearningLabel": "Talen die je leert",
   "languagesPickerTitle": "Selecteer talen",
-  "languagesNoneSelected": "Niets geselecteerd"
+  "languagesNoneSelected": "Niets geselecteerd",
+  "languagesRecommended": "Aanbevolen"
 }
