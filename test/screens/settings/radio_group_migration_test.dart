@@ -56,7 +56,14 @@ void main() {
         reason: 'dark is the default now');
 
     // The Appearance card is below the fold on a test-sized surface.
+    // scrollUntilVisible stops as soon as the widget exists in the tree, which
+    // can leave it flush against the viewport edge where a tap misses it — so
+    // ensureVisible scrolls the last few pixels. Without it this test breaks
+    // whenever anything is added above Appearance, which is a property of the
+    // scroll helper rather than of the theme radios under test.
     await tester.scrollUntilVisible(find.text('Light'), 200);
+    await tester.ensureVisible(find.text('Light'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Light'));
     await tester.pumpAndSettle();
 

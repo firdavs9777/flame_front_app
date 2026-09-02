@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flame/config/env.dart';
 
@@ -33,14 +34,30 @@ void main() {
       expect(EnvConfig.prodConfig.appleSignInEnabled, isTrue);
     });
 
-    test('keeps notifications OFF while the app cannot send one', () {
-      // No firebase_messaging dependency, no GoogleService-Info.plist or
-      // google-services.json, and nothing registers a device token — the app
-      // has no way to receive a push. The backend agrees: pushService no-ops
-      // without FLAME_FIREBASE_PROJECT_ID. Offering settings for deliveries
-      // that cannot happen is worse than offering nothing.
+    test('offers notifications on Android, where a push can arrive', () {
+      // firebase_messaging is a dependency, android/app/google-services.json
+      // exists, PushService registers a device token, and the server has
+      // FLAME_FIREBASE_PROJECT_ID set.
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+      expect(EnvConfig.prodConfig.notificationsEnabled, isTrue);
+      expect(EnvConfig.localConfig.notificationsEnabled, isTrue);
+    });
+
+    test('keeps notifications OFF on iOS, which cannot receive one', () {
+      // No iOS app in Firebase, no GoogleService-Info.plist, no APNs key. The
+      // build flag is on; the platform is what withholds it. Offering settings
+      // for deliveries that cannot happen is worse than offering nothing.
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
       expect(EnvConfig.prodConfig.notificationsEnabled, isFalse);
       expect(EnvConfig.localConfig.notificationsEnabled, isFalse);
+
+      // The build half stays true, so flipping iOS on later is one deletion in
+      // env.dart rather than a hunt for which flag was turned off and why.
+      expect(EnvConfig.prodConfig.pushConfigured, isTrue);
     });
 
     test('keeps Facebook OFF so no user hits a dead button', () {

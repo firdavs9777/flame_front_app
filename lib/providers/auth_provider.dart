@@ -47,6 +47,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService;
   final BillingService _billingService = BillingService();
 
+  /// Run just before a deliberate sign-out, while the session is still valid.
+  ///
+  /// Exists for the push layer: removing this device's token is an
+  /// authenticated request, so it cannot be done after [logout] has discarded
+  /// the credentials, and doing it at the four call sites instead would mean
+  /// the next screen that adds a sign-out button quietly leaves the token
+  /// behind — and that phone keeps receiving the previous account's messages.
+  /// A callback rather than a direct dependency so this provider stays free of
+  /// Firebase; wired in main.dart, mirroring [ApiClient.onAuthLost] above.
+  ///
+  /// NOT called from [_handleAuthLost]: the session is already gone there, so
+  /// the request would 401. Those tokens are pruned server-side the first time
+  /// FCM reports them unregistered.
+  Future<void> Function()? onBeforeLogout;
+
   /// [authService] is a test seam. Production calls this with no arguments and
   /// gets the real one; a test can hand in a service that fails, which is the
   /// only way to pin that logout signs out anyway.
@@ -289,6 +304,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // The state change is what actually signs someone out — routing watches it.
     // Awaiting a network call before it meant a throw left the user logged in
     // with the dialog already dismissed, which reads as a dead button.
+    try {
+      // Bounded, because this runs between the tap and the screen changing.
+      // A hung request must not be the reason sign-out looks dead — the same
+      // failure this method's comment above was written about.
+      await onBeforeLogout?.call().timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Best effort. A token left behind is pruned server-side once FCM
+      // reports it unregistered; a sign-out that fails is not recoverable.
+    }
+
     try {
       await _authService.logout();
     } catch (_) {

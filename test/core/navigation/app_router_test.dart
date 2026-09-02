@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,23 +61,64 @@ void main() {
   });
 
   group('a disabled feature is not reachable by name', () {
-    testWidgets('notification settings resolve to not-found while off',
-        (tester) async {
-      // The Settings row is hidden, but hiding an entry point does not close a
-      // screen — a deep link or a restored stack can still name the route.
+    Future<void> pumpNotificationSettings(WidgetTester tester) async {
       final route = AppRouter.onGenerateRoute(
         const RouteSettings(name: AppRoutes.notificationSettings),
       ) as MaterialPageRoute;
 
-      await tester.pumpWidget(MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Builder(builder: (context) => route.builder(context)),
+      // ProviderScope because the Android branch really does build
+      // NotificationSettingsScreen now, and it watches a provider. The
+      // not-found branch does not need one, but sharing the host keeps the two
+      // cases differing only in the platform, which is the variable under test.
+      await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(builder: (context) => route.builder(context)),
+        ),
       ));
-      await tester.pumpAndSettle();
+      await tester.pump();
+    }
 
-      expect(find.byType(RouteNotFoundScreen), findsOneWidget);
-      expect(find.byType(NotificationSettingsScreen), findsNothing);
+    // try/finally rather than addTearDown: testWidgets asserts that every
+    // foundation debug variable is back to null when the body returns, and
+    // tear-downs run after that check. Leaving it to addTearDown fails the
+    // test it was meant to clean up after.
+    Future<void> onPlatform(
+      TargetPlatform platform,
+      Future<void> Function() body,
+    ) async {
+      debugDefaultTargetPlatformOverride = platform;
+      try {
+        await body();
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    }
+
+    testWidgets('notification settings open on Android, where push works',
+        (tester) async {
+      // flutter_test reports Android by default, but say so explicitly: this
+      // test is about the platform, so it should not depend on that default.
+      await onPlatform(TargetPlatform.android, () async {
+        await pumpNotificationSettings(tester);
+
+        expect(find.byType(NotificationSettingsScreen), findsOneWidget);
+        expect(find.byType(RouteNotFoundScreen), findsNothing);
+      });
+    });
+
+    testWidgets('they resolve to not-found on iOS, which cannot receive one',
+        (tester) async {
+      // The Settings row is hidden there, but hiding an entry point does not
+      // close a screen — a deep link, a restored stack, or a notification
+      // payload can still name the route.
+      await onPlatform(TargetPlatform.iOS, () async {
+        await pumpNotificationSettings(tester);
+
+        expect(find.byType(RouteNotFoundScreen), findsOneWidget);
+        expect(find.byType(NotificationSettingsScreen), findsNothing);
+      });
     });
   });
 

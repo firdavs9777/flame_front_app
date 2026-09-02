@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "92940053684",
+    "project_id": "flame-dating-47bd1",
+    "storage_bucket": "flame-dating-47bd1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:92940053684:android:a082b7b641dd67ca46fbe1",
+        "android_client_info": {
+          "package_name": "com.bananatalk.flame"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgNwSo7mP5aVnnukzNWSMLFzPTLXr3Rmo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

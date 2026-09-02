@@ -77,6 +77,10 @@ dependencies:
   # Icons
   cupertino_icons: ^1.0.8
 
+  # Push notifications
+  firebase_core: ^4.14.0
+  firebase_messaging: ^16.6.0
+
   # Splash Screen
   flutter_native_splash: ^2.4.4
   google_mlkit_face_detection: ^0.13.1

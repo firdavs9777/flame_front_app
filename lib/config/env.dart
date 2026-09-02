@@ -58,20 +58,39 @@ class EnvConfig {
   /// either affordance until that changes.
   final bool chatEnabled;
 
+  /// Whether this BUILD is wired for push, before asking what it is running on.
+  ///
+  /// ON now: firebase_messaging is a dependency, android/app/google-services.json
+  /// exists, PushService registers a device token, and the server has
+  /// FLAME_FIREBASE_PROJECT_ID set (verified — pushService.isConfigured()
+  /// returns true on the droplet).
+  ///
+  /// Prefer [notificationsEnabled] everywhere. This is only half the answer.
+  final bool pushConfigured;
+
   /// Whether to offer notification settings at all.
   ///
-  /// OFF everywhere. The app has no push capability: there is no
-  /// firebase_messaging dependency, no GoogleService-Info.plist or
-  /// google-services.json, and nothing ever registers a device token — the
-  /// UserService.registerDevice() that used to sit unused was deleted.
-  /// The backend agrees — pushService no-ops unless FLAME_FIREBASE_PROJECT_ID
-  /// is set.
+  /// [pushConfigured] AND a platform that can actually receive a push — which
+  /// today means Android only. iOS has no Firebase app registered, no
+  /// GoogleService-Info.plist and no APNs key, so an iPhone can neither
+  /// initialize Firebase nor obtain a token.
   ///
-  /// So the settings screen was letting people tune notifications that cannot
-  /// arrive. Hiding it is not a downgrade; a control that promises something
-  /// the app cannot do is worse than no control. Flip this back on in the same
-  /// commit that adds FCM.
-  final bool notificationsEnabled;
+  /// The rule this preserves: a control that promises something the app cannot
+  /// do is worse than no control. Rather than hiding the screen by turning the
+  /// build flag off — which would also disable the working Android half — the
+  /// platform is folded in here, so one flag governs the settings row, the
+  /// route, and whether PushService does anything at all. They cannot drift.
+  ///
+  /// Delete the platform clause once iOS is registered and its APNs key is
+  /// uploaded; nothing else needs to change.
+  bool get notificationsEnabled => pushConfigured && _pushCapablePlatform;
+
+  /// Uses [defaultTargetPlatform] rather than `dart:io`'s `Platform.isAndroid`
+  /// so a test can exercise both sides via debugDefaultTargetPlatformOverride.
+  /// `Platform.isAndroid` reads the host in a `flutter test` run, which would
+  /// make this permanently false and untestable.
+  static bool get _pushCapablePlatform =>
+      defaultTargetPlatform == TargetPlatform.android;
 
   /// Whether to offer AI-drafted profile bios.
   ///
@@ -93,7 +112,7 @@ class EnvConfig {
     this.facebookSignInEnabled = false,
     this.forgotPasswordEnabled = false,
     this.chatEnabled = false,
-    this.notificationsEnabled = false,
+    this.pushConfigured = false,
     this.aiBioEnabled = true,
   });
 
@@ -109,7 +128,7 @@ class EnvConfig {
        wsBase = '',
        aiBioEnabled = true,
        realtimeEnabled = false,
-       notificationsEnabled = false,
+       pushConfigured = false,
        forgotPasswordEnabled = false,
        chatEnabled = false;
 
@@ -135,9 +154,10 @@ class EnvConfig {
     facebookSignInEnabled: true,
     forgotPasswordEnabled: true,
     chatEnabled: true,
-    // No FCM in the app and no FLAME_FIREBASE_PROJECT_ID on the server, so
-    // there is nothing to configure yet.
-    notificationsEnabled: false,
+    // Firebase is wired for Android. Local still points at a server without
+    // FLAME_FIREBASE_PROJECT_ID, so a token registers and nothing sends —
+    // which is the correct local behaviour, not a bug to work around.
+    pushConfigured: true,
     aiBioEnabled: true,
   );
 
@@ -164,9 +184,9 @@ class EnvConfig {
     // FLAME_FACEBOOK_APP_ID / _SECRET, so the button would dead-end.
     facebookSignInEnabled: false,
     forgotPasswordEnabled: true,
-    // See the field doc: the app has no push capability at all, so the
-    // settings screen was offering to tune deliveries that cannot happen.
-    notificationsEnabled: false,
+    // See the field docs: the build is wired, and notificationsEnabled folds
+    // in the platform — Android yes, iOS not until it has an APNs key.
+    pushConfigured: true,
     // Shares OPENAI_API_KEY with chat translation, which already runs here.
     aiBioEnabled: true,
   );

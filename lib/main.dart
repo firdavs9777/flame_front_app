@@ -10,6 +10,8 @@ import 'screens/auth/welcome_screen.dart';
 import 'screens/auth/registration/social_profile_completion_flow.dart';
 import 'screens/auth/terms_review_screen.dart';
 import 'core/navigation/app_router.dart';
+import 'core/push/push_service.dart';
+import 'providers/push_provider.dart';
 import 'screens/splash/splash_screen.dart';
 import 'core/i18n/locale_provider.dart';
 import 'core/i18n/supported_locales.dart';
@@ -31,6 +33,24 @@ void main() async {
             .toList(),
       );
 
+  // Push, if this build and platform have it. initializeFirebase() answers
+  // false rather than throwing when it does not — including on iOS, which has
+  // no GoogleService-Info.plist and where Firebase.initializeApp() would throw
+  // on launch. Nothing below is reached in that case, and the app starts
+  // exactly as it did before.
+  if (await PushService.initializeFirebase()) {
+    final push = container.read(pushServiceProvider);
+
+    // Before runApp: getInitialMessage() returns the notification that cold
+    // started the app only once, and reading it after the first frame means
+    // a tap that launched the app lands on the wrong screen.
+    await push.attachHandlers();
+
+    // Deregister while the session still authenticates — see the field doc.
+    container.read(authProvider.notifier).onBeforeLogout =
+        push.unregisterDevice;
+  }
+
   runApp(
     UncontrolledProviderScope(container: container, child: const FlameApp()),
   );
@@ -51,6 +71,17 @@ class FlameApp extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final authState = ref.watch(authProvider);
     final locale = ref.watch(localeProvider);
+
+    // Register this device's token once there is a session to register it
+    // under. Fires on the login transition AND on the restore of a stored
+    // session at launch, since both move status off its previous value — a
+    // returning user who never signs in again still needs a live token, and
+    // FCM rotates them.
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (previous?.status == AuthStatus.authenticated) return;
+      if (next.status != AuthStatus.authenticated) return;
+      ref.read(pushServiceProvider).registerDevice();
+    });
 
     ref.listen<AuthState>(authProvider, (previous, next) {
       final user = next.user;
