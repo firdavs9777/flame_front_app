@@ -17,10 +17,18 @@ class StepBioInterests extends ConsumerStatefulWidget {
   final RegistrationData data;
   final VoidCallback onNext;
 
+  /// Writes the draft to disk immediately.
+  ///
+  /// The wizard otherwise only saves on a step change, which is too coarse for
+  /// the language rows: the seeding latch and a deliberately emptied list both
+  /// have to survive the app being killed WHILE the user is still on this step.
+  final VoidCallback? onPersist;
+
   const StepBioInterests({
     super.key,
     required this.data,
     required this.onNext,
+    this.onPersist,
   });
 
   @override
@@ -164,13 +172,19 @@ class _StepBioInterestsState extends ConsumerState<StepBioInterests> {
               label: context.l10n.languagesSpokenLabel,
               codes: widget.data.languagesSpoken,
               key: const Key('register_languages_spoken'),
-              onChanged: (picked) => widget.data.languagesSpoken = picked,
+              onChanged: (picked) {
+                widget.data.languagesSpoken = picked;
+                widget.onPersist?.call();
+              },
             ),
             _languageRow(
               label: context.l10n.languagesLearningLabel,
               codes: widget.data.languagesLearning,
               key: const Key('register_languages_learning'),
-              onChanged: (picked) => widget.data.languagesLearning = picked,
+              onChanged: (picked) {
+                widget.data.languagesLearning = picked;
+                widget.onPersist?.call();
+              },
             ),
 
             const SizedBox(height: 32),
@@ -255,7 +269,10 @@ class _StepBioInterestsState extends ConsumerState<StepBioInterests> {
   void _seedFromLocale(BuildContext context) {
     if (widget.data.languagesSeeded) return;
     widget.data.languagesSeeded = true;
-    if (widget.data.languagesSpoken.isNotEmpty) return;
+    if (widget.data.languagesSpoken.isNotEmpty) {
+      widget.onPersist?.call();
+      return;
+    }
 
     final code = Localizations.localeOf(context).languageCode.toLowerCase();
     final catalog =
@@ -263,6 +280,10 @@ class _StepBioInterestsState extends ConsumerState<StepBioInterests> {
     if (catalog.any((l) => l.code == code)) {
       widget.data.languagesSpoken = [code];
     }
+    // Persist the latch straight away. Left to the next step change, a kill
+    // here restores a draft that has not seeded yet and seeds again -- which
+    // is the whole bug, re-adding a language the user had just removed.
+    widget.onPersist?.call();
   }
 
   Widget _languageRow({

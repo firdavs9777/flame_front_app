@@ -162,7 +162,8 @@ void main() {
     // "Languages you speak" got the device locale silently re-added and then
     // persisted. The latch has to outlive the widget, so it lives on the draft
     // beside the languages themselves.
-    Widget host(RegistrationData data, {required Locale locale, Key? key}) {
+    Widget host(RegistrationData data,
+        {required Locale locale, Key? key, VoidCallback? onPersist}) {
       return ProviderScope(
         overrides: [
           languageCatalogProvider.overrideWith((ref) async => kLanguageFallback),
@@ -177,7 +178,12 @@ void main() {
             GlobalCupertinoLocalizations.delegate,
           ],
           home: Scaffold(
-            body: StepBioInterests(key: key, data: data, onNext: () {}),
+            body: StepBioInterests(
+              key: key,
+              data: data,
+              onNext: () {},
+              onPersist: onPersist,
+            ),
           ),
         ),
       );
@@ -192,6 +198,27 @@ void main() {
 
       expect(data.languagesSpoken, ['ko']);
       expect(data.languagesSeeded, isTrue);
+    });
+
+    testWidgets('the latch is written to the draft as soon as it is set',
+        (tester) async {
+      // The wizard otherwise saves only on a step change, so a kill while the
+      // user is still on this step restored a draft that had never recorded
+      // the seeding -- and seeding ran again, re-adding the language they had
+      // just removed. Narrower than the State-level bug above, same outcome.
+      final data = RegistrationData();
+      var saves = 0;
+
+      await tester.pumpWidget(host(
+        data,
+        locale: const Locale('ko'),
+        onPersist: () => saves++,
+      ));
+      await tester.pumpAndSettle();
+
+      expect(data.languagesSeeded, isTrue);
+      expect(saves, greaterThan(0),
+          reason: 'seeding must reach disk before the next step change');
     });
 
     testWidgets('a cleared list stays cleared when the step is rebuilt',

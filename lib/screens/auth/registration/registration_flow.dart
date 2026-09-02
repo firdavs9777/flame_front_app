@@ -113,6 +113,10 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     }
   }
 
+  /// The step the wizard is on, so a save triggered from inside a step (rather
+  /// than by moving between them) records where the user actually is.
+  int _currentStep = 0;
+
   void _restoreFrom(RegistrationData data, int step) {
     setState(() {
       _data
@@ -132,13 +136,16 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
       _restoreGeneration++;
     });
 
-    _wizardKey.currentState?.jumpToStep(
-      resumeStepFor(
-        password: _data.password,
-        savedStep: step,
-        totalSteps: _totalSteps,
-      ),
+    final resumeAt = resumeStepFor(
+      password: _data.password,
+      savedStep: step,
+      totalSteps: _totalSteps,
     );
+    // Set explicitly rather than relying on jumpToStep to report back: if it
+    // does not, an in-step save would record step 0 and send a resuming user
+    // back to the beginning.
+    _currentStep = resumeAt;
+    _wizardKey.currentState?.jumpToStep(resumeAt);
   }
 
   @override
@@ -165,7 +172,10 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
     return StepWizard(
       key: _wizardKey,
       isBusy: busy,
-      onStepChanged: (step) => _draft.save(_data, step),
+      onStepChanged: (step) {
+        _currentStep = step;
+        _draft.save(_data, step);
+      },
       onExit: () {
         // Explicit back-out to welcome — discard the saved draft.
         _draft.clear();
@@ -197,8 +207,11 @@ class _RegistrationFlowState extends ConsumerState<RegistrationFlow> {
         WizardStep(
           title: context.l10n.registerStepInterestsTitle,
           subtitle: context.l10n.registerStepInterestsSubtitle,
-          builder: (context, onNext) =>
-              StepBioInterests(data: _data, onNext: onNext),
+          builder: (context, onNext) => StepBioInterests(
+            data: _data,
+            onNext: onNext,
+            onPersist: () => _draft.save(_data, _currentStep),
+          ),
         ),
         WizardStep(
           title: context.l10n.registerStepPhotosTitle,
