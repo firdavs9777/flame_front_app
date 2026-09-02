@@ -742,5 +742,9 @@
   "notifPromotionsPush": "प्रचार",
   "notifPromotionsPushSubtitle": "इस डिवाइस पर खबरें और ऑफ़र",
   "notifRemindersPush": "रिमाइंडर",
-  "notifRemindersPushSubtitle": "लंबे समय तक दूर रहने पर मुझे याद दिलाएं"
+  "notifRemindersPushSubtitle": "लंबे समय तक दूर रहने पर मुझे याद दिलाएं",
+  "profileLocationUpdate": "स्थान अपडेट करें",
+  "profileLocationUpdated": "स्थान अपडेट हो गया",
+  "profileLocationFailed": "आपका स्थान नहीं मिल सका",
+  "profileLocationUnknown": "स्थान सेट नहीं है"
 }

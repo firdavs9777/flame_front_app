@@ -858,5 +858,9 @@
   "notifPromotionsPush": "Promocions",
   "notifPromotionsPushSubtitle": "Novetats i ofertes en aquest dispositiu",
   "notifRemindersPush": "Recordatoris",
-  "notifRemindersPushSubtitle": "Avisa'm quan faci temps que no hi entro"
+  "notifRemindersPushSubtitle": "Avisa'm quan faci temps que no hi entro",
+  "profileLocationUpdate": "Actualitza la ubicació",
+  "profileLocationUpdated": "Ubicació actualitzada",
+  "profileLocationFailed": "No s'ha pogut obtenir la teva ubicació",
+  "profileLocationUnknown": "Ubicació no definida"
 }

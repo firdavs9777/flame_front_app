@@ -34,7 +34,7 @@ void main() {
     final pushed = <List<double>>[];
     final r = LocationRefresher(
       getPosition: source.call,
-      push: (lat, lng) async {
+      push: (lat, lng, {city, state, country}) async {
         pushed.add([lat, lng]);
         return true;
       },
@@ -61,7 +61,7 @@ void main() {
     var pushes = 0;
     final r = LocationRefresher(
       getPosition: source.call,
-      push: (_, __) async {
+      push: (_, __, {city, state, country}) async {
         pushes++;
         return true;
       },
@@ -85,7 +85,7 @@ void main() {
     var pushes = 0;
     final r = LocationRefresher(
       getPosition: source.call,
-      push: (_, __) async {
+      push: (_, __, {city, state, country}) async {
         pushes++;
         return true;
       },
@@ -108,7 +108,7 @@ void main() {
     final pushed = <List<double>>[];
     final r = LocationRefresher(
       getPosition: source.call,
-      push: (lat, lng) async {
+      push: (lat, lng, {city, state, country}) async {
         pushed.add([lat, lng]);
         return true;
       },
@@ -131,7 +131,7 @@ void main() {
     var pushes = 0;
     final r = LocationRefresher(
       getPosition: source.call,
-      push: (_, __) async {
+      push: (_, __, {city, state, country}) async {
         pushes++;
         return true;
       },
@@ -155,7 +155,7 @@ void main() {
     var pushes = 0;
     final r = LocationRefresher(
       getPosition: source.call,
-      push: (_, __) async {
+      push: (_, __, {city, state, country}) async {
         pushes++;
         return true;
       },
@@ -177,7 +177,7 @@ void main() {
     var attempts = 0;
     final r = LocationRefresher(
       getPosition: source.call,
-      push: (_, __) async {
+      push: (_, __, {city, state, country}) async {
         attempts++;
         return false;
       },
@@ -197,7 +197,7 @@ void main() {
       final clock = _Clock();
       final r = LocationRefresher(
         getPosition: source.call,
-        push: (_, __) async => true,
+        push: (_, __, {city, state, country}) async => true,
         now: clock.call,
       );
 
@@ -216,7 +216,7 @@ void main() {
       var pushes = 0;
       final r = LocationRefresher(
         getPosition: source.call,
-        push: (_, __) async {
+        push: (_, __, {city, state, country}) async {
           pushes++;
           return true;
         },
@@ -234,7 +234,7 @@ void main() {
       final clock = _Clock();
       final r = LocationRefresher(
         getPosition: source.call,
-        push: (_, __) async => true,
+        push: (_, __, {city, state, country}) async => true,
         now: clock.call,
       );
 
@@ -251,7 +251,7 @@ void main() {
     test('reports failure when the fix cannot be had', () async {
       final r = LocationRefresher(
         getPosition: _Position(ok: false).call,
-        push: (_, __) async => true,
+        push: (_, __, {city, state, country}) async => true,
       );
 
       expect(await r.refreshNow(), isFalse);

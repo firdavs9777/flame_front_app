@@ -59,6 +59,9 @@ PODS:
     - Flutter
   - flutter_secure_storage (6.0.0):
     - Flutter
+  - geocoding_darwin (0.0.1):
+    - Flutter
+    - FlutterMacOS
   - geolocator_apple (1.2.0):
     - Flutter
     - FlutterMacOS
@@ -177,6 +180,7 @@ DEPENDENCIES:
   - flutter_facebook_auth (from `.symlinks/plugins/flutter_facebook_auth/ios`)
   - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
+  - geocoding_darwin (from `.symlinks/plugins/geocoding_darwin/darwin`)
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/darwin`)
   - google_mlkit_commons (from `.symlinks/plugins/google_mlkit_commons/ios`)
   - google_mlkit_face_detection (from `.symlinks/plugins/google_mlkit_face_detection/ios`)
@@ -232,6 +236,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_native_splash/ios"
   flutter_secure_storage:
     :path: ".symlinks/plugins/flutter_secure_storage/ios"
+  geocoding_darwin:
+    :path: ".symlinks/plugins/geocoding_darwin/darwin"
   geolocator_apple:
     :path: ".symlinks/plugins/geolocator_apple/darwin"
   google_mlkit_commons:
@@ -276,6 +282,7 @@ SPEC CHECKSUMS:
   flutter_facebook_auth: 08ab1a6be157d7fce8348b881787e7608f763267
   flutter_native_splash: df59bb2e1421aa0282cb2e95618af4dcb0c56c29
   flutter_secure_storage: d33dac7ae2ea08509be337e775f6b59f1ff45f12
+  geocoding_darwin: 6b25f60c5c0855c2061f097ca17c937a827b8a76
   geolocator_apple: 66b711889fd333205763b83c9dcf0a57a28c7afd
   google_mlkit_commons: 2544377e5503bf78ee7412ccfce0394c2dcb8a6b
   google_mlkit_face_detection: 111b3ac2f2df6ad5f464bafed9ba380ac8366d37

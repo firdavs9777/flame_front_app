@@ -641,5 +641,9 @@
   "notifPromotionsPush": "Angebote",
   "notifPromotionsPushSubtitle": "Neuigkeiten und Angebote auf diesem Gerät",
   "notifRemindersPush": "Erinnerungen",
-  "notifRemindersPushSubtitle": "Erinnere mich, wenn ich länger weg war"
+  "notifRemindersPushSubtitle": "Erinnere mich, wenn ich länger weg war",
+  "profileLocationUpdate": "Standort aktualisieren",
+  "profileLocationUpdated": "Standort aktualisiert",
+  "profileLocationFailed": "Dein Standort konnte nicht ermittelt werden",
+  "profileLocationUnknown": "Kein Standort festgelegt"
 }

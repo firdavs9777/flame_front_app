@@ -609,5 +609,9 @@
   "notifPromotionsPush": "推广",
   "notifPromotionsPushSubtitle": "在此设备上接收资讯和优惠",
   "notifRemindersPush": "提醒",
-  "notifRemindersPushSubtitle": "长时间未使用时提醒我"
+  "notifRemindersPushSubtitle": "长时间未使用时提醒我",
+  "profileLocationUpdate": "更新位置",
+  "profileLocationUpdated": "位置已更新",
+  "profileLocationFailed": "无法获取你的位置",
+  "profileLocationUnknown": "尚未设置位置"
 }

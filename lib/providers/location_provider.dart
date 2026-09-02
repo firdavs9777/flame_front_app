@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flame/core/location/geo_distance.dart';
+import 'package:flame/core/location/place_resolver.dart';
 import 'package:flame/providers/user_provider.dart';
 import 'package:flame/services/location_service.dart';
 
@@ -28,6 +29,7 @@ class LocationRefresher {
   LocationRefresher({
     required this.getPosition,
     required this.push,
+    this.resolvePlace,
     DateTime Function()? now,
     this.minInterval = const Duration(minutes: 5),
     this.maxAge = const Duration(minutes: 30),
@@ -39,7 +41,18 @@ class LocationRefresher {
   /// constructor, so it cannot be subclassed for a test.
   final Future<LocationResult> Function() getPosition;
 
-  final Future<bool> Function(double latitude, double longitude) push;
+  final Future<bool> Function(
+    double latitude,
+    double longitude, {
+    String? city,
+    String? state,
+    String? country,
+  }) push;
+
+  /// Turns coordinates into a city name, on the device. Optional: when it is
+  /// absent or fails, the coordinates are still sent — the label is enrichment
+  /// and must never cost someone their place in the deck.
+  final Future<Place?> Function(double latitude, double longitude)? resolvePlace;
 
   final DateTime Function() _now;
 
@@ -102,10 +115,24 @@ class LocationRefresher {
 
     if (!force && !_isWorthPushing(lat, lng)) return;
 
+    // Resolved before the push so the name travels with the coordinates, in
+    // one request. A null here is ordinary — offline, or a coordinate the
+    // platform has no name for — and the server keeps whatever it already had.
+    Place? place;
+    if (resolvePlace != null) {
+      place = await resolvePlace!(lat, lng);
+    }
+
     // A failed PATCH changes nothing the user can see: the previously stored
     // point stands, and the next refresh tries again. Only a success updates
     // the local record, so a failure does not convince us we are current.
-    if (await push(lat, lng)) {
+    if (await push(
+      lat,
+      lng,
+      city: place?.city,
+      state: place?.state,
+      country: place?.country,
+    )) {
       _lastPushed = _now();
       _lastLat = lat;
       _lastLng = lng;
@@ -128,9 +155,17 @@ class LocationRefresher {
 }
 
 final locationRefresherProvider = Provider<LocationRefresher>((ref) {
+  final resolver = PlaceResolver();
   return LocationRefresher(
     getPosition: LocationService().getCurrentPosition,
-    push: (lat, lng) =>
-        ref.read(currentUserProvider.notifier).updateLocation(lat, lng),
+    resolvePlace: resolver.resolve,
+    push: (lat, lng, {city, state, country}) =>
+        ref.read(currentUserProvider.notifier).updateLocation(
+              lat,
+              lng,
+              city: city,
+              state: state,
+              country: country,
+            ),
   );
 });

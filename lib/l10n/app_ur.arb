@@ -858,5 +858,9 @@
   "notifPromotionsPush": "پیشکشیں",
   "notifPromotionsPushSubtitle": "اس ڈیوائس پر خبریں اور پیشکشیں",
   "notifRemindersPush": "یاد دہانیاں",
-  "notifRemindersPushSubtitle": "کافی عرصے کی غیر حاضری پر مجھے یاد دلائیں"
+  "notifRemindersPushSubtitle": "کافی عرصے کی غیر حاضری پر مجھے یاد دلائیں",
+  "profileLocationUpdate": "مقام اپ ڈیٹ کریں",
+  "profileLocationUpdated": "مقام اپ ڈیٹ ہو گیا",
+  "profileLocationFailed": "آپ کا مقام حاصل نہیں ہو سکا",
+  "profileLocationUnknown": "مقام مقرر نہیں"
 }

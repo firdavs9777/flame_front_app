@@ -858,5 +858,9 @@
   "notifPromotionsPush": "Tarjoukset",
   "notifPromotionsPushSubtitle": "Uutiset ja tarjoukset tällä laitteella",
   "notifRemindersPush": "Muistutukset",
-  "notifRemindersPushSubtitle": "Muistuta minua, kun olen ollut pitkään poissa"
+  "notifRemindersPushSubtitle": "Muistuta minua, kun olen ollut pitkään poissa",
+  "profileLocationUpdate": "Päivitä sijainti",
+  "profileLocationUpdated": "Sijainti päivitetty",
+  "profileLocationFailed": "Sijaintiasi ei saatu",
+  "profileLocationUnknown": "Sijaintia ei ole asetettu"
 }

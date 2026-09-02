@@ -858,5 +858,9 @@
   "notifPromotionsPush": "Akce",
   "notifPromotionsPushSubtitle": "Novinky a nabídky v tomto zařízení",
   "notifRemindersPush": "Připomenutí",
-  "notifRemindersPushSubtitle": "Upozorni mě, když se dlouho neozvu"
+  "notifRemindersPushSubtitle": "Upozorni mě, když se dlouho neozvu",
+  "profileLocationUpdate": "Aktualizovat polohu",
+  "profileLocationUpdated": "Poloha aktualizována",
+  "profileLocationFailed": "Nepodařilo se zjistit polohu",
+  "profileLocationUnknown": "Poloha není nastavena"
 }

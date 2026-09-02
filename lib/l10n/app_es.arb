@@ -644,5 +644,9 @@
   "notifPromotionsPush": "Promociones",
   "notifPromotionsPushSubtitle": "Novedades y ofertas en este dispositivo",
   "notifRemindersPush": "Recordatorios",
-  "notifRemindersPushSubtitle": "Avísame cuando lleve tiempo sin entrar"
+  "notifRemindersPushSubtitle": "Avísame cuando lleve tiempo sin entrar",
+  "profileLocationUpdate": "Actualizar ubicación",
+  "profileLocationUpdated": "Ubicación actualizada",
+  "profileLocationFailed": "No se pudo obtener tu ubicación",
+  "profileLocationUnknown": "Ubicación no establecida"
 }

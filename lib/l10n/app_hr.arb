@@ -858,5 +858,9 @@
   "notifPromotionsPush": "Promocije",
   "notifPromotionsPushSubtitle": "Novosti i ponude na ovom uređaju",
   "notifRemindersPush": "Podsjetnici",
-  "notifRemindersPushSubtitle": "Podsjeti me kad me dugo nema"
+  "notifRemindersPushSubtitle": "Podsjeti me kad me dugo nema",
+  "profileLocationUpdate": "Ažuriraj lokaciju",
+  "profileLocationUpdated": "Lokacija ažurirana",
+  "profileLocationFailed": "Nije moguće dohvatiti tvoju lokaciju",
+  "profileLocationUnknown": "Lokacija nije postavljena"
 }

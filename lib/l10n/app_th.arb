@@ -742,5 +742,9 @@
   "notifPromotionsPush": "โปรโมชัน",
   "notifPromotionsPushSubtitle": "ข่าวสารและข้อเสนอบนอุปกรณ์นี้",
   "notifRemindersPush": "การเตือน",
-  "notifRemindersPushSubtitle": "เตือนฉันเมื่อห่างหายไปนาน"
+  "notifRemindersPushSubtitle": "เตือนฉันเมื่อห่างหายไปนาน",
+  "profileLocationUpdate": "อัปเดตตำแหน่ง",
+  "profileLocationUpdated": "อัปเดตตำแหน่งแล้ว",
+  "profileLocationFailed": "ไม่สามารถระบุตำแหน่งของคุณได้",
+  "profileLocationUnknown": "ยังไม่ได้ตั้งค่าตำแหน่ง"
 }

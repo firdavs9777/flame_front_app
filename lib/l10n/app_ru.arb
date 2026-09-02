@@ -642,5 +642,9 @@
   "notifPromotionsPush": "Акции",
   "notifPromotionsPushSubtitle": "Новости и предложения на этом устройстве",
   "notifRemindersPush": "Напоминания",
-  "notifRemindersPushSubtitle": "Напоминать, если меня долго не было"
+  "notifRemindersPushSubtitle": "Напоминать, если меня долго не было",
+  "profileLocationUpdate": "Обновить местоположение",
+  "profileLocationUpdated": "Местоположение обновлено",
+  "profileLocationFailed": "Не удалось определить местоположение",
+  "profileLocationUnknown": "Местоположение не задано"
 }

@@ -858,5 +858,9 @@
   "notifPromotionsPush": "Aanbiedingen",
   "notifPromotionsPushSubtitle": "Nieuws en aanbiedingen op dit apparaat",
   "notifRemindersPush": "Herinneringen",
-  "notifRemindersPushSubtitle": "Stuur me een seintje als ik er even niet was"
+  "notifRemindersPushSubtitle": "Stuur me een seintje als ik er even niet was",
+  "profileLocationUpdate": "Locatie bijwerken",
+  "profileLocationUpdated": "Locatie bijgewerkt",
+  "profileLocationFailed": "Kan je locatie niet ophalen",
+  "profileLocationUnknown": "Locatie niet ingesteld"
 }

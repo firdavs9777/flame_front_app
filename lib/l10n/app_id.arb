@@ -611,5 +611,9 @@
   "notifPromotionsPush": "Promosi",
   "notifPromotionsPushSubtitle": "Berita dan penawaran di perangkat ini",
   "notifRemindersPush": "Pengingat",
-  "notifRemindersPushSubtitle": "Ingatkan saya saat sudah lama tidak aktif"
+  "notifRemindersPushSubtitle": "Ingatkan saya saat sudah lama tidak aktif",
+  "profileLocationUpdate": "Perbarui lokasi",
+  "profileLocationUpdated": "Lokasi diperbarui",
+  "profileLocationFailed": "Tidak dapat memperoleh lokasi Anda",
+  "profileLocationUnknown": "Lokasi belum diatur"
 }

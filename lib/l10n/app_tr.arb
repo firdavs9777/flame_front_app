@@ -610,5 +610,9 @@
   "notifPromotionsPush": "Kampanyalar",
   "notifPromotionsPushSubtitle": "Bu cihazda haberler ve fırsatlar",
   "notifRemindersPush": "Hatırlatıcılar",
-  "notifRemindersPushSubtitle": "Bir süredir uğramadığımda bana haber ver"
+  "notifRemindersPushSubtitle": "Bir süredir uğramadığımda bana haber ver",
+  "profileLocationUpdate": "Konumu güncelle",
+  "profileLocationUpdated": "Konum güncellendi",
+  "profileLocationFailed": "Konumunuz alınamadı",
+  "profileLocationUnknown": "Konum ayarlanmadı"
 }

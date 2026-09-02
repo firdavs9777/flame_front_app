@@ -742,5 +742,9 @@
   "notifPromotionsPush": "Khuyến mãi",
   "notifPromotionsPushSubtitle": "Tin tức và ưu đãi trên thiết bị này",
   "notifRemindersPush": "Nhắc nhở",
-  "notifRemindersPushSubtitle": "Nhắc tôi khi đã vắng mặt một thời gian"
+  "notifRemindersPushSubtitle": "Nhắc tôi khi đã vắng mặt một thời gian",
+  "profileLocationUpdate": "Cập nhật vị trí",
+  "profileLocationUpdated": "Đã cập nhật vị trí",
+  "profileLocationFailed": "Không lấy được vị trí của bạn",
+  "profileLocationUnknown": "Chưa đặt vị trí"
 }

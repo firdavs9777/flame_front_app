@@ -61,7 +61,7 @@ Widget _host() {
       // Location is enrichment; the deck must never wait on it.
       locationRefresherProvider.overrideWithValue(LocationRefresher(
         getPosition: () async => LocationResult.failure('no location in tests'),
-        push: (_, __) async => false,
+        push: (_, __, {city, state, country}) async => false,
       )),
     ],
     child: MaterialApp(

@@ -99,7 +99,7 @@ Future<void> pumpSheet(
     getPosition: () async => availability == LocationAvailability.denied
         ? LocationResult.failure('denied')
         : LocationResult.successAt(1, 2),
-    push: (_, __) async => true,
+    push: (_, __, {city, state, country}) async => true,
   );
   await refresher.refresh();
 

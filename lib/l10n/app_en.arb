@@ -1807,5 +1807,21 @@
   "notifRemindersPushSubtitle": "Nudge me when I have been away for a while",
   "@notifRemindersPushSubtitle": {
     "description": "Subtitle distinguishing reminder push from reminder email."
+  },
+  "profileLocationUpdate": "Update location",
+  "@profileLocationUpdate": {
+    "description": "Tooltip on the button that re-reads the device location from the profile."
+  },
+  "profileLocationUpdated": "Location updated",
+  "@profileLocationUpdated": {
+    "description": "Confirmation after the location was refreshed successfully."
+  },
+  "profileLocationFailed": "Could not get your location",
+  "@profileLocationFailed": {
+    "description": "Shown when a user-initiated location refresh fails."
+  },
+  "profileLocationUnknown": "Location not set",
+  "@profileLocationUnknown": {
+    "description": "Placeholder on the profile when no city is known yet."
   }
 }

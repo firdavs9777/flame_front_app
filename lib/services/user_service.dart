@@ -101,10 +101,19 @@ class UserService {
   Future<ServiceResult<Map<String, dynamic>>> updateLocation({
     required double latitude,
     required double longitude,
+    String? city,
+    String? state,
+    String? country,
   }) async {
+    // Names are omitted rather than sent as null when the device could not
+    // resolve them. The server keeps the previously known city in that case,
+    // so a lookup that fails offline does not wipe a good label.
     final response = await _apiClient.patch('/users/me/location', body: {
       'latitude': latitude,
       'longitude': longitude,
+      if (city != null) 'city': city,
+      if (state != null) 'state': state,
+      if (country != null) 'country': country,
     });
 
     if (response.success && response.data != null) {

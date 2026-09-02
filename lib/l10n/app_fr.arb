@@ -642,5 +642,9 @@
   "notifPromotionsPush": "Promotions",
   "notifPromotionsPushSubtitle": "Actualités et offres sur cet appareil",
   "notifRemindersPush": "Rappels",
-  "notifRemindersPushSubtitle": "Me relancer après une longue absence"
+  "notifRemindersPushSubtitle": "Me relancer après une longue absence",
+  "profileLocationUpdate": "Actualiser la position",
+  "profileLocationUpdated": "Position mise à jour",
+  "profileLocationFailed": "Impossible d'obtenir votre position",
+  "profileLocationUnknown": "Position non définie"
 }

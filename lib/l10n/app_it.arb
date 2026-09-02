@@ -740,5 +740,9 @@
   "notifPromotionsPush": "Promozioni",
   "notifPromotionsPushSubtitle": "Novità e offerte su questo dispositivo",
   "notifRemindersPush": "Promemoria",
-  "notifRemindersPushSubtitle": "Ricordamelo quando manco da un po'"
+  "notifRemindersPushSubtitle": "Ricordamelo quando manco da un po'",
+  "profileLocationUpdate": "Aggiorna posizione",
+  "profileLocationUpdated": "Posizione aggiornata",
+  "profileLocationFailed": "Impossibile ottenere la tua posizione",
+  "profileLocationUnknown": "Posizione non impostata"
 }

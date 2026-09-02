@@ -742,5 +742,9 @@
   "notifPromotionsPush": "العروض",
   "notifPromotionsPushSubtitle": "الأخبار والعروض على هذا الجهاز",
   "notifRemindersPush": "التذكيرات",
-  "notifRemindersPushSubtitle": "نبّهني عندما أغيب لفترة"
+  "notifRemindersPushSubtitle": "نبّهني عندما أغيب لفترة",
+  "profileLocationUpdate": "تحديث الموقع",
+  "profileLocationUpdated": "تم تحديث الموقع",
+  "profileLocationFailed": "تعذّر تحديد موقعك",
+  "profileLocationUnknown": "لم يتم تعيين الموقع"
 }

@@ -187,10 +187,19 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<User?>> {
     return true;
   }
 
-  Future<bool> updateLocation(double latitude, double longitude) async {
+  Future<bool> updateLocation(
+    double latitude,
+    double longitude, {
+    String? city,
+    String? state,
+    String? country,
+  }) async {
     final result = await _userService.updateLocation(
       latitude: latitude,
       longitude: longitude,
+      city: city,
+      state: state,
+      country: country,
     );
     return result.success;
   }

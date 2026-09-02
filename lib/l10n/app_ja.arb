@@ -609,5 +609,9 @@
   "notifPromotionsPush": "お知らせ",
   "notifPromotionsPushSubtitle": "この端末でのお知らせとお得な情報",
   "notifRemindersPush": "リマインダー",
-  "notifRemindersPushSubtitle": "しばらく利用がないときに知らせる"
+  "notifRemindersPushSubtitle": "しばらく利用がないときに知らせる",
+  "profileLocationUpdate": "位置情報を更新",
+  "profileLocationUpdated": "位置情報を更新しました",
+  "profileLocationFailed": "位置情報を取得できませんでした",
+  "profileLocationUnknown": "位置情報が未設定です"
 }

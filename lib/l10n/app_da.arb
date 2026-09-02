@@ -858,5 +858,9 @@
   "notifPromotionsPush": "Tilbud",
   "notifPromotionsPushSubtitle": "Nyheder og tilbud på denne enhed",
   "notifRemindersPush": "Påmindelser",
-  "notifRemindersPushSubtitle": "Giv mig et puf, når jeg har været væk et stykke tid"
+  "notifRemindersPushSubtitle": "Giv mig et puf, når jeg har været væk et stykke tid",
+  "profileLocationUpdate": "Opdater placering",
+  "profileLocationUpdated": "Placering opdateret",
+  "profileLocationFailed": "Kunne ikke finde din placering",
+  "profileLocationUnknown": "Placering ikke angivet"
 }

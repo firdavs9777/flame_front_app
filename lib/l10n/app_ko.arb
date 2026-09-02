@@ -609,5 +609,9 @@
   "notifPromotionsPush": "프로모션",
   "notifPromotionsPushSubtitle": "이 기기에서 소식과 혜택 받기",
   "notifRemindersPush": "리마인더",
-  "notifRemindersPushSubtitle": "한동안 접속하지 않으면 알려주기"
+  "notifRemindersPushSubtitle": "한동안 접속하지 않으면 알려주기",
+  "profileLocationUpdate": "위치 업데이트",
+  "profileLocationUpdated": "위치가 업데이트되었습니다",
+  "profileLocationFailed": "위치를 가져올 수 없습니다",
+  "profileLocationUnknown": "위치가 설정되지 않음"
 }

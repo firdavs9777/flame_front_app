@@ -858,5 +858,9 @@
   "notifPromotionsPush": "Tilbud",
   "notifPromotionsPushSubtitle": "Nyheter og tilbud på denne enheten",
   "notifRemindersPush": "Påminnelser",
-  "notifRemindersPushSubtitle": "Gi meg et dytt når jeg har vært borte en stund"
+  "notifRemindersPushSubtitle": "Gi meg et dytt når jeg har vært borte en stund",
+  "profileLocationUpdate": "Oppdater posisjon",
+  "profileLocationUpdated": "Posisjon oppdatert",
+  "profileLocationFailed": "Fant ikke posisjonen din",
+  "profileLocationUnknown": "Posisjon er ikke angitt"
 }

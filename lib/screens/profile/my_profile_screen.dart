@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flame/providers/location_provider.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/theme/app_tokens.dart';
@@ -25,6 +26,34 @@ class MyProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
+  bool _refreshingLocation = false;
+
+  /// User-initiated location refresh.
+  ///
+  /// Uses refreshNow rather than refresh: the throttle and the
+  /// do-not-ask-again-after-a-denial rule both exist to stop the app nagging,
+  /// and neither applies to someone who has just tapped the button. Tapping it
+  /// and having nothing happen would read as broken.
+  Future<void> _refreshLocation(BuildContext context) async {
+    if (_refreshingLocation) return;
+    setState(() => _refreshingLocation = true);
+
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+
+    final ok = await ref.read(locationRefresherProvider).refreshNow();
+    // Re-read the profile so the new city appears without leaving the screen.
+    if (ok) await ref.read(currentUserProvider.notifier).loadUser();
+
+    if (!mounted) return;
+    setState(() => _refreshingLocation = false);
+    messenger.showSnackBar(SnackBar(
+      content: Text(
+        ok ? l10n.profileLocationUpdated : l10n.profileLocationFailed,
+      ),
+    ));
+  }
+
   bool _initialized = false;
 
   @override
@@ -174,9 +203,33 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  user.location,
-                  style: TextStyle(fontSize: 16, color: context.secondaryText),
+                // The location line, with the means to fix it beside it.
+                //
+                // Until place names were stored this read "Unknown" for every
+                // user, permanently — the model's fallback for a city the
+                // server never populated. It is now real, which is also why it
+                // needs a way to be corrected: a city resolved once in another
+                // town is worse than no city.
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        user.location == 'Unknown'
+                            ? context.l10n.profileLocationUnknown
+                            : user.location,
+                        key: const Key('profile_location'),
+                        style: TextStyle(
+                            fontSize: 16, color: context.secondaryText),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    _LocationRefreshButton(
+                      onRefresh: () => _refreshLocation(context),
+                    ),
+                  ],
                 ),
                 if (user.isPremiumActive) ...[
                   const SizedBox(height: 10),
@@ -539,6 +592,36 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
         ],
+      ),
+    );
+  }
+}
+
+
+/// The refresh affordance beside the location line.
+///
+/// A quiet icon rather than a labelled button: this sits under someone's name
+/// on their own profile, and the common case is that the city is already
+/// right. It should be findable, not prominent.
+class _LocationRefreshButton extends StatelessWidget {
+  const _LocationRefreshButton({required this.onRefresh});
+
+  final Future<void> Function() onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      key: const Key('profile_refresh_location'),
+      onPressed: onRefresh,
+      iconSize: 18,
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints(),
+      padding: const EdgeInsets.all(4),
+      tooltip: context.l10n.profileLocationUpdate,
+      icon: Icon(
+        Icons.my_location,
+        size: 18,
+        color: context.secondaryText,
       ),
     );
   }
