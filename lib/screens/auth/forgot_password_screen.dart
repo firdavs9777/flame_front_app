@@ -262,7 +262,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     final success = await ref
         .read(authProvider.notifier)
-        .forgotPassword(_emailController.text.trim());
+        .forgotPassword(normalizeEmail(_emailController.text));
     if (!mounted) return;
 
     if (success) setState(() => _emailSent = true);
@@ -273,7 +273,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     setState(() => _resetting = true);
 
     final result = await AuthService().resetPassword(
-      email: _emailController.text.trim(),
+      email: normalizeEmail(_emailController.text),
       code: _codeController.text.trim(),
       password: _newPasswordController.text,
     );

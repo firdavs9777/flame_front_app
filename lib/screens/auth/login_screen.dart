@@ -249,7 +249,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
       ref.read(authProvider.notifier).login(
-            _emailController.text.trim(),
+            normalizeEmail(_emailController.text),
             _passwordController.text,
           );
     }

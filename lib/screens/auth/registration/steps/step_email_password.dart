@@ -283,7 +283,7 @@ class _StepEmailPasswordState extends ConsumerState<StepEmailPassword> {
     if (!_agreedToTerms || _checking) return;
     if (!_formKey.currentState!.validate()) return;
 
-    final email = _emailController.text.trim();
+    final email = normalizeEmail(_emailController.text);
     setState(() {
       _checking = true;
       _emailAvailabilityError = null;
