@@ -23,449 +23,708 @@
 - Ranking weights must always sum to exactly 1.0.
 - Unknown language data scores **0.50 (neutral)** — never 0, and never below a declared-but-poor match.
 
-## Prior art in BananaTalk, and what we take from it
+## Prior art in BananaTalk — corrected after reading the real app
 
-The sibling product already solved the vocabulary problem. What exists:
+An earlier draft of this plan was written against a stale copy of
+`moment_filter_model.dart` found in `~/Downloads`. The actual app at
+`~/Projects/BananaTalk/bananatalk_app` is considerably more developed, and it
+overturns two recommendations that draft made. Both corrections are recorded
+here so nobody re-derives the wrong conclusion from the wrong file.
 
-| Asset | Verdict |
+### What the real app does
+
+| File | What it establishes |
 |---|---|
-| `_data/languages.json` — **182 languages with `code`, `name`, `nativeName`** | **USE IT.** `nativeName` is exactly the endonym this design needs, and it is present and correct for all 40 shortlisted codes. Hand-writing 한국어 and العربية invites a typo nobody would catch. |
-| `GET /languages` (BananaTalk route) | **Do NOT call.** Reasoning below. |
-| `utils/languageCodes.js` name↔ISO map | Not needed — Flame stores codes from the start, so it has no legacy names to normalise. |
-| Flutter app's 16-language list with flag emoji | Structure worth copying; the flags are not. |
+| `lib/providers/languages_provider.dart` | `GET /languages` (127+ entries) is the source of truth, resolved **network → persisted cache → small hardcoded fallback** |
+| `lib/widgets/language_selection/language_picker_screen.dart` | A full-screen picker: search field, "Recommended" section, alphabetical list, A–Z index past 20 results |
+| `lib/models/language_model.dart` | `{id, code, name, nativeName, flag}` — flag prefers a client map, falls back to the backend's, then 🌐 |
+| `lib/utils/language_flags.dart` | Flag map with **regional variants** (`en-gb`, `en-us`, `es-mx`, `ar-eg`, `ar-lv`) and reasoning in comments |
 
-**Why the catalogue is copied, not fetched.**
+### Correction 1 — flags are fine; my objection was based on the stale file
 
-`GET /languages` is live and would be a single source of truth. It is still the
-wrong choice here:
+The draft said "no flag emoji" because the Downloads copy mapped English to 🇺🇸.
+**The real map uses 🇬🇧 for `en`**, carries regional variants so `en-us` and
+`en-gb` are distinct, documents contested choices in comments (Levantine Arabic
+→ 🇱🇧 as "recognized media standard for a dialect spanning LB/SY/JO/PS"), and
+falls back to **🌐** rather than guessing.
 
-- `CLAUDE.md` states flame's isolation as a principle, and this work is under a
-  standing instruction to touch nothing outside `flame/`.
-- It is **static data**. Fetching it adds a network round trip and a failure
-  mode to the registration screen App Review just rejected — a slow or failed
-  call leaves the picker empty and the premise invisible.
-- A change to BananaTalk's route or response shape would break Flame's signup,
-  which is precisely the coupling `CLAUDE.md` warns about.
+That is about as carefully as flags-for-languages can be done. **Adopt it**, and
+mirror the map rather than inventing one — consistency across the two products
+is worth more than my abstract objection, and 🌐 covers the cases that have no
+defensible flag.
 
-The *data* is the shared source of truth; the *runtime dependency* is not.
-Task 1 generates the Dart catalogue from that JSON and records where to
-re-derive it.
+### Correction 2 — fetch with a fallback, don't ship a frozen list
 
-**Why not flag emoji**, despite the BananaTalk app using them:
+The draft said "copy the data, don't call the API", on the grounds that a
+network call would add a failure mode to the registration screen App Review
+rejected. **`languages_provider.dart` already solves that**, and its resolution
+order is the answer:
 
-Their list maps English to 🇺🇸 and Spanish to 🇪🇸. Flags mark countries, not
-languages — 🇺🇸 for English erases every other English-speaking country, 🇪🇸
-for Spanish erases Latin America, and Swahili, Arabic and Tagalog have no
-defensible single flag. On an app whose premise is meeting people from
-elsewhere, that is a poor first impression. The endonym carries the meaning
-alone.
+1. network fetch — result persisted for offline
+2. persisted cache from a previous session
+3. `kLanguageCatalogFallback` — a deliberately small hardcoded list
 
-Their fallback **is** worth copying: `getLanguageName` degrades to the
-uppercased code rather than throwing — the same instinct as `endonymFor`
-returning the raw code.
+The picker can never be empty, so the objection does not survive. This is the
+better pattern and Flame should use it.
+
+**But Flame serves its own catalogue.** It fetches
+`/flamebackend/v1/languages`, not BananaTalk's `/api/v1/languages`. `CLAUDE.md`
+states flame's isolation as a principle and this work is under a standing
+instruction to touch nothing outside `flame/`; a shared runtime route would
+couple signup to another product's release cycle. Same data, same three-tier
+pattern, own endpoint.
+
+### Correction 3 — a picker screen, not a chip grid
+
+The draft put forty language chips inline in registration step 4. With 127+
+languages that does not scale, and it is also *worse* for the friction concern
+that shaped the design: forty chips is a wall, whereas one tappable row reading
+"English, 한국어" is barely an addition to the step at all.
+
+Mirror `language_picker_screen.dart` — search, Recommended, alphabetical.
+Recommended seeds from the same ten codes their app uses
+(`en ko ja zh es fr de it pt ru`), plus the device locale.
 
 ---
 
-### Task 1: Language catalogue (app)
+### Task 1: Language model, flags and offline fallback
 
 **Files:**
-- Create: `lib/core/languages/language_catalogue.dart`
-- Test: `test/core/languages/language_catalogue_test.dart`
+- Create: `lib/core/languages/language.dart`
+- Create: `lib/core/languages/language_flags.dart`
+- Create: `lib/core/languages/language_fallback.dart`
+- Test: `test/core/languages/language_test.dart`
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `class Language { final String code; final String endonym; }`, `const List<Language> kLanguages`, `Language? languageForCode(String code)`, `String endonymFor(String code)`.
+- Produces: `class Language {String code; String name; String nativeName; String flag;}`, `Language.fromJson`, `LanguageFlags.getFlag(String)`, `kLanguageFallback` (List<Language>), `kRecommendedCodes` (List<String>).
 
 - [ ] **Step 1: Write the failing test**
 
 ```dart
-// test/core/languages/language_catalogue_test.dart
+// test/core/languages/language_test.dart
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flame/core/languages/language_catalogue.dart';
+import 'package:flame/core/languages/language.dart';
+import 'package:flame/core/languages/language_fallback.dart';
+import 'package:flame/core/languages/language_flags.dart';
 
 void main() {
-  test('every code is a lowercase ISO 639-1 pair', () {
-    for (final l in kLanguages) {
-      expect(l.code, matches(RegExp(r'^[a-z]{2}$')),
-          reason: '"${l.code}" is not an ISO 639-1 code');
-    }
+  group('Language.fromJson', () {
+    test('parses the GET /languages shape', () {
+      final l = Language.fromJson({
+        'code': 'ko', 'name': 'Korean', 'nativeName': '한국어',
+      });
+
+      expect(l.code, 'ko');
+      expect(l.name, 'Korean');
+      expect(l.nativeName, '한국어');
+    });
+
+    test('falls back to the English name when nativeName is missing', () {
+      // The backend has entries with an empty nativeName. A blank label in a
+      // picker is worse than an English one.
+      final l = Language.fromJson({'code': 'xx', 'name': 'Example'});
+      expect(l.nativeName, 'Example');
+    });
+
+    test('a malformed entry throws rather than becoming a blank row', () {
+      expect(() => Language.fromJson({'name': 'No code'}), throwsA(anything));
+    });
   });
 
-  test('codes are unique', () {
-    final codes = kLanguages.map((l) => l.code).toList();
-    expect(codes.toSet().length, codes.length);
+  group('flags', () {
+    test('English is 🇬🇧, matching the BananaTalk map', () {
+      // NOT 🇺🇸. Mirrored deliberately so the two products agree.
+      expect(LanguageFlags.getFlag('en'), '🇬🇧');
+    });
+
+    test('regional variants resolve before the base language', () {
+      expect(LanguageFlags.getFlag('en-us'), '🇺🇸');
+      expect(LanguageFlags.getFlag('en-gb'), '🇬🇧');
+    });
+
+    test('an unknown region falls back to the base language', () {
+      expect(LanguageFlags.getFlag('es-cl'), LanguageFlags.getFlag('es'));
+    });
+
+    test('anything unrecognised is the globe, never a wrong flag', () {
+      expect(LanguageFlags.getFlag('zz'), '🌐');
+      expect(LanguageFlags.getFlag(''), '🌐');
+    });
   });
 
-  test('every language has a non-empty endonym', () {
-    for (final l in kLanguages) {
-      expect(l.endonym.trim(), isNotEmpty, reason: l.code);
-    }
-  });
+  group('offline fallback', () {
+    test('is small but never empty', () {
+      // The picker must work on a first-ever launch with no network. This is
+      // the floor, not the catalogue.
+      expect(kLanguageFallback, isNotEmpty);
+      expect(kLanguageFallback.length, lessThan(30));
+    });
 
-  test('endonyms are the language\'s OWN name, not English', () {
-    // The whole reason this catalogue needs no translation. If these were
-    // English names they would need 25 ARB translations each.
-    expect(endonymFor('ko'), '한국어');
-    expect(endonymFor('es'), 'Español');
-    expect(endonymFor('ja'), '日本語');
-    expect(endonymFor('ar'), 'العربية');
-    expect(endonymFor('en'), 'English');
-  });
+    test('every fallback entry has a code and a label', () {
+      for (final l in kLanguageFallback) {
+        expect(l.code, matches(RegExp(r'^[a-z]{2}$')));
+        expect(l.nativeName.trim(), isNotEmpty);
+      }
+    });
 
-  test('lookup finds a known code and refuses an unknown one', () {
-    expect(languageForCode('ko')?.endonym, '한국어');
-    expect(languageForCode('zz'), isNull);
-    expect(languageForCode(''), isNull);
-  });
-
-  test('endonymFor falls back to the raw code rather than throwing', () {
-    // A code stored by a newer client, or one dropped from the catalogue.
-    // Showing "xx" is bad; crashing a profile is worse.
-    expect(endonymFor('zz'), 'zz');
-  });
-
-  test('covers every language the app itself is translated into', () {
-    // Someone reading Flame in Croatian must be able to say they speak
-    // Croatian. Anything less is visibly incomplete.
-    for (final code in [
-      'en', 'ar', 'bn', 'ca', 'zh', 'hr', 'cs', 'da', 'nl', 'fi', 'fr', 'de',
-      'hi', 'id', 'it', 'ja', 'ko', 'nb', 'pt', 'ru', 'es', 'th', 'tr', 'ur',
-      'vi',
-    ]) {
-      expect(languageForCode(code), isNotNull,
-          reason: 'the app ships a $code locale but cannot declare it');
-    }
+    test('recommended codes are all present in the fallback', () {
+      // Otherwise an offline user sees a Recommended section with gaps.
+      for (final code in kRecommendedCodes) {
+        expect(kLanguageFallback.any((l) => l.code == code), isTrue,
+            reason: '$code is recommended but missing offline');
+      }
+    });
   });
 }
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `flutter test test/core/languages/language_catalogue_test.dart`
-Expected: FAIL — `Error: Couldn't resolve the package 'flame' ... language_catalogue.dart` (file does not exist).
+Run: `flutter test test/core/languages/language_test.dart`
+Expected: FAIL — `language.dart` does not exist.
 
-- [ ] **Step 3: Generate the catalogue from BananaTalk's language data**
+- [ ] **Step 3: Write the model**
 
-Do NOT hand-write the endonyms. Save the following as `tool/gen_languages.py`
-and run it — it derives every display name from `_data/languages.json`, whose
-`nativeName` column is already correct for all 40 shortlisted codes.
+```dart
+// lib/core/languages/language.dart
+import 'package:flutter/foundation.dart';
 
-```python
-import json, pathlib
+import 'package:flame/core/languages/language_flags.dart';
 
-SRC = '/Users/firdavsmutalipov/Projects/BananaTalk/backend/_data/languages.json'
+/// One language, as served by `GET /flamebackend/v1/languages`.
+///
+/// Mirrors BananaTalk's `models/language_model.dart` so the two products
+/// describe the same thing the same way.
+@immutable
+class Language {
+  const Language({
+    required this.code,
+    required this.name,
+    required this.nativeName,
+  });
 
-# Ordered by rough speaker count so common cases sit near the top of a picker.
-# Every locale the app itself ships is included: someone reading Flame in
-# Croatian must be able to say they speak Croatian.
-SHORTLIST = [
-    'en','zh','hi','es','ar','bn','pt','ru','ja','de',
-    'fr','ko','tr','vi','it','th','ur','id','pl','uk',
-    'nl','fa','ms','tl','sv','el','cs','ro','hu','he',
-    'da','fi','nb','sk','hr','sr','bg','ca','sw','ta',
-]
+  /// ISO 639-1, lowercase. The stored value, never translated — translating a
+  /// stored value breaks every record and every match at once.
+  final String code;
 
-by_code = {l['code']: l for l in json.load(open(SRC))}
-missing = [c for c in SHORTLIST if c not in by_code]
-assert not missing, f'not in BananaTalk data: {missing}'
+  /// The English name. Used for SEARCH, so someone can type "Korean" as well
+  /// as 한국어.
+  final String name;
 
-def endonym(code):
-    raw = by_code[code]['nativeName'].strip()
-    assert raw, f'{code} has no nativeName'
-    # Capitalise the first character. Their data is linguistically correct --
-    # Spanish does not capitalise "espanol" -- but a lowercase entry sitting
-    # beside "English" reads as a bug in a picker.
-    return raw[0].upper() + raw[1:]
+  /// The language's own name — what the picker and profiles display.
+  final String nativeName;
 
-entries = '\n'.join(f"  Language('{c}', '{endonym(c)}')," for c in SHORTLIST)
+  /// Country flag, or 🌐 when none is defensible.
+  String get flag => LanguageFlags.getFlag(code);
 
-DOC = (
-    "import 'package:flutter/foundation.dart';\n"
-    "\n"
-    "/// One language: a stable stored code and the name that language calls\n"
-    "/// itself.\n"
-    "///\n"
-    "/// The code is what `user.languagesSpoken` stores and what the backend\n"
-    "/// validates. ISO 639-1, lowercase, and NEVER translated -- translating a\n"
-    "/// stored value breaks every record and every match at once, the same\n"
-    "/// reasoning `interest_catalogue.dart` records about its own tokens.\n"
-    "///\n"
-    "/// The endonym is the language's own name, not an English one. That is\n"
-    "/// what makes this catalogue need no localisation: forty languages against\n"
-    "/// 25 locales would be a thousand ARB strings under arb_parity_test, all to\n"
-    "/// tell a Korean speaker what Korean is called in English.\n"
-    "///\n"
-    "/// NO FLAG EMOJI, unlike the BananaTalk picker. Flags mark countries, not\n"
-    "/// languages, and several of these have no defensible flag at all.\n"
-    "@immutable\n"
-    "class Language {\n"
-    "  const Language(this.code, this.endonym);\n"
-    "\n"
-    "  final String code;\n"
-    "  final String endonym;\n"
-    "\n"
-    "  @override\n"
-    "  bool operator ==(Object other) =>\n"
-    "      other is Language && other.code == code && other.endonym == endonym;\n"
-    "\n"
-    "  @override\n"
-    "  int get hashCode => Object.hash(code, endonym);\n"
-    "}\n"
-    "\n"
-    "/// The canonical vocabulary, mirrored in `flame/config/languages.js`. A\n"
-    "/// test in each repo asserts its own list matches the other's.\n"
-    "///\n"
-    "/// GENERATED by tool/gen_languages.py from BananaTalk's\n"
-    "/// _data/languages.json. Re-derive from there rather than editing an\n"
-    "/// endonym by hand.\n"
-    "const List<Language> kLanguages = [\n"
-)
+  factory Language.fromJson(Map<String, dynamic> json) {
+    final code = json['code'] as String?;
+    if (code == null || code.isEmpty) {
+      throw ArgumentError('language entry has no code: $json');
+    }
+    final name = (json['name'] as String?)?.trim() ?? code;
+    final native = (json['nativeName'] as String?)?.trim();
 
-TAIL = (
-    "];\n"
-    "\n"
-    "final Map<String, Language> _byCode = {\n"
-    "  for (final l in kLanguages) l.code: l,\n"
-    "};\n"
-    "\n"
-    "/// The catalogue entry for [code], or null when it is not one we know.\n"
-    "Language? languageForCode(String? code) {\n"
-    "  if (code == null || code.isEmpty) return null;\n"
-    "  return _byCode[code.toLowerCase()];\n"
-    "}\n"
-    "\n"
-    "/// The display name for [code], falling back to the code itself.\n"
-    "///\n"
-    "/// A fallback rather than a throw, mirroring BananaTalk's getLanguageName:\n"
-    "/// a code can arrive from a newer client, and rendering \"zz\" on a profile\n"
-    "/// is a blemish where crashing it is a bug.\n"
-    "String endonymFor(String code) => languageForCode(code)?.endonym ?? code;\n"
-)
+    return Language(
+      code: code.toLowerCase(),
+      name: name,
+      // An empty nativeName is real in the backend data. A blank row in a
+      // picker is worse than an English one.
+      nativeName: (native == null || native.isEmpty) ? name : native,
+    );
+  }
 
-out = pathlib.Path('lib/core/languages/language_catalogue.dart')
-out.parent.mkdir(parents=True, exist_ok=True)
-out.write_text(DOC + entries + '\n' + TAIL)
-print(f'generated {len(SHORTLIST)} languages')
+  @override
+  bool operator ==(Object other) => other is Language && other.code == code;
+
+  @override
+  int get hashCode => code.hashCode;
+}
 ```
 
-Run: `python3 tool/gen_languages.py`
-Expected: `generated 40 languages`
+- [ ] **Step 4: Mirror the flag map**
 
-- [ ] **Step 4: Run test to verify it passes**
+Copy `~/Projects/BananaTalk/bananatalk_app/lib/utils/language_flags.dart`'s
+`flags` map and `getFlag` resolution into
+`lib/core/languages/language_flags.dart`, keeping its comments. Do not retype
+it — copy the file and strip everything Flame does not use (`_nameToCode`, the
+exam helpers). Keep `getRecommendedCodes()` as `kRecommendedCodes`.
 
-Run: `flutter test test/core/languages/language_catalogue_test.dart`
-Expected: PASS, 7 tests.
+Header the file with:
 
-- [ ] **Step 5: Verify analyze is clean**
+```dart
+/// Flag emoji per language, MIRRORED from BananaTalk's
+/// lib/utils/language_flags.dart so the two products never disagree about
+/// what 한국어 looks like in a list.
+///
+/// Flags mark countries, not languages, which is a real objection — but this
+/// map handles it about as well as it can be: 🇬🇧 for `en` rather than 🇺🇸,
+/// regional variants so en-us and en-gb are distinct, reasoning recorded for
+/// the contested ones, and 🌐 rather than a guess for anything unresolved.
+```
 
-Run: `flutter analyze 2>&1 | grep -c "error •"`
-Expected: `0`
+- [ ] **Step 5: Write the offline fallback**
 
-- [ ] **Step 6: Commit**
+```dart
+// lib/core/languages/language_fallback.dart
+import 'package:flame/core/languages/language.dart';
+
+/// Shown when the catalogue cannot be fetched AND nothing was cached — a
+/// first-ever launch with no network.
+///
+/// Deliberately small. This is a floor so the picker is never empty, NOT the
+/// catalogue: the real list is 127+ entries from the server. Mirrors the size
+/// and intent of BananaTalk's kLanguageCatalogFallback.
+const List<Language> kLanguageFallback = [
+  Language(code: 'en', name: 'English', nativeName: 'English'),
+  Language(code: 'ko', name: 'Korean', nativeName: '한국어'),
+  Language(code: 'ja', name: 'Japanese', nativeName: '日本語'),
+  Language(code: 'zh', name: 'Chinese', nativeName: '中文'),
+  Language(code: 'es', name: 'Spanish', nativeName: 'Español'),
+  Language(code: 'fr', name: 'French', nativeName: 'Français'),
+  Language(code: 'de', name: 'German', nativeName: 'Deutsch'),
+  Language(code: 'it', name: 'Italian', nativeName: 'Italiano'),
+  Language(code: 'pt', name: 'Portuguese', nativeName: 'Português'),
+  Language(code: 'ru', name: 'Russian', nativeName: 'Русский'),
+  Language(code: 'ar', name: 'Arabic', nativeName: 'العربية'),
+  Language(code: 'hi', name: 'Hindi', nativeName: 'हिन्दी'),
+  Language(code: 'th', name: 'Thai', nativeName: 'ไทย'),
+  Language(code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt'),
+  Language(code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia'),
+  Language(code: 'tr', name: 'Turkish', nativeName: 'Türkçe'),
+  Language(code: 'nl', name: 'Dutch', nativeName: 'Nederlands'),
+];
+
+/// Surfaced above the alphabetical list in the picker. The same ten
+/// BananaTalk recommends, so a user of both apps sees a consistent shortlist.
+const List<String> kRecommendedCodes = [
+  'en', 'ko', 'ja', 'zh', 'es', 'fr', 'de', 'it', 'pt', 'ru',
+];
+```
+
+- [ ] **Step 6: Run test to verify it passes**
+
+Run: `flutter test test/core/languages/language_test.dart`
+Expected: PASS, 10 tests.
+
+- [ ] **Step 7: Verify analyze and commit**
+
+Run: `flutter analyze 2>&1 | grep -c "error •"` → `0`
 
 ```bash
-git add tool/gen_languages.py lib/core/languages/language_catalogue.dart test/core/languages/language_catalogue_test.dart
-git commit -m "feat(languages): the catalogue, named in each language's own words
+git add lib/core/languages test/core/languages/language_test.dart
+git commit -m "feat(languages): the model, mirrored from BananaTalk
 
-GENERATED from BananaTalk's _data/languages.json, which already carries a
-nativeName column for all 182 languages it knows, correct for every code we
-shortlist. Hand-writing those names invites a typo nobody would catch.
+Same shape, same flag map, same recommended ten, so the two products never
+disagree about what a language looks like in a list.
 
-Endonyms rather than translated names: forty languages against 25 locales
-would be a thousand ARB strings under arb_parity_test, all to tell a Korean
-speaker what Korean is called in English.
+Flags mark countries rather than languages, which is a real objection --
+but this map handles it about as well as it can be: 🇬🇧 for en rather than
+🇺🇸, regional variants so en-us and en-gb differ, reasoning recorded for
+contested cases, and 🌐 rather than a guess when nothing fits.
 
-Copied, not fetched. GET /languages exists on the BananaTalk side and would
-be a single source of truth, but this is static data -- calling it would add
-a network failure mode to the registration screen App Review just rejected,
-and couple flame to a route CLAUDE.md says to stay clear of.
-
-No flag emoji, unlike the BananaTalk picker: flags mark countries, not
-languages, and several of these have no defensible flag at all."
+The fallback list is a floor, not the catalogue: 17 entries so a
+first-ever launch with no network still has a working picker. The real
+list is 127+ from the server."
 ```
 
 ---
 
-### Task 2: Language catalogue (backend) + cross-repo parity
+### Task 2: Flame's own /languages endpoint, and the three-tier provider
 
 **Files:**
-- Create: `/Users/firdavsmutalipov/Projects/BananaTalk/backend/flame/config/languages.js`
-- Create: `/Users/firdavsmutalipov/Projects/BananaTalk/backend/flame/__tests__/languageCatalogue.test.js`
-- Create: `test/core/languages/language_parity_test.dart` (app repo)
+- Create: `flame/config/languages.js` (backend)
+- Create: `flame/routes/languages.js` (backend)
+- Modify: `flame/index.js` (register the route)
+- Create: `flame/__tests__/languagesRoute.test.js` (backend)
+- Create: `lib/providers/languages_provider.dart` (app)
+- Test: `test/providers/languages_provider_test.dart` (app)
 
 **Interfaces:**
-- Consumes: `kLanguages` from Task 1.
-- Produces: `LANGUAGE_CODES` (frozen array of strings), `isLanguageCode(code)` from `flame/config/languages.js`.
+- Consumes: `Language`, `kLanguageFallback` from Task 1.
+- Produces: `GET /flamebackend/v1/languages` → `{success, data: [{code, name, nativeName}]}`; `languageCatalogProvider` (FutureProvider<List<Language>>); `isLanguageCode(code)` for Task 3's validation.
 
-- [ ] **Step 1: Write the failing backend test**
+**Flame serves its own catalogue.** Not BananaTalk's `/api/v1/languages`:
+`CLAUDE.md` states flame's isolation as a principle, and coupling signup to
+another product's release cycle is exactly what it warns about. Same data, own
+endpoint.
+
+- [ ] **Step 1: Generate the backend catalogue from BananaTalk's data**
+
+Save as `flame/scripts/gen-languages.js` and run it once. It derives the list
+from `_data/languages.json` — 182 entries with a `nativeName` column — rather
+than anyone retyping 한국어 and العربية by hand.
 
 ```javascript
-// flame/__tests__/languageCatalogue.test.js
-const test = require('node:test');
-const assert = require('node:assert/strict');
+// flame/scripts/gen-languages.js
+//
+// Regenerates flame/config/languages.js from the shared language data.
+// Run manually; the output is committed.
 const fs = require('fs');
 const path = require('path');
 
-const { LANGUAGE_CODES, isLanguageCode } = require('../config/languages');
+const SRC = path.join(__dirname, '../../_data/languages.json');
+const OUT = path.join(__dirname, '../config/languages.js');
 
-test('every code is a lowercase ISO 639-1 pair', () => {
-  for (const code of LANGUAGE_CODES) {
-    assert.match(code, /^[a-z]{2}$/, `"${code}" is not an ISO 639-1 code`);
-  }
-});
+const all = JSON.parse(fs.readFileSync(SRC, 'utf8'));
 
-test('codes are unique', () => {
-  assert.equal(new Set(LANGUAGE_CODES).size, LANGUAGE_CODES.length);
-});
+const entries = all
+  .filter((l) => /^[a-z]{2}$/.test(l.code))
+  .map((l) => ({
+    code: l.code,
+    name: String(l.name || l.code).trim(),
+    // Empty nativeName is real in this data. Falling back to the English name
+    // beats a blank row in a picker.
+    nativeName: String(l.nativeName || l.name || l.code).trim(),
+  }))
+  .sort((a, b) => a.name.localeCompare(b.name));
 
-test('isLanguageCode accepts a known code and refuses anything else', () => {
-  assert.equal(isLanguageCode('ko'), true);
-  assert.equal(isLanguageCode('KO'), true, 'case is normalised');
-  assert.equal(isLanguageCode('zz'), false);
-  assert.equal(isLanguageCode(''), false);
-  assert.equal(isLanguageCode(null), false);
-  assert.equal(isLanguageCode(123), false);
-});
+const body = entries
+  .map((e) => `  { code: '${e.code}', name: ${JSON.stringify(e.name)}, nativeName: ${JSON.stringify(e.nativeName)} },`)
+  .join('\n');
 
-test('the list matches the app catalogue exactly', () => {
-  // Two hardcoded lists that silently diverge is how a stored value becomes
-  // unmatchable. The interest catalogues guard themselves the same way.
-  const appPath = path.join(
-    process.env.FLAME_APP_PATH
-      || '/Users/firdavsmutalipov/Desktop/Flame/flame_front_app',
-    'lib/core/languages/language_catalogue.dart',
-  );
-
-  if (!fs.existsSync(appPath)) {
-    // The app repo is not always checked out beside this one. Skip rather
-    // than fail: a missing sibling is an environment fact, not a defect.
-    console.log('app catalogue not found, skipping parity check');
-    return;
-  }
-
-  const source = fs.readFileSync(appPath, 'utf8');
-  const appCodes = [...source.matchAll(/Language\('([a-z]{2})',/g)]
-    .map((m) => m[1]);
-
-  assert.deepEqual(LANGUAGE_CODES, appCodes,
-    'flame/config/languages.js and language_catalogue.dart have diverged');
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `cd /Users/firdavsmutalipov/Projects/BananaTalk/backend && node --test flame/__tests__/languageCatalogue.test.js`
-Expected: FAIL — `Cannot find module '../config/languages'`.
-
-- [ ] **Step 3: Write minimal implementation**
-
-```javascript
-// flame/config/languages.js
+fs.writeFileSync(OUT, `// GENERATED by flame/scripts/gen-languages.js from _data/languages.json.
+// Do not edit by hand -- re-run the script.
 //
-// The canonical language vocabulary.
-//
-// These codes are what `user.languagesSpoken` and `user.languagesLearning`
-// store. They are ISO 639-1, lowercase, and deliberately stable: the app shows
-// each language under its own endonym (한국어, not "Korean") and never
-// translates the code, so localisation cannot break a match.
-//
-// The app holds the same list in lib/core/languages/language_catalogue.dart,
-// and a test in each repo asserts its own list matches the other's — the same
-// guard the interest catalogues use, for the same reason.
-//
-// Order matches the app's, because the app's order is what a picker shows.
-const LANGUAGE_CODES = Object.freeze([
-  'en', 'zh', 'hi', 'es', 'ar', 'bn', 'pt', 'ru', 'ja', 'de',
-  'fr', 'ko', 'tr', 'vi', 'it', 'th', 'ur', 'id', 'pl', 'uk',
-  'nl', 'fa', 'ms', 'tl', 'sv', 'el', 'cs', 'ro', 'hu', 'he',
-  'da', 'fi', 'nb', 'sk', 'hr', 'sr', 'bg', 'ca', 'sw', 'ta',
-]);
+// Flame serves this itself at GET /flamebackend/v1/languages rather than
+// pointing the app at BananaTalk's /api/v1/languages. CLAUDE.md states
+// flame's isolation as a principle, and coupling signup to another product's
+// release cycle is what it warns about. Same data, own endpoint.
+const LANGUAGES = Object.freeze([
+${body}
+].map(Object.freeze));
 
+const LANGUAGE_CODES = Object.freeze(LANGUAGES.map((l) => l.code));
 const _set = new Set(LANGUAGE_CODES);
 
-/** Whether `code` is one this app knows. Case-insensitive; anything non-string is false. */
+/** Whether \`code\` is one this app knows. Case-insensitive. */
 function isLanguageCode(code) {
   if (typeof code !== 'string') return false;
   return _set.has(code.toLowerCase());
 }
 
-module.exports = { LANGUAGE_CODES, isLanguageCode };
+module.exports = { LANGUAGES, LANGUAGE_CODES, isLanguageCode };
+`);
+
+console.log(`generated ${entries.length} languages`);
 ```
 
-- [ ] **Step 4: Run backend test to verify it passes**
+Run: `cd ~/Projects/BananaTalk/backend && node flame/scripts/gen-languages.js`
+Expected: `generated 180+ languages` (182 minus any non-two-letter codes).
 
-Run: `cd /Users/firdavsmutalipov/Projects/BananaTalk/backend && node --test flame/__tests__/languageCatalogue.test.js`
-Expected: PASS, 4 tests.
+- [ ] **Step 2: Write the failing route test**
 
-- [ ] **Step 5: Write the app-side parity test**
+```javascript
+// flame/__tests__/languagesRoute.test.js
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const request = require('supertest');
+
+process.env.FLAME_SPACES_BUCKET = 't';
+process.env.SPACES_ENDPOINT = 'e';
+process.env.DO_SPACES_KEY = 'k';
+process.env.DO_SPACES_SECRET = 's';
+
+const { buildApp } = require('./helpers/app');
+const { isLanguageCode, LANGUAGES } = require('../config/languages');
+
+const BASE = '/flamebackend/v1';
+
+test('GET /languages returns the catalogue without authentication', async () => {
+  // The picker is on the REGISTRATION screen — there is no token yet.
+  const res = await request(buildApp()).get(`${BASE}/languages`).expect(200);
+
+  assert.equal(res.body.success, true);
+  assert.ok(Array.isArray(res.body.data));
+  assert.ok(res.body.data.length > 100, 'the catalogue, not the fallback');
+});
+
+test('every entry carries a code, a name and a nativeName', async () => {
+  const res = await request(buildApp()).get(`${BASE}/languages`).expect(200);
+
+  for (const l of res.body.data) {
+    assert.match(l.code, /^[a-z]{2}$/);
+    assert.ok(l.name && l.name.length, `${l.code} has no name`);
+    assert.ok(l.nativeName && l.nativeName.length, `${l.code} has no nativeName`);
+  }
+});
+
+test('isLanguageCode agrees with the served list', () => {
+  for (const l of LANGUAGES) assert.equal(isLanguageCode(l.code), true);
+  assert.equal(isLanguageCode('zz'), false);
+  assert.equal(isLanguageCode(null), false);
+});
+```
+
+- [ ] **Step 3: Run test to verify it fails**
+
+Run: `cd ~/Projects/BananaTalk/backend && node --test flame/__tests__/languagesRoute.test.js`
+Expected: FAIL — 404, the route does not exist.
+
+- [ ] **Step 4: Add the route**
+
+```javascript
+// flame/routes/languages.js
+const express = require('express');
+const { LANGUAGES } = require('../config/languages');
+
+const router = express.Router();
+
+// PUBLIC, deliberately: the language picker is on the registration screen, so
+// there is no token yet. The payload is a static, non-sensitive list.
+router.get('/', (_req, res) => {
+  res.json({ success: true, data: LANGUAGES });
+});
+
+module.exports = router;
+```
+
+In `flame/index.js`, beside the other `router.use` lines:
+
+```javascript
+router.use('/languages', require('./routes/languages'));
+```
+
+- [ ] **Step 5: Run test to verify it passes**
+
+Run: `node --test flame/__tests__/languagesRoute.test.js`
+Expected: PASS, 3 tests.
+
+- [ ] **Step 6: Verify blast radius and commit the backend**
+
+```bash
+git status --short | awk '{print $2}' | grep -v '^flame/'   # must print nothing
+git add flame/config/languages.js flame/routes/languages.js flame/index.js \
+        flame/scripts/gen-languages.js flame/__tests__/languagesRoute.test.js
+git commit -m "feat(flame): serve the language catalogue
+
+Generated from the shared _data/languages.json rather than retyped, and
+served from flame's own route rather than pointing the app at BananaTalk's
+/api/v1/languages -- CLAUDE.md states flame's isolation as a principle, and
+coupling signup to another product's release cycle is what it warns about.
+
+Public, deliberately: the picker sits on the registration screen, so there
+is no token yet, and the payload is a static non-sensitive list."
+```
+
+- [ ] **Step 7: Write the failing provider test**
 
 ```dart
-// test/core/languages/language_parity_test.dart
-import 'dart:io';
-
+// test/providers/languages_provider_test.dart
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:flame/core/languages/language_catalogue.dart';
+import 'package:flame/core/languages/language_fallback.dart';
+import 'package:flame/providers/languages_provider.dart';
 
-/// The other half of the guard in flame/__tests__/languageCatalogue.test.js.
-/// Each repo checks itself against the other, so whichever one you are working
-/// in tells you when they drift.
 void main() {
-  test('the catalogue matches the backend list exactly', () {
-    const backendPath =
-        '/Users/firdavsmutalipov/Projects/BananaTalk/backend/flame/config/languages.js';
-    final file = File(backendPath);
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    if (!file.existsSync()) {
-      // The backend is not always checked out beside this repo. An absent
-      // sibling is an environment fact, not a defect.
-      // ignore: avoid_print
-      print('backend catalogue not found at $backendPath, skipping');
-      return;
-    }
+  setUp(() => SharedPreferences.setMockInitialValues({}));
 
-    final source = file.readAsStringSync();
-    final block = RegExp(r'LANGUAGE_CODES = Object\.freeze\(\[(.*?)\]\)',
-            dotAll: true)
-        .firstMatch(source);
-    expect(block, isNotNull, reason: 'could not find LANGUAGE_CODES');
+  test('parses a GET /languages body', () {
+    final list = parseLanguageCatalog(
+      '{"success":true,"data":[{"code":"ko","name":"Korean","nativeName":"한국어"}]}',
+    );
 
-    final backendCodes = RegExp(r"'([a-z]{2})'")
-        .allMatches(block!.group(1)!)
-        .map((m) => m.group(1)!)
-        .toList();
+    expect(list, hasLength(1));
+    expect(list.first.nativeName, '한국어');
+  });
 
-    expect(kLanguages.map((l) => l.code).toList(), backendCodes,
-        reason: 'language_catalogue.dart and flame/config/languages.js '
-            'have diverged');
+  test('malformed JSON yields an empty list rather than throwing', () {
+    // Resolution falls through to the cache, then the fallback. A throw here
+    // would take the registration screen with it.
+    expect(parseLanguageCatalog('not json'), isEmpty);
+    expect(parseLanguageCatalog('{"data":"wrong shape"}'), isEmpty);
+    expect(parseLanguageCatalog(''), isEmpty);
+  });
+
+  test('a malformed ENTRY is skipped, not fatal to the whole catalogue', () {
+    final list = parseLanguageCatalog(
+      '{"data":[{"name":"no code"},{"code":"ko","name":"Korean","nativeName":"한국어"}]}',
+    );
+
+    expect(list, hasLength(1), reason: 'one bad row must not lose the rest');
+    expect(list.first.code, 'ko');
+  });
+
+  test('resolveCatalog prefers the network result and caches it', () async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final list = await resolveCatalog(
+      fetch: () async =>
+          '{"data":[{"code":"ja","name":"Japanese","nativeName":"日本語"}]}',
+      prefs: prefs,
+    );
+
+    expect(list.single.code, 'ja');
+    expect(prefs.getString(kLanguagesCacheKey), isNotNull,
+        reason: 'persisted so the next launch works offline');
+  });
+
+  test('falls back to the cache when the network fails', () async {
+    SharedPreferences.setMockInitialValues({
+      kLanguagesCacheKey:
+          '{"data":[{"code":"ko","name":"Korean","nativeName":"한국어"}]}',
+    });
+    final prefs = await SharedPreferences.getInstance();
+
+    final list = await resolveCatalog(
+      fetch: () async => throw Exception('offline'),
+      prefs: prefs,
+    );
+
+    expect(list.single.code, 'ko');
+  });
+
+  test('falls back to the bundled list when there is no cache either', () async {
+    // First-ever launch, offline. The picker must still work — it is on the
+    // registration screen App Review rejected, and an empty one is worse
+    // than a short one.
+    final prefs = await SharedPreferences.getInstance();
+
+    final list = await resolveCatalog(
+      fetch: () async => throw Exception('offline'),
+      prefs: prefs,
+    );
+
+    expect(list, kLanguageFallback);
+  });
+
+  test('an empty network response does not overwrite a good cache', () async {
+    SharedPreferences.setMockInitialValues({
+      kLanguagesCacheKey:
+          '{"data":[{"code":"ko","name":"Korean","nativeName":"한국어"}]}',
+    });
+    final prefs = await SharedPreferences.getInstance();
+
+    final list = await resolveCatalog(fetch: () async => '{"data":[]}', prefs: prefs);
+
+    expect(list.single.code, 'ko',
+        reason: 'a 200 with nothing in it is a failure, not an answer');
   });
 }
 ```
 
-- [ ] **Step 6: Run the app parity test**
+- [ ] **Step 8: Run test to verify it fails**
 
-Run: `flutter test test/core/languages/language_parity_test.dart`
-Expected: PASS, 1 test.
+Run: `flutter test test/providers/languages_provider_test.dart`
+Expected: FAIL — `languages_provider.dart` does not exist.
 
-- [ ] **Step 7: Verify backend blast radius, then commit both repos**
+- [ ] **Step 9: Write the provider**
+
+```dart
+// lib/providers/languages_provider.dart
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:flame/core/languages/language.dart';
+import 'package:flame/core/languages/language_fallback.dart';
+import 'package:flame/services/api_client.dart';
+
+const String kLanguagesCacheKey = 'flame_languages_catalog_v1';
+
+/// The language catalogue — the ONE source for every picker.
+///
+/// Resolution order, mirroring BananaTalk's languages_provider.dart:
+///
+///   1. network fetch, persisted for next time
+///   2. the persisted copy from a previous session
+///   3. [kLanguageFallback], a small bundled list
+///
+/// The layering is what makes it safe to put a fetch behind the REGISTRATION
+/// screen — the screen App Review rejected. There is no path where the picker
+/// is empty: worst case it is short.
+List<Language> parseLanguageCatalog(String body) {
+  try {
+    final decoded = json.decode(body);
+    final data = decoded is Map<String, dynamic>
+        ? (decoded['data'] as List? ?? const [])
+        : (decoded is List ? decoded : const []);
+
+    final out = <Language>[];
+    for (final entry in data) {
+      if (entry is! Map<String, dynamic>) continue;
+      try {
+        out.add(Language.fromJson(entry));
+      } catch (_) {
+        // One malformed row must not cost the other 180.
+      }
+    }
+    return out;
+  } catch (_) {
+    return const [];
+  }
+}
+
+/// Resolves the catalogue. [fetch] and [prefs] are injected so the whole
+/// ladder is testable without a network or a platform channel.
+Future<List<Language>> resolveCatalog({
+  required Future<String> Function() fetch,
+  required SharedPreferences prefs,
+}) async {
+  try {
+    final body = await fetch();
+    final fresh = parseLanguageCatalog(body);
+    if (fresh.isNotEmpty) {
+      await prefs.setString(kLanguagesCacheKey, body);
+      return fresh;
+    }
+    // A 200 carrying nothing is a failure, not an answer — fall through
+    // rather than overwrite a good cache with emptiness.
+  } catch (error) {
+    debugPrint('languages: fetch failed — $error');
+  }
+
+  final cached = prefs.getString(kLanguagesCacheKey);
+  if (cached != null) {
+    final list = parseLanguageCatalog(cached);
+    if (list.isNotEmpty) return list;
+  }
+
+  return kLanguageFallback;
+}
+
+final languageCatalogProvider = FutureProvider<List<Language>>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  return resolveCatalog(
+    prefs: prefs,
+    fetch: () async {
+      final res = await ApiClient().get('/languages');
+      if (!res.success) throw Exception(res.error ?? 'languages fetch failed');
+      return json.encode({'data': res.data});
+    },
+  );
+});
+```
+
+- [ ] **Step 10: Run test to verify it passes**
+
+Run: `flutter test test/providers/languages_provider_test.dart`
+Expected: PASS, 7 tests.
+
+- [ ] **Step 11: Full suite, analyze, commit**
 
 ```bash
-cd /Users/firdavsmutalipov/Projects/BananaTalk/backend
-git status --short | awk '{print $2}' | grep -v '^flame/'   # must print nothing
-git add flame/config/languages.js flame/__tests__/languageCatalogue.test.js
-git commit -m "feat(flame): the language vocabulary, guarded against drift
+flutter test 2>&1 | tail -3
+flutter analyze 2>&1 | grep -c "error •"   # 0
 
-Codes only — the app renders each language under its own endonym, so the
-server never needs a display name and never needs translating.
+git add lib/providers/languages_provider.dart test/providers/languages_provider_test.dart
+git commit -m "feat(languages): fetch the catalogue, with two floors under it
 
-Each repo tests itself against the other's list. Two hardcoded lists that
-silently diverge is how a stored value becomes unmatchable, which is the
-lesson the interest catalogues already record."
+Network, then the persisted copy, then a bundled list -- the same ladder
+BananaTalk's languages_provider uses, and the reason it is safe to put a
+fetch behind the registration screen App Review rejected. There is no path
+where the picker is empty; worst case it is short.
 
-cd /Users/firdavsmutalipov/Desktop/Flame/flame_front_app
-git add test/core/languages/language_parity_test.dart
-git commit -m "test(languages): assert the app catalogue matches the backend's"
+A 200 carrying an empty array is treated as a failure rather than an
+answer, so a bad deploy cannot overwrite a good cache with nothing. One
+malformed entry is skipped rather than costing the other 180."
 ```
 
 ---
@@ -1088,240 +1347,330 @@ deliberately — the premise should shape the deck, not dictate it."
 
 ---
 
-### Task 6: Registration step 4 pickers
+### Task 6: The language picker, and its two rows in registration
 
 **Files:**
+- Create: `lib/screens/languages/language_picker_screen.dart`
+- Create: `lib/core/languages/language_label.dart`
 - Modify: `lib/screens/auth/registration/steps/step_bio_interests.dart`
-- Modify: `lib/screens/auth/registration/registration_flow.dart` (`RegistrationData` gains two lists)
-- Modify: `lib/providers/auth_provider.dart` + `lib/services/auth_service.dart` (register body)
-- Modify: `lib/l10n/app_en.arb` **and all 25 base locale ARBs** (3 new keys)
-- Test: `test/screens/auth/registration/language_step_test.dart` (create)
+- Modify: `lib/screens/auth/registration/registration_flow.dart` (`RegistrationData`)
+- Modify: `lib/services/auth_service.dart`, `lib/providers/auth_provider.dart` (register body)
+- Modify: `lib/l10n/app_en.arb` **and all 25 base locale ARBs** (4 new keys)
+- Test: `test/screens/languages/language_picker_test.dart`
 
 **Interfaces:**
-- Consumes: `kLanguages`, `endonymFor` (Task 1); `User.languagesSpoken` (Task 4).
-- Produces: `RegistrationData.languagesSpoken` / `.languagesLearning`, sent on register.
+- Consumes: `Language`, `kLanguageFallback`, `kRecommendedCodes` (Task 1); `languageCatalogProvider` (Task 2).
+- Produces: `LanguagePickerScreen`, `languageLabel(String code, List<Language> catalog)`, `RegistrationData.languagesSpoken` / `.languagesLearning`.
 
-- [ ] **Step 1: Add the three l10n keys to English**
+**A picker screen, not a chip grid.** 127+ languages will not fit as chips, and
+one tappable row reading "English, 한국어" adds far less to the rejected
+registration screen than a wall of forty chips would. Mirrors
+`bananatalk_app/lib/widgets/language_selection/language_picker_screen.dart`:
+search, a Recommended section, then alphabetical.
 
-```bash
-python3 - <<'PY'
-import json, pathlib, collections
-p = pathlib.Path('lib/l10n/app_en.arb')
-d = json.loads(p.read_text(), object_pairs_hook=collections.OrderedDict)
-new = [
- ("registerLanguagesSpoken", "Languages you speak",
-  "Header for the languages-spoken picker in registration."),
- ("registerLanguagesLearning", "Languages you're learning",
-  "Header for the languages-learning picker in registration."),
- ("registerLanguagesHint", "Up to 3 each — this is how we find people you can talk to",
-  "Explains the cap and why languages are collected."),
-]
-for k, v, desc in new:
-    if k in d: continue
-    d[k] = v
-    d['@' + k] = {"description": desc}
-p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n")
-print('added', len(new))
-PY
-```
+- [ ] **Step 1: Add four l10n keys to English, then all 25 base locales**
 
-- [ ] **Step 2: Translate the three keys into all 25 base locales**
+Keys: `languagesSpokenLabel` → `"Languages you speak"`,
+`languagesLearningLabel` → `"Languages you're learning"`,
+`languagesPickerTitle` → `"Select languages"`,
+`languagesNoneSelected` → `"None selected"`.
 
-`arb_parity_test` fails otherwise. Add the same three keys to each of
-`app_{ar,bn,ca,cs,da,de,es,fi,fr,hi,hr,id,it,ja,ko,nb,nl,pt,ru,th,tr,ur,vi,zh,zh_Hant}.arb`
-with real translations — English placeholders are not acceptable, matching how
-the notification and location strings were handled.
+`arb_parity_test` fails unless every key exists in all 25 base ARBs with a real
+translation — English placeholders are not acceptable, matching how the
+notification and location strings were handled.
 
-Then: `flutter gen-l10n` and `flutter test test/l10n/`
-Expected: PASS.
+Then: `flutter gen-l10n && flutter test test/l10n/` → PASS.
 
-- [ ] **Step 3: Write the failing test**
+- [ ] **Step 2: Write the failing test**
 
 ```dart
-// test/screens/auth/registration/language_step_test.dart
+// test/screens/languages/language_picker_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flame/core/languages/language_catalogue.dart';
+import 'package:flame/core/languages/language.dart';
 import 'package:flame/l10n/gen/app_localizations.dart';
-import 'package:flame/screens/auth/registration/registration_flow.dart';
-import 'package:flame/screens/auth/registration/steps/step_bio_interests.dart';
+import 'package:flame/providers/languages_provider.dart';
+import 'package:flame/screens/languages/language_picker_screen.dart';
 
-Widget _host(RegistrationData data, {Locale locale = const Locale('en')}) =>
+final _catalog = [
+  const Language(code: 'en', name: 'English', nativeName: 'English'),
+  const Language(code: 'ko', name: 'Korean', nativeName: '한국어'),
+  const Language(code: 'zu', name: 'Zulu', nativeName: 'isiZulu'),
+];
+
+Widget _host({
+  required List<String> initial,
+  required ValueChanged<List<String>> onDone,
+  int max = 3,
+}) =>
     ProviderScope(
+      overrides: [
+        languageCatalogProvider.overrideWith((ref) async => _catalog),
+      ],
       child: MaterialApp(
-        locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(body: StepBioInterests(data: data, onNext: () {})),
+        home: LanguagePickerScreen(
+          initialSelection: initial,
+          maxSelection: max,
+          onDone: onDone,
+        ),
       ),
     );
 
 void main() {
-  testWidgets('spoken languages pre-seed from the device locale', (tester) async {
-    // The premise gets populated for essentially every new user with no added
-    // friction, and no new blocking gate on the step App Review flagged.
-    final data = RegistrationData();
-    await tester.pumpWidget(_host(data, locale: const Locale('ko')));
+  testWidgets('lists languages under their own names', (tester) async {
+    await tester.pumpWidget(_host(initial: const [], onDone: (_) {}));
     await tester.pumpAndSettle();
 
-    expect(data.languagesSpoken, contains('ko'));
-  });
-
-  testWidgets('an unsupported device locale seeds nothing rather than guessing',
-      (tester) async {
-    final data = RegistrationData();
-    await tester.pumpWidget(_host(data, locale: const Locale('en')));
-    await tester.pumpAndSettle();
-
-    expect(data.languagesSpoken, ['en']);
-  });
-
-  testWidgets('languages render under their own names', (tester) async {
-    await tester.pumpWidget(_host(RegistrationData()));
-    await tester.pumpAndSettle();
-
-    await tester.scrollUntilVisible(find.text('한국어'), 200);
     expect(find.text('한국어'), findsOneWidget);
-    expect(find.text('Korean'), findsNothing,
-        reason: 'endonyms need no translation — that is the point');
+    expect(find.text('isiZulu'), findsOneWidget);
   });
 
-  testWidgets('tapping a language toggles it into the data', (tester) async {
-    final data = RegistrationData();
-    await tester.pumpWidget(_host(data));
+  testWidgets('search matches the ENGLISH name too', (tester) async {
+    // Someone whose keyboard is English must be able to find 한국어 by
+    // typing "Korean" — that is what Language.name is carried for.
+    await tester.pumpWidget(_host(initial: const [], onDone: (_) {}));
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(find.text('한국어'), 200);
+    await tester.enterText(find.byType(TextField), 'korean');
+    await tester.pumpAndSettle();
+
+    expect(find.text('한국어'), findsOneWidget);
+    expect(find.text('isiZulu'), findsNothing);
+  });
+
+  testWidgets('search matches the native name as well', (tester) async {
+    await tester.pumpWidget(_host(initial: const [], onDone: (_) {}));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '한국');
+    await tester.pumpAndSettle();
+
+    expect(find.text('한국어'), findsOneWidget);
+  });
+
+  testWidgets('selecting returns the codes, not the labels', (tester) async {
+    List<String>? got;
+    await tester.pumpWidget(_host(initial: const [], onDone: (v) => got = v));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('한국어'));
     await tester.pumpAndSettle();
-
-    expect(data.languagesSpoken, contains('ko'));
-  });
-
-  testWidgets('the cap of three is enforced', (tester) async {
-    final data = RegistrationData()
-      ..languagesSpoken = ['en', 'ko', 'es'];
-    await tester.pumpWidget(_host(data));
+    await tester.tap(find.byKey(const Key('language_picker_done')));
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(find.text('Français'), 200);
-    await tester.tap(find.text('Français'));
-    await tester.pumpAndSettle();
-
-    expect(data.languagesSpoken.length, 3, reason: 'a fourth must not stick');
-    expect(data.languagesSpoken, isNot(contains('fr')));
+    expect(got, ['ko']);
   });
 
-  test('every catalogue entry is selectable', () {
-    // A language nobody can pick is a language nobody can match on.
-    expect(kLanguages, isNotEmpty);
+  testWidgets('the cap is enforced and the extra tap does not stick',
+      (tester) async {
+    List<String>? got;
+    await tester.pumpWidget(_host(
+      initial: const ['en', 'ko'], onDone: (v) => got = v, max: 2,
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('isiZulu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('language_picker_done')));
+    await tester.pumpAndSettle();
+
+    expect(got, ['en', 'ko']);
+  });
+
+  testWidgets('an already-selected language can be deselected', (tester) async {
+    List<String>? got;
+    await tester.pumpWidget(_host(initial: const ['ko'], onDone: (v) => got = v));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('한국어'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('language_picker_done')));
+    await tester.pumpAndSettle();
+
+    expect(got, isEmpty);
+  });
+
+  testWidgets('a failed catalogue still shows the bundled fallback',
+      (tester) async {
+    // The picker is on the registration screen. Empty is not an option.
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        languageCatalogProvider.overrideWith((ref) async => kLanguageFallback),
+      ],
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: LanguagePickerScreen(
+          initialSelection: const [], maxSelection: 3, onDone: (_) {},
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('English'), findsWidgets);
   });
 }
 ```
 
-- [ ] **Step 4: Run test to verify it fails**
+Add `import 'package:flame/core/languages/language_fallback.dart';` for the last test.
 
-Run: `flutter test test/screens/auth/registration/language_step_test.dart`
-Expected: FAIL — `The getter 'languagesSpoken' isn't defined for the class 'RegistrationData'`.
+- [ ] **Step 3: Run test to verify it fails**
 
-- [ ] **Step 5: Add the fields to RegistrationData**
+Run: `flutter test test/screens/languages/language_picker_test.dart`
+Expected: FAIL — `language_picker_screen.dart` does not exist.
 
-In `lib/screens/auth/registration/registration_flow.dart`, inside `RegistrationData`:
+- [ ] **Step 4: Write the label helper**
 
 ```dart
-  /// ISO 639-1 codes, max 3. Seeded from the device locale on first build of
-  /// the step so the premise is populated without asking anything extra.
+// lib/core/languages/language_label.dart
+import 'package:flame/core/languages/language.dart';
+import 'package:flame/core/languages/language_fallback.dart';
+
+/// The display name for [code], given whatever catalogue is loaded.
+///
+/// Falls through the loaded catalogue, then the bundled fallback, then the
+/// raw code — mirroring BananaTalk's getLanguageName, which degrades to the
+/// code rather than throwing. A code can arrive from a newer client or survive
+/// a catalogue edit, and rendering "zz" on a profile is a blemish where
+/// crashing the profile is a bug.
+String languageLabel(String code, List<Language> catalog) {
+  final lower = code.toLowerCase();
+  for (final l in catalog) {
+    if (l.code == lower) return l.nativeName;
+  }
+  for (final l in kLanguageFallback) {
+    if (l.code == lower) return l.nativeName;
+  }
+  return code;
+}
+```
+
+- [ ] **Step 5: Write the picker**
+
+Mirror `bananatalk_app/lib/widgets/language_selection/language_picker_screen.dart`:
+
+- `ConsumerStatefulWidget` taking `initialSelection`, `maxSelection`, `onDone`.
+- Watches `languageCatalogProvider`; `AsyncValue.when` renders a spinner while
+  loading and **`kLanguageFallback` on error** — never an empty list.
+- A `TextField` filtering on `name` OR `nativeName`, both lowercased, so
+  "korean" and "한국" both work.
+- A **Recommended** section above the alphabetical list, from
+  `kRecommendedCodes`, hidden once a search is typed (their behaviour).
+- Each row: `Text('${lang.flag}  ${lang.nativeName}')` with the English name as
+  a subtitle when it differs, and a check when selected.
+- Tapping toggles; adding beyond `maxSelection` is ignored, and the app bar
+  shows `selected.length / maxSelection` so the cap is visible before it bites.
+- A **Done** button keyed `language_picker_done` calling `onDone(selectedCodes)`.
+
+- [ ] **Step 6: Run test to verify it passes**
+
+Run: `flutter test test/screens/languages/language_picker_test.dart`
+Expected: PASS, 7 tests.
+
+- [ ] **Step 7: Add the two rows to registration step 4**
+
+In `registration_flow.dart`, add to `RegistrationData`:
+
+```dart
+  /// ISO 639-1 codes, max 3 each. Spoken is seeded from the device locale the
+  /// first time step 4 builds.
   List<String> languagesSpoken = [];
   List<String> languagesLearning = [];
 ```
 
-- [ ] **Step 6: Add the pickers to the step**
-
-In `step_bio_interests.dart`, add to the state class:
+In `step_bio_interests.dart`, below the interests grid, add two rows built by:
 
 ```dart
-  bool _seededLanguages = false;
+  Widget _languageRow({
+    required String label,
+    required List<String> codes,
+    required Key key,
+    required void Function(List<String>) onChanged,
+  }) {
+    final catalog = ref.watch(languageCatalogProvider).valueOrNull
+        ?? kLanguageFallback;
+    final summary = codes.isEmpty
+        ? context.l10n.languagesNoneSelected
+        : codes.map((c) => languageLabel(c, catalog)).join(', ');
 
+    return ListTile(
+      key: key,
+      contentPadding: EdgeInsets.zero,
+      title: Text(label),
+      subtitle: Text(summary),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => LanguagePickerScreen(
+          initialSelection: codes,
+          maxSelection: 3,
+          onDone: (picked) => setState(() => onChanged(picked)),
+        ),
+      )),
+    );
+  }
+```
+
+Note this makes the step a `ConsumerStatefulWidget` if it is not already.
+
+And seed the spoken list once, at the top of `build`:
+
+```dart
   /// Pre-selects the device's language, once.
   ///
-  /// Someone on a Korean phone opens this step with 한국어 already chosen.
-  /// That populates the app's premise for essentially every new user at zero
-  /// friction — and, deliberately, without adding a second blocking
-  /// requirement to the step whose first one produced the "Skip for now was
-  /// unresponsive" rejection.
+  /// A Korean phone opens this step with 한국어 already chosen. That populates
+  /// the app's premise for essentially every new user at zero friction — and
+  /// deliberately without adding a second blocking requirement to the step
+  /// whose first one produced the "Skip for now was unresponsive" rejection.
   void _seedFromLocale(BuildContext context) {
     if (_seededLanguages) return;
     _seededLanguages = true;
     if (widget.data.languagesSpoken.isNotEmpty) return;
 
     final code = Localizations.localeOf(context).languageCode.toLowerCase();
-    if (languageForCode(code) != null) {
+    final catalog = ref.read(languageCatalogProvider).valueOrNull
+        ?? kLanguageFallback;
+    if (catalog.any((l) => l.code == code)) {
       widget.data.languagesSpoken = [code];
     }
   }
 ```
 
-Call `_seedFromLocale(context)` at the top of `build`.
-
-Add a chip grid below the interests grid, mirroring `_buildInterestsGrid`'s
-`Wrap` + `GestureDetector` + `AnimatedContainer` structure, for each of the two
-lists. Each chip's `onTap` calls:
-
-```dart
-  void _toggleLanguage(List<String> list, String code) {
-    setState(() {
-      if (list.contains(code)) {
-        list.remove(code);
-      } else if (list.length < 3) {
-        // Silently ignoring a fourth is the cap doing its job; the counter
-        // above the grid already shows the limit.
-        list.add(code);
-      }
-    });
-  }
-```
-
-Chip label: `Text(endonymFor(language.code))`.
-Section headers: `context.l10n.registerLanguagesSpoken` / `registerLanguagesLearning`,
-with `context.l10n.registerLanguagesHint` beneath the first.
-
-- [ ] **Step 7: Run test to verify it passes**
-
-Run: `flutter test test/screens/auth/registration/language_step_test.dart`
-Expected: PASS, 6 tests.
-
 - [ ] **Step 8: Send them on register**
 
-In `lib/services/auth_service.dart`'s `register`, add two optional named
-`List<String>` parameters and include them in the body as `languagesSpoken` /
-`languagesLearning`. Mirror on `AuthNotifier.register` in
-`lib/providers/auth_provider.dart`, and pass `_data.languagesSpoken` /
-`_data.languagesLearning` from the registration flow's submit.
+In `auth_service.dart`'s `register`, add two optional `List<String>` named
+parameters and include them in the body as `languagesSpoken` /
+`languagesLearning`. Mirror on `AuthNotifier.register`, and pass
+`_data.languagesSpoken` / `_data.languagesLearning` from the flow's submit.
 
-- [ ] **Step 9: Full app suite and analyze**
-
-Run: `flutter test 2>&1 | tail -3` and `flutter analyze 2>&1 | grep -c "error •"`
-Expected: all pass; `0`.
-
-- [ ] **Step 10: Commit**
+- [ ] **Step 9: Full suite, analyze, commit**
 
 ```bash
-git add lib/screens/auth/registration lib/services/auth_service.dart \
-        lib/providers/auth_provider.dart lib/l10n test/screens/auth/registration/language_step_test.dart
+flutter test 2>&1 | tail -3
+flutter analyze 2>&1 | grep -c "error •"   # 0
+
+git add lib/screens/languages lib/core/languages/language_label.dart \
+        lib/screens/auth/registration lib/services/auth_service.dart \
+        lib/providers/auth_provider.dart lib/l10n \
+        test/screens/languages/language_picker_test.dart
 git commit -m "feat(register): declare your languages, seeded from the device
 
-Folded into step 4 rather than added as a sixth step: App Review rejected
-this exact flow days ago, and a longer one invites a fresh look at a screen
-we want skimmed past.
+A picker SCREEN, not a chip grid: 127 languages will not fit as chips, and
+one row reading 'English, 한국어' adds far less to the registration screen
+App Review rejected than a wall of forty chips would. Mirrors BananaTalk's
+picker -- search, Recommended, alphabetical.
+
+Search matches the English name as well as the native one, so someone on an
+English keyboard can find 한국어 by typing Korean.
 
 Spoken languages pre-select from the device locale, so a Korean phone opens
-with 한국어 already chosen. That populates the premise for essentially every
-new user at zero friction and avoids adding a second blocking gate to the
-step whose first one produced the 'Skip for now was unresponsive' rejection.
-
-Chips show endonyms, so no language name needs translating into 25 locales."
+with 한국어 already chosen: the premise is populated for essentially every
+new user at zero friction, and without adding a second blocking gate to the
+step whose first one produced the 'Skip for now was unresponsive'
+rejection."
 ```
 
 ---
@@ -1337,7 +1686,7 @@ Chips show endonyms, so no language name needs translating into 25 locales."
 - Test: `test/widgets/languages_line_test.dart` (create)
 
 **Interfaces:**
-- Consumes: `User.languagesSpoken` / `languagesLearning` (Task 4), `endonymFor` (Task 1).
+- Consumes: `User.languagesSpoken` / `languagesLearning` (Task 4), `languageLabel(code, catalog)` (Task 6), `languageCatalogProvider` (Task 2).
 - Produces: `LanguagesLine` widget.
 
 **This is the task that actually answers Guideline 4.3(b).** Ranking is invisible; a reviewer with a fresh account may see no reordering at all. These three surfaces are what make the premise legible in thirty seconds.
@@ -1424,7 +1773,9 @@ Expected: FAIL — `languages_line.dart` does not exist.
 import 'package:flutter/material.dart';
 
 import 'package:flame/core/i18n/build_context_ext.dart';
-import 'package:flame/core/languages/language_catalogue.dart';
+import 'package:flame/core/languages/language.dart';
+import 'package:flame/core/languages/language_fallback.dart';
+import 'package:flame/core/languages/language_label.dart';
 
 /// "Speaks 한국어 · Learning English".
 ///
@@ -1435,7 +1786,7 @@ import 'package:flame/core/languages/language_catalogue.dart';
 /// Renders NOTHING when nothing is declared. Every account created before this
 /// feature has empty lists, and a label with no value after it reads as broken
 /// data rather than as an absent answer.
-class LanguagesLine extends StatelessWidget {
+class LanguagesLine extends ConsumerWidget {
   const LanguagesLine({
     super.key,
     required this.spoken,
@@ -1448,16 +1799,22 @@ class LanguagesLine extends StatelessWidget {
   final TextStyle? style;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // valueOrNull with a fallback rather than AsyncValue.when: this line sits
+    // on a deck card, and a spinner where a language should be is worse than
+    // a name resolved from the bundled list.
+    final catalog =
+        ref.watch(languageCatalogProvider).valueOrNull ?? kLanguageFallback;
+    String label(String c) => languageLabel(c, catalog);
+
     final parts = <String>[];
 
     if (spoken.isNotEmpty) {
-      parts.add('${context.l10n.profileSpeaks} '
-          '${spoken.map(endonymFor).join(', ')}');
+      parts.add('${context.l10n.profileSpeaks} ${spoken.map(label).join(', ')}');
     }
     if (learning.isNotEmpty) {
       parts.add('${context.l10n.profileLearning} '
-          '${learning.map(endonymFor).join(', ')}');
+          '${learning.map(label).join(', ')}');
     }
 
     if (parts.isEmpty) return const SizedBox.shrink();
@@ -1610,7 +1967,7 @@ none of this."
 |---|---|
 | §1 Data model — app | 1, 4 |
 | §1 Data model — backend | 2, 3 |
-| §1 Catalogue mirroring | 1, 2 |
+| §1 Catalogue | 1 (model, flags, fallback), 2 (endpoint + fetch ladder) |
 | §2 Onboarding, device-locale seed | 6 |
 | §3 Ranking, rebalanced weights | 5 |
 | §3 Unknown = neutral | 3, 5 (tested in both) |
@@ -1629,8 +1986,12 @@ Step 6) name exact files and the exact existing widget structure to mirror.
 in Dart, Mongoose, and both wire directions except the discovery response, which
 is `languages_spoken` / `languages_learning` to match `User.fromJson`'s existing
 snake_case convention (Task 3 Step 6 defines it, Task 4 Step 3 parses it).
-`endonymFor(String)` and `languageForCode(String?)` are defined in Task 1 and used
-in Tasks 6 and 7 under those exact names. `languageScore(viewer, candidate)` is
+`Language.fromJson` and `LanguageFlags.getFlag` are defined in Task 1;
+`parseLanguageCatalog` / `resolveCatalog` / `languageCatalogProvider` in Task 2;
+`languageLabel(String, List<Language>)` in Task 6 and used by Task 7 under that
+exact name. There is no synchronous global name lookup — the catalogue is
+fetched, so every consumer takes the loaded list and falls back to
+`kLanguageFallback`. `languageScore(viewer, candidate)` is
 defined in Task 5 and referenced nowhere earlier.
 
 **One risk worth restating:** Task 7 is what answers the rejection. If the plan is
