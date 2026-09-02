@@ -101,9 +101,9 @@ Deliberately not written here: this repository is public.
 > cross-language matches, not by adding an unrelated feature. Sign in with
 > the demo account above. On the demo account's own profile and in the
 > discovery deck, note the languages row — it reads "speaks English,
-> learning 한국어/Español" and is visually distinguished when a candidate's
-> languages complement it. Open a conversation with one of the seeded
-> matches (Korean-speaking or Spanish-speaking, both within the demo
+> learning 한국어/Español", with a flag badge on each card. Open a
+> conversation with one of the seeded matches (Korean-speaking or
+> Spanish-speaking, both within the demo
 > account's discovery radius): because the two accounts do not share a
 > language, translation is on by default in that chat and says so, rather
 > than being hidden behind a long-press menu. This is the feature the

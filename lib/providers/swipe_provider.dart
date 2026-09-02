@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flame/models/models.dart';
 import 'package:flame/services/swipe_service.dart';
-import 'package:flame/providers/discovery_provider.dart';
 import 'package:flame/providers/match_provider.dart';
 import 'package:flame/providers/user_provider.dart';
 import 'package:flame/core/i18n/error_strings_for.dart';

@@ -25,8 +25,14 @@ class _SilentAuthService extends AuthService {
 }
 
 class _DeletingUserService extends UserService {
+  // Named and typed to match UserService.deleteAccount exactly. It read
+  // `deleteMe` before, which overrode nothing — so the stub was inert and a
+  // test that did reach deletion would have called the real network method.
   @override
-  Future<ServiceResult<void>> deleteMe({String? password}) async =>
+  Future<ServiceResult<void>> deleteAccount({
+    String? password,
+    String? reason,
+  }) async =>
       ServiceResult.success(null);
 }
 
