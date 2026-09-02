@@ -1231,9 +1231,9 @@ In `flame/services/rankingService.js`, replace the `WEIGHTS` object:
 ```javascript
 const WEIGHTS = Object.freeze({
   interests: 0.22,
-  distance: 0.22,
+  distance: 0.20,
   language: 0.20,
-  activity: 0.16,
+  activity: 0.18,
   reciprocity: 0.12,
   completeness: 0.08,
 });

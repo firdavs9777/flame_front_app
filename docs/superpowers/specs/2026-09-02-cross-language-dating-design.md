@@ -173,9 +173,9 @@ A sixth component in `rankingService`. Weights sum to 1, so all of them move:
 | component | before | after |
 |---|---|---|
 | interests | 0.30 | 0.22 |
-| distance | 0.25 | 0.22 |
+| distance | 0.25 | 0.20 |
 | **language** | — | **0.20** |
-| activity | 0.20 | 0.16 |
+| activity | 0.20 | 0.18 |
 | reciprocity | 0.15 | 0.12 |
 | completeness | 0.10 | 0.08 |
 
