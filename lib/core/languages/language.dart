@@ -29,11 +29,17 @@ class Language {
   String get flag => LanguageFlags.getFlag(code);
 
   factory Language.fromJson(Map<String, dynamic> json) {
-    final code = json['code'] as String?;
+    final code = (json['code'] as String?)?.trim();
     if (code == null || code.isEmpty) {
       throw ArgumentError('language entry has no code: $json');
     }
-    final name = (json['name'] as String?)?.trim() ?? code;
+    // Blank is treated exactly like absent, for every field a reader may
+    // index or uppercase. The served catalogue has rows with `"name": ""`,
+    // and those parsed fine and then threw a RangeError on `name[0]` in the
+    // picker's A-Z sectioning -- a red screen the catalogue fallback cannot
+    // rescue, because the row itself parsed.
+    final trimmedName = (json['name'] as String?)?.trim();
+    final name = (trimmedName == null || trimmedName.isEmpty) ? code : trimmedName;
     final native = (json['nativeName'] as String?)?.trim();
 
     return Language(

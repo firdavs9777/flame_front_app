@@ -23,6 +23,28 @@ void main() {
       expect(l.nativeName, 'Example');
     });
 
+    test('an empty name falls back to the code, like a missing one', () {
+      // A served row with "name": "" used to sail through fromJson and then
+      // blow up in the picker on name[0]. Empty and absent are the same
+      // thing to every reader of this field.
+      final l = Language.fromJson({'code': 'xx', 'name': ''});
+      expect(l.name, 'xx');
+      expect(l.nativeName, 'xx');
+    });
+
+    test('a whitespace-only name falls back to the code', () {
+      final l = Language.fromJson({'code': 'yy', 'name': '   '});
+      expect(l.name, 'yy');
+      expect(l.nativeName, 'yy');
+    });
+
+    test('a whitespace-only nativeName falls back to the name', () {
+      final l = Language.fromJson({
+        'code': 'zz', 'name': 'Example', 'nativeName': '  ',
+      });
+      expect(l.nativeName, 'Example');
+    });
+
     test('a malformed entry throws rather than becoming a blank row', () {
       expect(() => Language.fromJson({'name': 'No code'}), throwsA(anything));
     });
