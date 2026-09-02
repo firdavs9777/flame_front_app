@@ -1926,7 +1926,7 @@ Verify:
 ```bash
 curl -s -X POST https://api.banatalk.com/flamebackend/v1/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"appreview1@banatalk.com","password":"$FLAME_REVIEW_PW"}' \
+  -d '{"email":"appreview1@banatalk.com","password":"'"$FLAME_REVIEW_PW"'"}' \
   | python3 -m json.tool | grep -E 'languages|photos'
 ```
 Expected: non-empty `languagesSpoken`, `languagesLearning`, and `photos`.

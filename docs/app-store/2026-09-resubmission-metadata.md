@@ -92,7 +92,8 @@ other dating app" impression this resubmission is trying to correct.
 
 **Demo account:**
 Email: `appreview1@banatalk.com`
-Password: `$FLAME_REVIEW_PW`
+Password: see App Store Connect -> App Review Information.
+Deliberately not written here: this repository is public.
 
 **Note to reviewer:**
 
@@ -174,11 +175,23 @@ script; they are recorded here so the owner can run them directly.
 
 ### 7a. Set the demo account's languages
 
+The snippets below read the demo password from `$FLAME_REVIEW_PW` rather than
+containing it, because **this repository is public**. Export it once, in the
+shell you are about to run these in:
+
+```bash
+read -rs FLAME_REVIEW_PW && export FLAME_REVIEW_PW   # paste, press enter
+```
+
+`read -rs` keeps it off your screen and, unlike typing it inline, out of your
+shell history. The authoritative copy is in App Store Connect -> App Review
+Information; if the two ever disagree, that one is right.
+
 ```bash
 # 1. Log in as the demo account to get a token.
 curl -s -X POST https://api.banatalk.com/flamebackend/v1/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"appreview1@banatalk.com","password":"$FLAME_REVIEW_PW"}'
+  -d '{"email":"appreview1@banatalk.com","password":"'"$FLAME_REVIEW_PW"'"}'
 # Take the access token from the response and use it below as $TOKEN.
 #
 # CASING MATTERS HERE, and getting it wrong LOOKS like success.
@@ -202,7 +215,7 @@ curl -s -X PATCH https://api.banatalk.com/flamebackend/v1/users/me \
 ```bash
 curl -s -X POST https://api.banatalk.com/flamebackend/v1/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"appreview1@banatalk.com","password":"$FLAME_REVIEW_PW"}' \
+  -d '{"email":"appreview1@banatalk.com","password":"'"$FLAME_REVIEW_PW"'"}' \
   | python3 -m json.tool | grep -E 'languages|photos'
 ```
 
@@ -298,7 +311,7 @@ still visually contain a clear face, since a reviewer will look at it.
 ```bash
 curl -s -X POST https://api.banatalk.com/flamebackend/v1/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"appreview1@banatalk.com","password":"$FLAME_REVIEW_PW"}' \
+  -d '{"email":"appreview1@banatalk.com","password":"'"$FLAME_REVIEW_PW"'"}' \
   | python3 -m json.tool | grep -E 'languages|photos'
 ```
 
