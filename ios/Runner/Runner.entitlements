@@ -13,5 +13,18 @@
 	<array>
 		<string>Default</string>
 	</array>
+
+	<!-- Push notifications. Same caveat as Sign in with Apple above: the App ID
+	     at developer.apple.com must also have the Push Notifications capability
+	     enabled, or a SIGNED build fails to provision.
+
+	     `development` targets the APNs sandbox, which is what a device build
+	     from Xcode uses. An App Store or TestFlight build needs `production`,
+	     and Xcode rewrites this value during an archive with a distribution
+	     profile — verify it in the archive's entitlements before shipping
+	     rather than assuming, because a sandbox token is silently rejected by
+	     production APNs and the only symptom is notifications never arriving. -->
+	<key>aps-environment</key>
+	<string>development</string>
 </dict>
 </plist>

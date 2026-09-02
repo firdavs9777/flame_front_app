@@ -56,6 +56,17 @@ class PushService {
 
   FirebaseMessaging get _fcm => _messaging ?? FirebaseMessaging.instance;
 
+  /// The value the backend's zod enum accepts for this device.
+  ///
+  /// The enum is exactly ['ios','android'] and the route is strict, so a wrong
+  /// value is a 422 and the device silently never registers. Derived rather
+  /// than hardcoded because the registration path is shared.
+  @visibleForTesting
+  static String get platformValue =>
+      defaultTargetPlatform == TargetPlatform.iOS
+          ? PushPlatform.ios
+          : PushPlatform.android;
+
   /// Whether push is wired on this build and platform.
   ///
   /// Reads the same flag that hides the notification settings screen, so the
@@ -117,7 +128,11 @@ class PushService {
     try {
       // On Android 13+ this raises the POST_NOTIFICATIONS dialog; below it,
       // and on a device that has already answered, it resolves immediately.
+      // On iOS it is not optional — without permission APNs never issues a
+      // token, and everything below is unreachable.
       await _fcm.requestPermission();
+
+      if (!await _awaitApnsToken()) return;
 
       final token = await _fcm.getToken();
       if (token == null) {
@@ -160,11 +175,35 @@ class PushService {
     }
   }
 
+  /// Waits for iOS to hand Firebase an APNs token. No-op on Android.
+  ///
+  /// This is the iOS trap. `getToken()` returns null — or throws — until APNs
+  /// has registered the app, and that round trip to Apple completes some time
+  /// AFTER the permission dialog is answered. Calling getToken() straight
+  /// afterwards therefore works on a warm launch and fails on a cold one, so
+  /// the device registers or doesn't depending on the network that morning,
+  /// which is the worst kind of bug to be handed a report about.
+  ///
+  /// Returns false when no token arrives. The usual cause is permission being
+  /// declined: APNs simply never issues one, and there is nothing to wait for.
+  Future<bool> _awaitApnsToken() async {
+    if (defaultTargetPlatform != TargetPlatform.iOS) return true;
+
+    for (var attempt = 0; attempt < 10; attempt++) {
+      final apns = await _fcm.getAPNSToken();
+      if (apns != null) return true;
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+
+    debugPrint('PushService: no APNs token after 5s — permission declined?');
+    return false;
+  }
+
   Future<void> _register(String token) async {
     final deviceId = await DeviceId.get();
     final result = await _deviceService.registerToken(
       token: token,
-      platform: PushPlatform.android,
+      platform: platformValue,
       deviceId: deviceId,
     );
 
