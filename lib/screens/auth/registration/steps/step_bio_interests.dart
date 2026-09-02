@@ -235,20 +235,47 @@ class _StepBioInterestsState extends State<StepBioInterests> {
 
   Widget _buildContinueButton() {
     final enabled = canContinue(_selectedInterests.length);
+
+    // NEITHER button is disabled, deliberately.
+    //
+    // App Review rejected the build with "The Skip for now button was
+    // unresponsive to taps", and it was: onPressed was null until an interest
+    // was selected, so the button was disabled and did nothing. A disabled
+    // *Continue* is a convention people read correctly. A disabled *Skip*
+    // is not — the label promises to move past the step, so refusing silently
+    // is indistinguishable from a broken button.
+    //
+    // Both now always fire, and _handleContinue explains what is missing.
+    // Feedback on tap is what makes a control responsive; the hint below makes
+    // the requirement visible before the tap.
     return Column(
       children: [
+        if (!enabled) ...[
+          Text(
+            context.l10n.registerInterestsMin,
+            key: const Key('register_interests_hint'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         AppButton(
+          key: const Key('register_bio_continue'),
           text: context.l10n.registerContinue,
           size: AppButtonSize.large,
           isFullWidth: true,
-          onPressed: enabled ? () => _handleContinue(skipBio: false) : null,
+          onPressed: () => _handleContinue(skipBio: false),
         ),
         const SizedBox(height: 8),
         AppButton(
+          key: const Key('register_bio_skip'),
           text: context.l10n.registerSkipForNow,
           variant: AppButtonVariant.ghost,
           isFullWidth: true,
-          onPressed: enabled ? () => _handleContinue(skipBio: true) : null,
+          onPressed: () => _handleContinue(skipBio: true),
         ),
       ],
     );

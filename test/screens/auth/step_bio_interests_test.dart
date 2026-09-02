@@ -24,22 +24,28 @@ void main() {
     expect(canContinue(3), isTrue);
   });
 
-  testWidgets('Continue is disabled with 0 interests, enabled after picking one',
+  testWidgets('neither button is disabled — the requirement is SHOWN instead',
       (tester) async {
+    // Reversed deliberately, on 2026-09-02. This test used to assert that
+    // Continue was disabled with 0 interests, and Skip was disabled by the
+    // same flag. App Review rejected the build under Guideline 2.1(a):
+    // "The Skip for now button was unresponsive to taps in account creation."
+    //
+    // It was disabled, so it was. Both share the same precondition — the
+    // backend requires an interest either way — so disabling one and not the
+    // other would be incoherent. Both now respond and say what is missing,
+    // and the requirement is stated inline before anything is tapped.
     await tester.pumpWidget(_host(RegistrationData(), () {}));
     await tester.pumpAndSettle();
 
-    ElevatedButton continueButton() =>
-        tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+    expect(find.byKey(const Key('register_interests_hint')), findsOneWidget,
+        reason: 'the reason must be visible without tapping to discover it');
 
-    // No interest selected yet.
-    expect(continueButton().onPressed, isNull);
-
-    // Pick one interest.
+    // Pick one interest: the requirement is met, so the hint goes.
     await tester.tap(find.text('Travel'));
     await tester.pumpAndSettle();
 
-    expect(continueButton().onPressed, isNotNull);
+    expect(find.byKey(const Key('register_interests_hint')), findsNothing);
   });
 
   testWidgets('Continue advances with >=1 interest and no bio', (tester) async {
