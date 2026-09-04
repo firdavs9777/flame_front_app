@@ -6,7 +6,22 @@ import 'package:flame/providers/user_provider.dart';
 import 'package:flame/services/location_service.dart';
 
 /// Whether we can offer distance-based filtering at all.
-enum LocationAvailability { unknown, granted, denied }
+/// What the app currently knows about its ability to read a location.
+///
+/// [denied] and [unavailable] are both "no coordinates right now" and are
+/// deliberately NOT the same thing. Only a refusal is worth remembering: a
+/// failed fix is worth retrying, and describing it as a permission problem
+/// tells the user to go and change a setting that is already correct.
+enum LocationAvailability {
+  unknown,
+  granted,
+
+  /// The person, or the OS on their behalf, refused this app.
+  denied,
+
+  /// Permission is fine; no fix arrived this time. Transient.
+  unavailable,
+}
 
 /// Keeps the stored location current as people move.
 ///
@@ -79,6 +94,12 @@ class LocationRefresher {
   Future<void> refresh() async {
     // A denial stands for the session. Re-prompting someone who said no, every
     // time they switch back to the app, is the definition of nagging.
+    //
+    // Only a denial, though. This used to test every failure, so one slow
+    // indoor fix — the 15s timeout expiring — ended location updates for the
+    // rest of the session and disabled the distance filter citing a permission
+    // the person had actually granted. A failed fix gets to try again, still
+    // behind the throttle below.
     if (_availability == LocationAvailability.denied) return;
 
     final asked = _lastAsked;
@@ -107,7 +128,13 @@ class LocationRefresher {
       // Recorded rather than swallowed: the filter sheet needs this to disable
       // the distance slider with a reason instead of offering a control that
       // cannot work.
-      _availability = LocationAvailability.denied;
+      //
+      // Which failure it was decides whether we ever look again. A refusal is
+      // final until the person changes it; anything else is this attempt
+      // failing, not the capability being gone.
+      _availability = result.isRefusal
+          ? LocationAvailability.denied
+          : LocationAvailability.unavailable;
       return;
     }
 

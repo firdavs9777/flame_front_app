@@ -5,16 +5,25 @@ import 'package:flame/services/location_service.dart';
 /// A stand-in for LocationService.getCurrentPosition, which cannot be faked by
 /// subclassing — the service is a singleton with a private constructor.
 class _Position {
-  _Position({this.ok = true, this.lat = 1.5, this.lng = 2.5});
+  _Position({
+    this.ok = true,
+    this.lat = 1.5,
+    this.lng = 2.5,
+    // Defaults to a refusal because that is what these tests meant by "not
+    // ok" before failures were distinguishable. A test about a failed FIX
+    // has to say so.
+    this.reason = LocationFailure.permissionDenied,
+  });
 
   bool ok;
   double lat;
   double lng;
+  LocationFailure reason;
   int calls = 0;
 
   Future<LocationResult> call() async {
     calls++;
-    if (!ok) return LocationResult.failure('denied');
+    if (!ok) return LocationResult.failure('no', reason: reason);
     return LocationResult.successAt(lat, lng);
   }
 }
@@ -75,6 +84,53 @@ void main() {
     expect(source.calls, 1, reason: 'a denial must not be re-prompted');
     expect(pushes, 0);
     expect(r.availability, LocationAvailability.denied);
+  });
+
+  test('a failed fix is retried later; only a refusal stops the session',
+      () async {
+    // The bug this pins: every failure was recorded as a denial, so one slow
+    // indoor fix — the 15-second timeout expiring — ended location updates for
+    // the rest of the session and disabled the distance filter citing a
+    // permission the person had actually granted.
+    final source = _Position(ok: false, reason: LocationFailure.positionUnavailable);
+    final clock = _Clock();
+    final r = LocationRefresher(
+      getPosition: source.call,
+      push: (_, __, {city, state, country}) async => true,
+      now: clock.call,
+    );
+
+    await r.refresh();
+    expect(r.availability, LocationAvailability.unavailable,
+        reason: 'a fix that did not arrive is not a refusal');
+
+    // Far enough ahead to clear the throttle, which still applies.
+    clock.advance(const Duration(hours: 2));
+    source
+      ..ok = true;
+    await r.refresh();
+
+    expect(source.calls, 2, reason: 'it must look again');
+    expect(r.availability, LocationAvailability.granted);
+  });
+
+  test('location services being switched off is also retried', () async {
+    // Not a refusal aimed at this app, and the check returns immediately, so
+    // looking again costs nothing and picks it up the moment it is turned on.
+    final source = _Position(ok: false, reason: LocationFailure.serviceDisabled);
+    final clock = _Clock();
+    final r = LocationRefresher(
+      getPosition: source.call,
+      push: (_, __, {city, state, country}) async => true,
+      now: clock.call,
+    );
+
+    await r.refresh();
+    expect(r.availability, LocationAvailability.unavailable);
+
+    clock.advance(const Duration(hours: 2));
+    await r.refresh();
+    expect(source.calls, 2);
   });
 
   test('standing still costs a GPS read but no request', () async {

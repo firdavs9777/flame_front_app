@@ -97,7 +97,11 @@ Future<void> pumpSheet(
 
   final refresher = LocationRefresher(
     getPosition: () async => availability == LocationAvailability.denied
-        ? LocationResult.failure('denied')
+        // Says WHICH failure: only a refusal disables the slider. A failed fix
+        // leaves it usable, because the server still has the last known point
+        // and telling someone to check a permission they granted is wrong.
+        ? LocationResult.failure('denied',
+            reason: LocationFailure.permissionDenied)
         : LocationResult.successAt(1, 2),
     push: (_, __, {city, state, country}) async => true,
   );
