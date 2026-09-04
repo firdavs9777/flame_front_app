@@ -1,11 +1,12 @@
 # Response to App Review — build 1.0.0 (10003)
 
-Every factual claim below was checked against the shipped code before writing.
-Nothing here describes a feature that does not exist. **Do not add claims to
-this text without verifying them** — the previous draft of the review notes
-told Apple the deck card is "visually distinguished when languages complement",
-which was specified but never built. A reviewer who follows a pointer and finds
-nothing has been given a reason to reject.
+Every factual claim below was re-checked against the shipped app, and against
+production, on the day of writing. **Do not add a claim to this text without
+doing the same.** An earlier draft told Apple the deck card is "visually
+distinguished when languages complement" while nothing of the sort had been
+built; a reviewer who follows a pointer and finds nothing has been handed a
+reason to reject. That highlight now exists — which is why step 2 below can
+name it — but the rule that produced the mistake has not changed.
 
 **Send this only after the demo account and the two seed accounts have
 languages and photos** (`2026-09-resubmission-metadata.md` §7). The whole letter
@@ -45,7 +46,11 @@ What is in build 10003, all of it verifiable in the app:
 
 3. **The languages are visible where the decision is made** — on the profile
    card in the deck, on the full profile, and on the member's own profile —
-   each language shown with its flag.
+   each language shown with its flag. Where the fit is mutual, the card says
+   so: a card whose owner speaks what you are learning *and* is learning what
+   you speak is marked "You can teach each other". That is the one case the
+   ranking scores highest, and it is marked only in that case, so the label
+   means something when it appears.
 
 4. **Chat translates by default across a genuine language gap.** When both
    people have declared spoken languages and share none, incoming messages
@@ -66,11 +71,14 @@ first meets the app rather than discovered after signing up.
 1. Open **Discover**. The cards show each person's languages — the demo
    account's matches include a Korean speaker learning English and a Spanish
    speaker learning English, which is what the ranking is preferring.
-2. Tap a card to open the full profile and see the same languages in full.
-3. Open a conversation with either of them. Because the demo account speaks
+2. Both of those cards carry a **"You can teach each other"** marker, because
+   each of them speaks a language the demo account is learning and is learning
+   the language it speaks. It is the ranking's reasoning, shown on the card.
+3. Tap a card to open the full profile and see the same languages in full.
+4. Open a conversation with either of them. Because the demo account speaks
    English and neither of them does, their messages appear **already
    translated**, with a "Hide translation" control — no tap needed.
-4. Open **Profile → Edit Profile → Languages** to see and change the
+5. Open **Profile → Edit Profile → Languages** to see and change the
    declaration that drives all of the above.
 
 We are glad to answer anything further.
@@ -135,8 +143,10 @@ them on every sign-in, registration and password-reset field, so pasting works.
       radius, with bios.
 - [ ] §7c: demo account and both seed accounts have at least one photo, added
       through the app so they pass the same face check as any member.
-- [ ] Signed in as the demo account, walked steps 1–4 of the letter and seen
-      each one actually work. **If any step does not, fix it before sending
+- [ ] Signed in as the demo account, walked steps 1–5 of the letter and seen
+      each one actually work — including the "You can teach each other" marker
+      on both seed accounts' cards, which only appears once §7a and §7b have
+      given all three accounts their languages. **If any step does not, fix it before sending
       rather than softening the wording** — every step is checkable, which is
       the point.
 - [ ] Name and subtitle updated in App Store Connect.

@@ -115,6 +115,50 @@ void main() {
     });
   });
 
+  group('the App Review demo data', () {
+    // docs/app-store/2026-09-resubmission-metadata.md section 7 specifies the
+    // demo account and two seed accounts, and the response letter tells Apple
+    // that BOTH seed cards will carry the "You can teach each other" marker.
+    // That is a promise made to a reviewer who has already rejected this app
+    // once, so it is pinned here rather than reasoned about: change the seed
+    // spec and this fails.
+    const demoSpoken = ['en'];
+    const demoLearning = ['ko', 'es'];
+
+    test('the Korean seed account is a mutual match with the demo account', () {
+      expect(
+        classify(
+          mySpoken: demoSpoken,
+          myLearning: demoLearning,
+          theirSpoken: ['ko'],
+          theirLearning: ['en'],
+        ),
+        LanguageComplement.mutual,
+      );
+    });
+
+    test('the Spanish seed account is too', () {
+      expect(
+        classify(
+          mySpoken: demoSpoken,
+          myLearning: demoLearning,
+          theirSpoken: ['es'],
+          theirLearning: ['en'],
+        ),
+        LanguageComplement.mutual,
+      );
+    });
+
+    test('a demo account with no languages set earns no marker at all', () {
+      // What the reviewer would actually see if section 7a were skipped: the
+      // letter points at a badge that is not there.
+      expect(
+        classify(theirSpoken: ['ko'], theirLearning: ['en']),
+        LanguageComplement.unknown,
+      );
+    });
+  });
+
   group('codes as they actually arrive', () {
     test('case and surrounding space do not change the answer', () {
       // These have been stored since before the field was validated.
