@@ -655,5 +655,6 @@
   "profileSpeaks": "Говорит",
   "profileLearning": "Изучает",
   "profileLanguages": "Языки",
-  "profileLanguagesUpdated": "Языки обновлены"
+  "profileLanguagesUpdated": "Языки обновлены",
+  "languagesTeachEachOther": "Вы можете учить друг друга"
 }

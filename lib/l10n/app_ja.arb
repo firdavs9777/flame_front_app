@@ -622,5 +622,6 @@
   "profileSpeaks": "話せる",
   "profileLearning": "学習中",
   "profileLanguages": "言語",
-  "profileLanguagesUpdated": "言語を更新しました"
+  "profileLanguagesUpdated": "言語を更新しました",
+  "languagesTeachEachOther": "お互いに教え合えます"
 }

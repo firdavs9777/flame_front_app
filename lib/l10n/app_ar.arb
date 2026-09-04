@@ -755,5 +755,6 @@
   "profileSpeaks": "يتحدث",
   "profileLearning": "يتعلم",
   "profileLanguages": "اللغات",
-  "profileLanguagesUpdated": "تم تحديث اللغات"
+  "profileLanguagesUpdated": "تم تحديث اللغات",
+  "languagesTeachEachOther": "يمكنكما تعليم بعضكما"
 }

@@ -871,5 +871,6 @@
   "profileSpeaks": "Parla",
   "profileLearning": "Aprenent",
   "profileLanguages": "Idiomes",
-  "profileLanguagesUpdated": "Idiomes actualitzats"
+  "profileLanguagesUpdated": "Idiomes actualitzats",
+  "languagesTeachEachOther": "Us podeu ensenyar mútuament"
 }

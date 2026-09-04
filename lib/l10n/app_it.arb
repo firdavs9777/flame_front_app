@@ -753,5 +753,6 @@
   "profileSpeaks": "Parla",
   "profileLearning": "Impara",
   "profileLanguages": "Lingue",
-  "profileLanguagesUpdated": "Lingue aggiornate"
+  "profileLanguagesUpdated": "Lingue aggiornate",
+  "languagesTeachEachOther": "Potete insegnarvi a vicenda"
 }

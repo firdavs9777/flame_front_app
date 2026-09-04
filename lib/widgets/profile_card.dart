@@ -8,12 +8,26 @@ import 'package:flame/theme/app_tokens.dart';
 import 'package:flame/core/image/photo_variants.dart';
 import 'package:flame/widgets/language_flag_badge.dart';
 import 'package:flame/widgets/languages_line.dart';
+import 'package:flame/core/languages/language_complement.dart';
 
 class ProfileCard extends StatefulWidget {
   final User user;
   final VoidCallback? onTap;
 
-  const ProfileCard({super.key, required this.user, this.onTap});
+  /// How this person's languages fit the viewer's, decided by the caller.
+  ///
+  /// Passed in rather than read from a provider so the card stays a pure
+  /// function of its inputs — and so the deck, which already holds the
+  /// current user, computes it once instead of every card reaching for it.
+  /// Null means "not worked out", which renders nothing.
+  final LanguageComplement? complement;
+
+  const ProfileCard({
+    super.key,
+    required this.user,
+    this.onTap,
+    this.complement,
+  });
 
   @override
   State<ProfileCard> createState() => _ProfileCardState();
@@ -259,6 +273,15 @@ class _ProfileCardState extends State<ProfileCard> {
                     // label it sits under. LanguagesLine renders nothing of
                     // its own accord when nothing is declared, so the
                     // conditional here only owns the spacing around it.
+                    // Only the mutual rung earns a badge. It is the case the
+                    // server scores 1.0, and it is rare — a marker that showed
+                    // up on most cards would stop being a signal and become
+                    // decoration. The line below still states the languages
+                    // either way; this says why they matter.
+                    if (widget.complement == LanguageComplement.mutual) ...[
+                      _TeachEachOtherBadge(),
+                      const SizedBox(height: 8),
+                    ],
                     if (widget.user.languagesSpoken.isNotEmpty ||
                         widget.user.languagesLearning.isNotEmpty) ...[
                       LanguagesLine(
@@ -307,6 +330,48 @@ class _ProfileCardState extends State<ProfileCard> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The one visual distinction the deck draws from language.
+///
+/// Deliberately a labelled pill rather than a colour or a glow: the reason has
+/// to survive being looked at once, on a card the user is about to swipe, and
+/// a colour that means something only to whoever chose it explains nothing.
+class _TeachEachOtherBadge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withValues(alpha: 0.22),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: AppTheme.primaryColor.withValues(alpha: 0.55),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.swap_horiz, size: 14, color: context.onOverlay),
+          const SizedBox(width: 5),
+          // Flexible, not fixed: this string is a sentence in most locales and
+          // several of them are far longer than the English.
+          Flexible(
+            child: Text(
+              context.l10n.languagesTeachEachOther,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: context.onOverlay,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -622,5 +622,6 @@
   "profileSpeaks": "구사",
   "profileLearning": "배우는 중",
   "profileLanguages": "언어",
-  "profileLanguagesUpdated": "언어가 업데이트되었습니다"
+  "profileLanguagesUpdated": "언어가 업데이트되었습니다",
+  "languagesTeachEachOther": "서로 가르쳐 줄 수 있어요"
 }

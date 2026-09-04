@@ -871,5 +871,6 @@
   "profileSpeaks": "Puhuu",
   "profileLearning": "Opiskelee",
   "profileLanguages": "Kielet",
-  "profileLanguagesUpdated": "Kielet päivitetty"
+  "profileLanguagesUpdated": "Kielet päivitetty",
+  "languagesTeachEachOther": "Voitte opettaa toisianne"
 }

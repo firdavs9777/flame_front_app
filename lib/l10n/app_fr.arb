@@ -655,5 +655,6 @@
   "profileSpeaks": "Parle",
   "profileLearning": "Apprend",
   "profileLanguages": "Langues",
-  "profileLanguagesUpdated": "Langues mises à jour"
+  "profileLanguagesUpdated": "Langues mises à jour",
+  "languagesTeachEachOther": "Vous pouvez vous apprendre mutuellement"
 }

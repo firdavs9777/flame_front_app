@@ -871,5 +871,6 @@
   "profileSpeaks": "Spreekt",
   "profileLearning": "Leert",
   "profileLanguages": "Talen",
-  "profileLanguagesUpdated": "Talen bijgewerkt"
+  "profileLanguagesUpdated": "Talen bijgewerkt",
+  "languagesTeachEachOther": "Jullie kunnen elkaar lesgeven"
 }

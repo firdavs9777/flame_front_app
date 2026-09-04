@@ -623,5 +623,6 @@
   "profileSpeaks": "Konuşuyor",
   "profileLearning": "Öğreniyor",
   "profileLanguages": "Diller",
-  "profileLanguagesUpdated": "Diller güncellendi"
+  "profileLanguagesUpdated": "Diller güncellendi",
+  "languagesTeachEachOther": "Birbirinize öğretebilirsiniz"
 }

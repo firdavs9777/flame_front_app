@@ -755,5 +755,6 @@
   "profileSpeaks": "พูด",
   "profileLearning": "กำลังเรียน",
   "profileLanguages": "ภาษา",
-  "profileLanguagesUpdated": "อัปเดตภาษาแล้ว"
+  "profileLanguagesUpdated": "อัปเดตภาษาแล้ว",
+  "languagesTeachEachOther": "คุณสอนกันและกันได้"
 }

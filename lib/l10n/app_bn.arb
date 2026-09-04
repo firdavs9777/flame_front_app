@@ -871,5 +871,6 @@
   "profileSpeaks": "বলেন",
   "profileLearning": "শিখছেন",
   "profileLanguages": "ভাষা",
-  "profileLanguagesUpdated": "ভাষা আপডেট হয়েছে"
+  "profileLanguagesUpdated": "ভাষা আপডেট হয়েছে",
+  "languagesTeachEachOther": "আপনারা একে অপরকে শেখাতে পারেন"
 }

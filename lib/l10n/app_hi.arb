@@ -755,5 +755,6 @@
   "profileSpeaks": "बोलते हैं",
   "profileLearning": "सीख रहे हैं",
   "profileLanguages": "भाषाएं",
-  "profileLanguagesUpdated": "भाषाएं अपडेट हो गईं"
+  "profileLanguagesUpdated": "भाषाएं अपडेट हो गईं",
+  "languagesTeachEachOther": "आप एक-दूसरे को सिखा सकते हैं"
 }

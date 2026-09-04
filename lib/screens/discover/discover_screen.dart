@@ -7,6 +7,7 @@ import 'package:flame/models/models.dart';
 import 'package:flame/providers/providers.dart';
 import 'package:flame/theme/app_theme.dart';
 import 'package:flame/widgets/profile_card.dart';
+import 'package:flame/core/languages/language_complement.dart';
 import 'package:flame/widgets/action_buttons.dart';
 import 'package:flame/screens/discover/widgets/deck_states.dart';
 import 'package:flame/core/layout/breakpoints.dart';
@@ -292,6 +293,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       }
     });
 
+    // Read once for the whole deck rather than per card: every card asks the
+    // same question of the same viewer, and the answer cannot differ between
+    // them.
+    final me = ref.watch(currentUserProvider).valueOrNull;
     final usersState = ref.watch(discoveryProvider);
     final swipeState = ref.watch(swipeProvider);
 
@@ -384,6 +389,18 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               final user = users[index];
                               return ProfileCard(
                                 user: user,
+                                // Null while the viewer is still loading, or
+                                // if they have declared nothing — either way
+                                // there is no claim to make, and the badge
+                                // stays away.
+                                complement: me == null
+                                    ? null
+                                    : languageComplement(
+                                        viewerSpoken: me.languagesSpoken,
+                                        viewerLearning: me.languagesLearning,
+                                        theirSpoken: user.languagesSpoken,
+                                        theirLearning: user.languagesLearning,
+                                      ),
                                 onTap: () {
                                   Navigator.pushNamed(
                                     context,

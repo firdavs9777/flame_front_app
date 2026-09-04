@@ -657,5 +657,6 @@
   "profileSpeaks": "Habla",
   "profileLearning": "Aprende",
   "profileLanguages": "Idiomas",
-  "profileLanguagesUpdated": "Idiomas actualizados"
+  "profileLanguagesUpdated": "Idiomas actualizados",
+  "languagesTeachEachOther": "Pueden enseñarse mutuamente"
 }

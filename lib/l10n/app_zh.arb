@@ -622,5 +622,6 @@
   "profileSpeaks": "会说",
   "profileLearning": "学习中",
   "profileLanguages": "语言",
-  "profileLanguagesUpdated": "语言已更新"
+  "profileLanguagesUpdated": "语言已更新",
+  "languagesTeachEachOther": "你们可以互相教学"
 }

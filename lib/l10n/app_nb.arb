@@ -871,5 +871,6 @@
   "profileSpeaks": "Snakker",
   "profileLearning": "Lærer",
   "profileLanguages": "Språk",
-  "profileLanguagesUpdated": "Språk oppdatert"
+  "profileLanguagesUpdated": "Språk oppdatert",
+  "languagesTeachEachOther": "Dere kan lære hverandre"
 }

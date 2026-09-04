@@ -871,5 +871,6 @@
   "profileSpeaks": "Mluví",
   "profileLearning": "Učí se",
   "profileLanguages": "Jazyky",
-  "profileLanguagesUpdated": "Jazyky aktualizovány"
+  "profileLanguagesUpdated": "Jazyky aktualizovány",
+  "languagesTeachEachOther": "Můžete se navzájem učit"
 }

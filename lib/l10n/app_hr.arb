@@ -871,5 +871,6 @@
   "profileSpeaks": "Govori",
   "profileLearning": "Uči",
   "profileLanguages": "Jezici",
-  "profileLanguagesUpdated": "Jezici su ažurirani"
+  "profileLanguagesUpdated": "Jezici su ažurirani",
+  "languagesTeachEachOther": "Možete učiti jedno drugo"
 }

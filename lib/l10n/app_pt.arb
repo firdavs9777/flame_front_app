@@ -655,5 +655,6 @@
   "profileSpeaks": "Fala",
   "profileLearning": "Aprende",
   "profileLanguages": "Idiomas",
-  "profileLanguagesUpdated": "Idiomas atualizados"
+  "profileLanguagesUpdated": "Idiomas atualizados",
+  "languagesTeachEachOther": "Podem ensinar-se mutuamente"
 }

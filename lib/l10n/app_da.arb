@@ -871,5 +871,6 @@
   "profileSpeaks": "Taler",
   "profileLearning": "Lærer",
   "profileLanguages": "Sprog",
-  "profileLanguagesUpdated": "Sprog opdateret"
+  "profileLanguagesUpdated": "Sprog opdateret",
+  "languagesTeachEachOther": "I kan lære hinanden"
 }
