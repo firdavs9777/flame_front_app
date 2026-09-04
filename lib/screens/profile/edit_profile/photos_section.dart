@@ -268,9 +268,15 @@ class PhotosSectionState extends ConsumerState<PhotosSection> {
                 if (!mounted) return;
                 messenger.showSnackBar(
                   SnackBar(
+                    // The captured l10n, not `context`: Navigator.pop above
+                    // dismissed the sheet this context belongs to, so reading
+                    // an inherited widget from it after the await is reading
+                    // from a deactivated element. `mounted` does not cover it
+                    // — that is PhotosSectionState's, a different object.
+                    // The set-main-photo branch above already does this.
                     content: Text(ok
-                        ? context.l10n.profilePhotoDeleted
-                        : context.l10n.profilePhotoDeleteFailed),
+                        ? l10n.profilePhotoDeleted
+                        : l10n.profilePhotoDeleteFailed),
                   ),
                 );
               },

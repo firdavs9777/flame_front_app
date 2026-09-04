@@ -465,12 +465,18 @@ class SettingsScreen extends ConsumerWidget {
               Navigator.pop(dialogContext);
               final deleted = context.l10n.settingsAccountDeleted;
               final deleteFailed = context.l10n.settingsAccountDeleteFailed;
+              // Captured BEFORE the await, like the strings above it.
+              // Deleting the account clears the session, which rebuilds the
+              // tree from the root — so by the time the await returns, this
+              // screen may already be gone and Navigator.of(context) would
+              // throw on a deactivated element. That is the account-deletion
+              // path, which App Review exercises deliberately.
+              final navigator = Navigator.of(context);
               final failure = await ref
                   .read(currentUserProvider.notifier)
                   .deleteAccount(password: hasPassword ? password : null);
               if (failure == null) {
                 messenger.showSnackBar(SnackBar(content: Text(deleted)));
-                final navigator = Navigator.of(context);
                 await ref.read(authProvider.notifier).logout();
                 // Same unwind as Log out, and it matters more here: the account
                 // is gone, so every screen still on the stack is showing data

@@ -68,6 +68,12 @@ dependencies:
   # coordinates to a third-party geocoder from the server; the platform API
   # answers locally, so it does not leave the phone.
   geocoding: ^5.0.0
+
+  # Imported directly by api_client.dart for MediaType on multipart uploads.
+  # It resolved anyway as a transitive dependency of http, which is why this
+  # was easy to miss — but relying on that means a version bump elsewhere can
+  # remove it and break the build for a reason that points nowhere near here.
+  http_parser: ^4.1.2
   permission_handler: ^11.3.1
 
   # Social Auth
