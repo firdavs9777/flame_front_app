@@ -166,6 +166,54 @@ the task brief; use this one since it is what users are actually shown):
 
 ---
 
+## 7-DONE. What has actually been set (2026-09-05)
+
+Steps 7a and 7b below were run against production. Recorded here so nobody
+repeats them, and because doing so corrected two errors in the instructions
+that follow — read this section before trusting them.
+
+**Demo account** `appreview1@banatalk.com` (Alex Reviewer, male, 28, San
+Francisco): `languagesSpoken: ["en"]`, `languagesLearning: ["ko","es"]`.
+
+**Seed accounts** (both female / looking for male, so the demo account can see
+them; both within 3 km of it):
+
+| email | password | name | age | speaks | learning |
+|---|---|---|---|---|---|
+| `flame.seed.ko@banatalk.com` | `FlameSeedKo2026!` | Jiwoo | 27 | ko | en |
+| `flame.seed.es@banatalk.com` | `FlameSeedEs2026!` | Lucia | 29 | es | en |
+
+Passwords are here only because these are throwaway seed accounts on a public
+repo's *sibling* — if that ever stops being true, rotate them.
+
+**Demo account preferences were set explicitly** to 22-40 / 50 km. This was
+not optional. `preferencesSet` defaults to false, and while it is false the
+radius is deliberately NOT applied (see `discoveryService.js` — an untouched
+default must not silently hide people). Before setting it the demo deck
+contained three accounts **9,029 km away**, which in a location-based dating
+app reads as broken. After: the deck is exactly the two seed accounts, at
+2 km and 3 km, both carrying the "You can teach each other" marker.
+
+### Two corrections to the instructions below
+
+1. **`POST /auth/register` does NOT accept `languagesSpoken` /
+   `languagesLearning`.** They are absent from `registerSchema`, and that
+   schema is not `.strict()`, so they are silently discarded and registration
+   still returns success. Languages must be set by a follow-up
+   `PATCH /users/me` after logging in. The §7b example below is wrong on this
+   point.
+
+2. **`GET /users/me` returns camelCase**, not snake_case: `getMe` serialises
+   through `toPublic`. So verify with `languagesSpoken`, not
+   `languages_spoken`. (`/discover` genuinely is snake_case — the two really
+   do differ, which is why the client reads both.)
+
+**Still outstanding: 7c, photos.** All three accounts have `photos: []`. This
+cannot be automated — the upload has to go through the app so it passes the
+same on-device face check as any member's photo.
+
+---
+
 ## 7. Manual steps — DO NOT AUTOMATE
 
 **These touch production data on the live server and must be run by hand by
