@@ -1,0 +1,163 @@
+Thank you for the detailed review. All five points are addressed in build
+1.0.0 (10003). Taking them in the order you raised them.
+
+
+GUIDELINE 4.3(b) — DESIGN: SPAM
+
+We understand the concern. A dating app that matches only on photos and
+distance is hard to distinguish from many others already on the App Store,
+and that was a fair description of the build you reviewed.
+
+We have not answered this with cosmetic changes. Flame's matching premise is
+now cross-language dating: members are matched on how their languages
+complement one another, and a conversation between two people with no shared
+language is translated automatically rather than requiring them to ask for it.
+
+What is in build 10003:
+
+1. Members declare the languages they speak and the languages they are
+learning. This is part of creating an account, and existing members set it
+from Edit Profile. The catalogue is 182 languages, shown with their own
+endonyms (Oʻzbek, ئۇيغۇرچە, 한국어) rather than English names.
+
+2. Those declarations are a weighted input to matching, not a filter or a
+badge. Language complementarity carries 0.20 of the ranking score, alongside
+shared interests, distance, recent activity and mutual preference
+compatibility. Someone who speaks what you are learning, and is learning what
+you speak, ranks above someone equally close and equally active who does not.
+
+3. The languages are visible where the decision is made — on the card in the
+deck, on the full profile, and on the member's own profile. Where the fit is
+mutual, the card says so: a card whose owner speaks what you are learning and
+is learning what you speak is marked "You can teach each other". That is the
+one case the ranking scores highest, and it is marked only in that case.
+
+4. Chat translates by default across a genuine language gap. When both people
+have declared spoken languages and share none, incoming messages arrive
+already translated, marked with a translation icon and a "Hide translation"
+control. Where the two share a language nothing is translated and the manual
+per-message option is unchanged. We default on only for a known mismatch: an
+undeclared language is not evidence of a gap.
+
+We have also renamed the app. "Flame Dating App: Meet & Date" stated the
+category and nothing else; it is now "Flame: Date Across Languages", subtitle
+"Chat translates automatically", in every localization.
+
+To confirm this in about two minutes, signed in as the demo account:
+
+  1. Open Discover. The cards show each person's languages. The demo
+     account's matches include a Korean speaker learning English and a
+     Spanish speaker learning English.
+  2. Both cards carry a "You can teach each other" marker, because each of
+     them speaks a language the demo account is learning and is learning the
+     language it speaks. It is the ranking's reasoning, shown on the card.
+  3. Tap a card to open the full profile and see the languages in full.
+  4. Open a conversation with either of them. Because the demo account speaks
+     English and neither of them does, their messages appear already
+     translated, with a "Hide translation" control — no tap needed.
+  5. Open Profile > Edit Profile > Languages to see and change the
+     declaration that drives all of the above.
+
+
+GUIDELINE 2.1 — UNABLE TO SIGN IN WITH THE DEMO ACCOUNT
+
+Apologies for the wasted attempt. The credentials were correct; the sign-in
+form was not. Pasting the address carried invisible characters with it — zero
+width spaces and a byte-order mark — and the form compared the pasted string
+literally, so it never matched. Typing it by hand worked, which is why this
+passed our own testing.
+
+The app now strips those characters from every field where an address is
+typed or pasted: sign-in, registration, and both steps of password reset. The
+same credentials in App Store Connect now work when pasted.
+
+
+GUIDELINE 4 — SIGN IN WITH APPLE
+
+You are right, and the cause was on our side rather than in the framework.
+
+The app requested the fullName scope from Authentication Services, received
+the name, and then discarded it — only the identity token and authorization
+code were forwarded to our server. With no name to store, the account was
+created as "New User", and the profile step presented that placeholder for the
+user to correct. That is the behaviour you saw.
+
+Build 10003 captures givenName and familyName from the Apple credential and
+forwards them, so an account created through Sign in with Apple carries the
+name Apple supplied and the user is not asked for it. The name only ever fills
+a gap: on later sign-ins the existing account is returned untouched, so a name
+the user has since edited is never overwritten.
+
+One thing worth knowing before you test. Apple returns givenName and
+familyName exactly once — on an Apple ID's first authorization of this app —
+and never again. If you signed in to Flame with the same Apple ID during the
+previous review, Apple will not send the name a second time and the app will
+have nothing to display, so the original behaviour would appear unchanged.
+
+To see the corrected behaviour, please use an Apple ID that has not signed in
+to Flame before, or revoke the previous authorization first:
+
+  Settings > [your name] > Sign-In & Security > Sign in with Apple > Flame >
+  Stop Using Apple ID
+
+The next sign-in is then treated as a first authorization and the name
+arrives. We are glad to supply a dedicated Apple ID if that is easier.
+
+
+GUIDELINE 2.1(a) — THE "SKIP FOR NOW" BUTTON
+
+Reproduced and fixed.
+
+The button was not dropping taps — it was disabled. The interests step
+required at least one selection before allowing anyone to continue, and "Skip
+for now" was wired to the same condition as "Continue", so the one control
+that existed to bypass the requirement was itself blocked by it. It also still
+rendered in its enabled colours, so nothing on screen explained why tapping
+did nothing.
+
+Both faults are fixed in build 10003. "Skip for now" is always actionable, and
+the shared button component now takes its colours from whether it can actually
+be pressed, so a disabled control can no longer look enabled. An automated
+test covers the case and quotes your report, so it cannot regress.
+
+
+GUIDELINE 2.1 — FACE DATA
+
+Flame uses on-device face detection for one purpose: to check that a photo a
+member uploads as a profile photo actually contains a human face.
+
+What face data is collected: a camera or gallery image the member has chosen
+is analysed in memory, on their own device, to detect whether a face is
+present, plus coarse quality signals (eyes open, smiling) used only to reject
+an unclear photo. No facial landmark data, faceprint, or biometric template is
+created.
+
+Planned use: solely to accept or reject that photo as a profile photo. There
+is no other use and none planned.
+
+Sharing: none. The analysis is performed by Google ML Kit running locally on
+the device. No image or derived data is transmitted to Google, to us, or to
+any third party for this check.
+
+Third parties and storage location: none, and nowhere. Processing is transient
+and in memory on the user's device. Nothing derived from face detection is
+transmitted or stored on any server.
+
+Retention: none. The pass/fail result is used at that moment and discarded.
+The photo itself, once accepted, is stored as an ordinary profile photo and is
+deleted through the normal photo and account deletion flows.
+
+Deletion: not applicable — nothing derived from face detection is retained, so
+there is nothing to delete beyond the profile photo itself.
+
+Where this is explained in the privacy policy: section 5, "Photos and face
+detection", at https://flamedating.net/privacy.
+
+The specific text concerning face data reads:
+
+  "We do not run face recognition, we do not compute a faceprint or any
+  biometric identifier, we do not compare your face against any database,
+  and photos are not sent anywhere for this purpose."
+
+
+We are glad to answer anything further.
