@@ -85,7 +85,79 @@ We are glad to answer anything further.
 
 ---
 
-## B. Reply to Guideline 2.1 — face data
+## B. Reply to Guideline 2.1 — we were unable to sign in with the demo account
+
+> Paste into **App Store Connect → Resolution Center**.
+
+Thank you for flagging this, and apologies for the wasted attempt.
+
+The credentials were correct; the sign-in form was not. Pasting the address
+carried invisible characters along with it — zero-width spaces and a byte-order
+mark — and the form compared the pasted string literally, so the address never
+matched. Typing it by hand would have worked, which is why it passed our own
+testing.
+
+The app now strips those characters from every field where an address is typed
+or pasted: sign-in, registration, and both steps of password reset. The same
+credentials in App Store Connect now work when pasted.
+
+---
+
+## C. Reply to Guideline 4 — Sign in with Apple
+
+> Paste into **App Store Connect → Resolution Center**.
+
+You are right, and the cause was on our side rather than in the framework.
+
+The app requested the `fullName` scope from Authentication Services, received
+the name, and then discarded it — only the identity token and authorization
+code were forwarded to our server. With no name to store, the account was
+created as "New User", and the profile step then presented that placeholder for
+the user to correct. That is the behaviour you saw.
+
+Build 10003 captures `givenName` and `familyName` from the Apple credential and
+forwards them, so an account created through Sign in with Apple now carries the
+name Apple supplied and the user is not asked for it. The name is only ever
+used to fill a gap: on later sign-ins the existing account is returned
+untouched, so a name the user has since edited is never overwritten.
+
+**One thing worth knowing before you test.** Apple returns `givenName` and
+`familyName` exactly once — on the first authorization of this app by a given
+Apple ID — and never again, in the token or otherwise. If you signed in to
+Flame with the same Apple ID during the previous review, Apple will not send
+the name a second time, and the app will have nothing to display.
+
+To see the corrected behaviour, please either use an Apple ID that has not
+signed in to Flame before, or revoke the previous authorization first:
+**Settings → [your name] → Sign-In & Security → Sign in with Apple → Flame →
+Stop Using Apple ID.** The next sign-in is then treated as a first
+authorization and the name arrives.
+
+We are happy to supply a dedicated Apple ID for this if that is easier.
+
+---
+
+## D. Reply to Guideline 2.1(a) — the Skip for now button
+
+> Paste into **App Store Connect → Resolution Center**.
+
+Reproduced and fixed.
+
+The button was not unresponsive in the sense of a dropped tap — it was
+disabled. The interests step required at least one selection before it would
+let anyone continue, and "Skip for now" was wired to the same condition as
+"Continue", so the one control that existed to bypass the requirement was
+itself blocked by it. It also still rendered in its enabled colours, so there
+was nothing on screen to say why tapping did nothing.
+
+Both faults are fixed in build 10003. "Skip for now" is now always actionable,
+and the shared button component now derives its colours from whether it can
+actually be pressed, so a disabled control can never again look enabled. An
+automated test covers the case and quotes your report, so it cannot regress.
+
+---
+
+## E. Reply to Guideline 2.1 — face data
 
 > Paste into the **App Privacy / Resolution Center** response, or the face-data
 > questions if asked as a form.
@@ -118,7 +190,7 @@ This is disclosed in our privacy policy under "Photos and face detection":
 
 ---
 
-## C. Demo account
+## F. Demo account
 
 Sign-in details go in **App Review Information**, not in the letter.
 
@@ -133,21 +205,33 @@ them on every sign-in, registration and password-reset field, so pasting works.
 
 ---
 
-## D. Before sending — checklist
+## G. Before sending — checklist
 
-- [ ] Backend deployed (done — the language catalogue is live in production).
-- [ ] §7a run: demo account has `languagesSpoken: ["en"]`, `languagesLearning:
-      ["ko","es"]`. **Verify by reading it back** — the update endpoint accepts
-      camelCase and silently discards a snake_case typo with a 200.
-- [ ] §7b: both seed accounts exist, within the demo account's discovery
-      radius, with bios.
-- [ ] §7c: demo account and both seed accounts have at least one photo, added
-      through the app so they pass the same face check as any member.
-- [ ] Signed in as the demo account, walked steps 1–5 of the letter and seen
-      each one actually work — including the "You can teach each other" marker
-      on both seed accounts' cards, which only appears once §7a and §7b have
-      given all three accounts their languages. **If any step does not, fix it before sending
-      rather than softening the wording** — every step is checkable, which is
-      the point.
-- [ ] Name and subtitle updated in App Store Connect.
-- [ ] Build 10003 uploaded.
+Ordered. Nothing below the line about photos is worth doing until that is done.
+
+- [ ] **1. Photos** on all three accounts (demo, both seeds), added **through
+      the app** so they pass the same on-device face check as any member's.
+      Everything else in this letter assumes a reviewer looking at real cards.
+- [ ] **2. Name and subtitle in all 32 localizations** —
+      `2026-09-resubmission-metadata.md` §1b. App Store Connect stores these
+      per localization; changing only English leaves the old generic name in
+      31 storefronts, which is part of what 4.3(b) objected to.
+- [ ] **3. Archive and upload build 1.0.0 (10003).**
+- [ ] **4. App Review Information** — demo credentials, plus the note in §F,
+      plus the Apple ID revocation note from §C. A reviewer who reuses last
+      review's Apple ID will not see the Sign in with Apple fix.
+- [ ] **5. Walk it yourself** as the demo account, on an **iPad** — that is
+      the device they reviewed on, and where the Skip button bug was found.
+      Steps 1-5 of §A, and tap "Skip for now" on the interests step.
+- [ ] **6. Paste §A-§E** into Resolution Center as one reply. All five issues,
+      in the order Apple raised them. A reply that answers some of them reads
+      as a reply to none.
+- [ ] **7. Rotate the demo password** and update App Store Connect. It was
+      briefly readable in a public repository.
+
+### If you are short of time
+
+Items 1, 3 and 6 are the submission. Item 2 can be done after submitting —
+metadata is editable while the build is in review. Item 7 can be done
+immediately after. Item 5 cannot be skipped: every claim in §A is an
+invitation to go and look.
