@@ -1,12 +1,30 @@
 # App Store resubmission metadata — cross-language dating
 
-**Date:** 2026-09-03
-**Context:** Flame was rejected under **Guideline 4.3(b) — Design: Spam**
-("primarily includes dating features that duplicate the content and
-functionality of similar apps that are already widely available") and
-separately asked, under **Guideline 2.1**, what face data the app collects.
+**Date:** 2026-09-03 (context corrected 2026-09-20)
+**Context:** App Review raised **FIVE** issues on submission
+36d289d7-c1dd-4f3f-a482-e232923daac8, reviewed 2026-09-02 on an **iPad Air
+11-inch (M3), iPadOS 26.6**, against build `1.0.0 (10001)`.
+
+An earlier version of this section listed only two of them, which is a trap:
+a reply that answers two of five is a reply Apple bounces for non-response.
+All five, with where each stands:
+
+| # | Guideline | Issue | Status |
+|---|---|---|---|
+| 1 | 4.3(b) Design — Spam | "duplicates … apps already widely available" | Answered by the cross-language premise; live and verified |
+| 2 | 2.1 Information Needed | Could not sign in with the demo account | Fixed — invisible pasted characters stripped at all four typed-email entry points |
+| 3 | **4 Design — Sign in with Apple** | Users are asked for name/email that Authentication Services already provided | **Check before submitting.** `StepProfileInfo` in the social completion flow renders a required "First name" field. Apple sends a name only on the FIRST authorization ever, and the reviewer already authorized on 10001 — so on re-review the field is blank and required, reproducing the rejection exactly |
+| 4 | 2.1(a) App Completeness | "Skip for now button was unresponsive" | Fixed — `test/screens/auth/registration/skip_for_now_test.dart` pins it and quotes the rejection |
+| 5 | 2.1 Information Needed | Face-data questions | Answered in §6, verified against shipped code |
+
+Note the review device: an **iPad**. Issue 4 was found there, and anything
+re-tested before resubmission should be re-tested on an iPad, not only on a
+phone simulator.
+
 This document is the copy for the resubmission and the answers to the 2.1
-question. It does not change product code.
+questions. The reply itself lives in
+`docs/app-store/2026-09-apple-review-response.md`. It does not change
+product code.
 
 The build this metadata accompanies is `1.0.0+10003` (see "Build number"
 below). The build App Review rejected was `10001`.
@@ -119,7 +137,7 @@ Beyond that, Flame is a real dating app:
 • Swipe, match, and chat
 • Stories that expire
 • Sign in with Apple, Google, or email
-• Precise, private location-based discovery
+• Private location-based discovery — distances are deliberately coarse
 • Report and block tools that actually work
 • Free to download
 
@@ -134,7 +152,7 @@ other dating app" impression this resubmission is trying to correct.
 
 1. **"Speaks 한국어, learning English — matched because your languages
    complement."** (Deck card, or profile detail, showing the languages row
-   with the complementary highlight from Task 7.)
+   with the "You can teach each other" marker.)
 2. **"Don't share a language? Your chat translates automatically."** (Chat
    screen with the default-on translation banner/behavior visible, ideally
    showing one message in the original and one translated.)
@@ -150,20 +168,14 @@ Email: `appreview1@banatalk.com`
 Password: see App Store Connect -> App Review Information.
 Deliberately not written here: this repository is public.
 
-**Note to reviewer:**
+**Note to reviewer:** the canonical text is section A of
+`docs/app-store/2026-09-apple-review-response.md`. It is NOT duplicated here.
 
-> This build answers the 4.3(b) rejection by ranking and surfacing
-> cross-language matches, not by adding an unrelated feature. Sign in with
-> the demo account above. On the demo account's own profile and in the
-> discovery deck, note the languages row — it reads "speaks English,
-> learning 한국어/Español", with a flag badge on each card. Open a
-> conversation with one of the seeded matches (Korean-speaking or
-> Spanish-speaking, both within the demo
-> account's discovery radius): because the two accounts do not share a
-> language, translation is on by default in that chat and says so, rather
-> than being hidden behind a long-press menu. This is the feature the
-> resubmission is about — please look at the languages on the card and the
-> translated chat before evaluating the rest of the app.
+A second copy is how the last mistake survived: an earlier draft of that note
+told Apple the deck card is "visually distinguished when languages complement"
+while nothing of the sort had been built, and the copy that got fixed was not
+the copy someone would have pasted. One text, one place, checked against the
+app before it is sent.
 
 ## 6. Face data answers (Guideline 2.1)
 
