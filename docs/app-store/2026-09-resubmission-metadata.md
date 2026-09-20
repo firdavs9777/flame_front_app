@@ -32,6 +32,61 @@ mechanism (translation). "Translated" alone invites the reviewer to see
 translation as a bolted-on feature; "Date Across Languages" states the
 premise the whole rejection response depends on.
 
+## 1b. Name and subtitle for ALL 32 localizations
+
+**App Store Connect stores the name and subtitle PER LOCALIZATION.** Renaming
+only English (U.S.) leaves `Flame Dating App: Meet & Date` — the generic name
+that is part of what 4.3(b) objected to — live in the other 31 storefronts.
+Set every row below, or the rename is cosmetic in 31 markets.
+
+Both fields cap at 30 characters; every value here was length-checked.
+Portuguese (Portugal) is exactly 30, so do not add to it.
+
+| Localization | Name | Subtitle |
+|---|---|---|
+| English (U.S.) | Flame: Date Across Languages | Chat translates automatically |
+| English (Australia) | Flame: Date Across Languages | Chat translates automatically |
+| English (Canada) | Flame: Date Across Languages | Chat translates automatically |
+| English (U.K.) | Flame: Date Across Languages | Chat translates automatically |
+| Arabic | فليم: مواعدة عبر اللغات | ترجمة تلقائية للمحادثات |
+| Bangla | ফ্লেম: ভাষা পেরিয়ে ডেটিং | চ্যাট নিজেই অনুবাদ হয় |
+| Catalan | Flame: Cites entre idiomes | El xat es tradueix sol |
+| Chinese (Simplified) | Flame：跨语言约会 | 聊天自动翻译 |
+| Chinese (Traditional) | Flame：跨語言約會 | 聊天自動翻譯 |
+| Croatian | Flame: Spojevi preko jezika | Chat se prevodi sam |
+| Czech | Flame: Seznamte se napříč | Chat se překládá sám |
+| Danish | Flame: Date på tværs af sprog | Chatten oversættes selv |
+| Dutch | Flame: Daten over talen heen | Chat vertaalt automatisch |
+| Finnish | Flame: Treffit yli kielien | Chatti kääntyy itsestään |
+| French | Flame : Aimer en toute langue | Le chat se traduit seul |
+| French (Canada) | Flame : Aimer en toute langue | Le chat se traduit seul |
+| German | Flame: Daten über Sprachen | Chats werden übersetzt |
+| Hindi | फ्लेम: भाषाओं के पार डेटिंग | चैट अपने आप अनुवाद |
+| Indonesian | Flame: Kencan Lintas Bahasa | Obrolan diterjemahkan |
+| Italian | Flame: Incontri tra lingue | La chat si traduce da sola |
+| Japanese | Flame：言語を越えて出会う | チャットは自動で翻訳 |
+| Korean | Flame: 언어를 넘어 만나다 | 채팅이 자동으로 번역돼요 |
+| Norwegian | Flame: Date på tvers av språk | Chatten oversettes selv |
+| Portuguese (Brazil) | Flame: Namoro entre idiomas | O chat traduz sozinho |
+| Portuguese (Portugal) | Flame: Encontros entre línguas | O chat traduz-se sozinho |
+| Russian | Flame: Общение на любом языке | Чат переводится сам |
+| Spanish (Mexico) | Flame: Citas entre idiomas | El chat se traduce solo |
+| Spanish (Spain) | Flame: Citas entre idiomas | El chat se traduce solo |
+| Thai | Flame: เดตข้ามภาษา | แชทแปลให้อัตโนมัติ |
+| Turkish | Flame: Diller arası flört | Sohbet otomatik çevrilir |
+| Urdu | فلیم: زبانوں کے پار ڈیٹنگ | چیٹ خودکار ترجمہ ہوتی ہے |
+| Vietnamese | Flame: Hẹn hò xuyên ngôn ngữ | Trò chuyện tự động dịch |
+
+The name states the premise (who you are matched with) and the subtitle states
+the mechanism (what makes it work) — the same division as the English pair, not
+a literal translation of it. The CJK and Thai entries are far under the cap
+because those scripts say it in fewer characters, not because they say less.
+
+Description: the English text in §3 is the one that has to be right on the day.
+If time is short, translate §3's **first two lines only** for each locale — they
+carry the 4.3(b) answer, and the rest of the description is a feature list that
+reads acceptably in English to a reviewer who has already seen the premise.
+
 ## 2. Subtitle (30-character limit)
 
 | Option | Characters | Note |
