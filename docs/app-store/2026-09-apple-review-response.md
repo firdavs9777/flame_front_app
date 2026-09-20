@@ -1,4 +1,4 @@
-# Response to App Review — build 1.0.0 (10003)
+# Response to App Review — build 1.0.1 (10004)
 
 Every factual claim below was re-checked against the shipped app, and against
 production, on the day of writing. **Do not add a claim to this text without
@@ -30,7 +30,7 @@ now cross-language dating: members are matched on how their languages
 complement one another, and a conversation between two people with no shared
 language is translated automatically rather than requiring them to ask for it.
 
-What is in build 10003, all of it verifiable in the app:
+What is in build 10004, all of it verifiable in the app:
 
 1. **Members declare the languages they speak and the languages they are
    learning.** This is part of creating an account, and existing members can
@@ -115,7 +115,7 @@ code were forwarded to our server. With no name to store, the account was
 created as "New User", and the profile step then presented that placeholder for
 the user to correct. That is the behaviour you saw.
 
-Build 10003 captures `givenName` and `familyName` from the Apple credential and
+Build 10004 captures `givenName` and `familyName` from the Apple credential and
 forwards them, so an account created through Sign in with Apple now carries the
 name Apple supplied and the user is not asked for it. The name is only ever
 used to fill a gap: on later sign-ins the existing account is returned
@@ -150,7 +150,7 @@ let anyone continue, and "Skip for now" was wired to the same condition as
 itself blocked by it. It also still rendered in its enabled colours, so there
 was nothing on screen to say why tapping did nothing.
 
-Both faults are fixed in build 10003. "Skip for now" is now always actionable,
+Both faults are fixed in build 10004. "Skip for now" is now always actionable,
 and the shared button component now derives its colours from whether it can
 actually be pressed, so a disabled control can never again look enabled. An
 automated test covers the case and quotes your report, so it cannot regress.
@@ -216,7 +216,7 @@ Ordered. Nothing below the line about photos is worth doing until that is done.
       `2026-09-resubmission-metadata.md` §1b. App Store Connect stores these
       per localization; changing only English leaves the old generic name in
       31 storefronts, which is part of what 4.3(b) objected to.
-- [ ] **3. Archive and upload build 1.0.0 (10003).**
+- [ ] **3. Archive and upload build 1.0.1 (10004).**
 - [ ] **4. App Review Information** — demo credentials, plus the note in §F,
       plus the Apple ID revocation note from §C. A reviewer who reuses last
       review's Apple ID will not see the Sign in with Apple fix.

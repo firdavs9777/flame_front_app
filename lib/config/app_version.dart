@@ -8,4 +8,4 @@
 /// `pubspec.yaml` is still the source of truth, because that is what the build
 /// stamps into the binary. This mirrors it, and `test/config/app_version_test`
 /// fails the build if the two ever disagree.
-const String kAppVersion = '1.0.0';
+const String kAppVersion = '1.0.1';

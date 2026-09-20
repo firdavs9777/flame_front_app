@@ -26,7 +26,7 @@ questions. The reply itself lives in
 `docs/app-store/2026-09-apple-review-response.md`. It does not change
 product code.
 
-The build this metadata accompanies is `1.0.0+10003` (see "Build number"
+The build this metadata accompanies is `1.0.1+10004` (see "Build number"
 below). The build App Review rejected was `10001`.
 
 ---
@@ -440,9 +440,17 @@ account doesn't appear).
 
 ## Build number
 
-`pubspec.yaml` (`version: 1.0.0+10003`) and `lib/config/app_version.dart`
-(`kAppVersion = '1.0.0'`) — version name unchanged, build number bumped from
-`10002` to `10003` (App Review's rejected build was `10001`).
+`pubspec.yaml` (`version: 1.0.1+10004`) and `lib/config/app_version.dart`
+(`kAppVersion = '1.0.1'`) — both must be bumped together.
+
+History: App Review rejected `1.0.0 (10001)`. `10002` and `10003` were
+stamped locally during the fix work and never submitted. The submission is
+`1.0.1 (10004)`.
+
+**Because the version NAME changed from 1.0.0 to 1.0.1, App Store Connect
+needs a version record for 1.0.1.** A build whose short version is 1.0.1 will
+not attach to a prepared 1.0.0 record — it simply will not appear as a
+selectable build, which looks like a failed upload and is not one.
 `test/config/app_version_test.dart` checks the version *name* (before the
 `+`) matches, not the build number, so this bump does not require a code
 change beyond `pubspec.yaml`.
